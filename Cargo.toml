@@ -17,8 +17,11 @@ atoll-engine = { path = "crates/atoll-engine" }
 ash = "0.38"
 cef = { version = "152.3", default-features = false }
 directories = "6"
+anyhow = "1"
+arboard = { version = "3.6", features = ["wayland-data-control"] }
 image = { version = "0.25", default-features = false, features = ["png"] }
 libc = "0.2"
+pollster = "1"
 rfd = "0.17"
 rusqlite = { version = "0.40", features = ["bundled"] }
 slint = { version = "1.18", default-features = false, features = [
