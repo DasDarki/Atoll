@@ -1,0 +1,46 @@
+import { ListView } from "std-widgets.slint";
+import { Theme } from "../theme.slint";
+import { OverlayState } from "../state.slint";
+import { Modal } from "modal.slint";
+import { ActionButton, ButtonKind } from "../widgets/button.slint";
+
+export component ImportReport inherits Modal {
+    title: "Import abgeschlossen";
+    card-width: 600px;
+    dismissed => { OverlayState.report-close(); }
+
+    Text {
+        text: OverlayState.report-summary;
+        color: Theme.text-muted;
+        font-size: Theme.font-normal;
+        wrap: word-wrap;
+    }
+
+    if OverlayState.report-lines.length > 0 : Rectangle {
+        height: min(260px, OverlayState.report-lines.length * 26px + 12px);
+        border-radius: Theme.radius;
+        background: Theme.background;
+        border-width: 1px;
+        border-color: Theme.border;
+        ListView {
+            for line in OverlayState.report-lines : Text {
+                height: 26px;
+                x: 12px;
+                text: line;
+                color: Theme.text;
+                font-size: Theme.font-small + 1px;
+                vertical-alignment: center;
+                overflow: elide;
+            }
+        }
+    }
+
+    HorizontalLayout {
+        alignment: end;
+        ActionButton {
+            text: "Schließen";
+            kind: ButtonKind.primary;
+            clicked => { OverlayState.report-close(); }
+        }
+    }
+}

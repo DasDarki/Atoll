@@ -1,0 +1,97 @@
+import { Theme } from "../theme.slint";
+import { BrowserState } from "../state.slint";
+
+export component AddressBar inherits Rectangle {
+    property <string> address: BrowserState.address;
+    out property <bool> editing: input.has-focus;
+
+    public function focus-and-select() {
+        input.focus();
+        input.select-all();
+    }
+
+    changed address => {
+        if (!input.has-focus) {
+            input.text = self.address;
+        }
+    }
+
+    height: 32px;
+    border-radius: 16px;
+    background: input.has-focus ? Theme.surface-raised : Theme.surface;
+    border-width: 1px;
+    border-color: input.has-focus ? Theme.accent : touch.has-hover ? Theme.border-strong : Theme.border;
+    animate border-color, background { duration: 120ms; }
+
+    touch := TouchArea {
+        mouse-cursor: text;
+        clicked => {
+            if (!input.has-focus) {
+                input.focus();
+                input.select-all();
+            }
+        }
+    }
+
+    keys := FocusScope {
+        focus-on-click: false;
+        key-pressed(event) => {
+            if (event.text == Key.Escape) {
+                input.text = BrowserState.address;
+                input.clear-focus();
+                return accept;
+            }
+            return reject;
+        }
+
+        HorizontalLayout {
+            padding-left: 12px;
+            padding-right: 14px;
+            spacing: 8px;
+
+            Image {
+                source: BrowserState.secure ? @image-url("../icons/lock.svg") : @image-url("../icons/search.svg");
+                width: 13px;
+                height: 13px;
+                y: (parent.height - self.height) / 2;
+                colorize: BrowserState.secure ? #6ee7b7 : Theme.text-faint;
+            }
+
+            Rectangle {
+                clip: true;
+                horizontal-stretch: 1;
+
+                Text {
+                    x: 0;
+                    width: parent.width;
+                    text: "Suchen oder Adresse eingeben";
+                    visible: input.text == "";
+                    color: Theme.text-faint;
+                    font-size: Theme.font-normal;
+                    vertical-alignment: center;
+                }
+
+                input := TextInput {
+                    x: 0;
+                    width: parent.width;
+                    height: parent.height;
+                    text: BrowserState.address;
+                    color: self.has-focus ? Theme.text : Theme.text-muted;
+                    font-size: Theme.font-normal;
+                    vertical-alignment: center;
+                    single-line: true;
+                    selection-background-color: #7c6cff66;
+                    accepted => {
+                        BrowserState.navigate(self.text);
+                        self.clear-focus();
+                    }
+                    changed has-focus => {
+                        if (!self.has-focus) {
+                            self.text = BrowserState.address;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

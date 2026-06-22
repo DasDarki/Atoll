@@ -1,0 +1,106 @@
+import { Theme } from "../theme.slint";
+import { BrowserState } from "../state.slint";
+
+export component NewTabPage inherits Rectangle {
+    public function focus-input() {
+        input.focus();
+    }
+
+    background: Theme.background;
+
+    Rectangle {
+        width: 720px;
+        height: 720px;
+        x: (parent.width - self.width) / 2;
+        y: parent.height * 0.12;
+        border-radius: self.width / 2;
+        background: @radial-gradient(circle, #6a5cff1f 0%, #22d3ee0a 45%, transparent 70%);
+    }
+
+    VerticalLayout {
+        alignment: center;
+        spacing: 28px;
+        padding-bottom: 80px;
+
+        HorizontalLayout {
+            alignment: center;
+            Image {
+                source: @image-url("../images/logo-256.png");
+                width: 96px;
+                height: 96px;
+            }
+        }
+
+        Text {
+            text: "Atoll";
+            color: Theme.text;
+            font-size: 30px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            horizontal-alignment: center;
+        }
+
+        Rectangle {
+            height: 48px;
+            field := Rectangle {
+                x: (parent.width - self.width) / 2;
+                width: min(560px, parent.width - 80px);
+                height: 48px;
+                border-radius: 24px;
+                background: Theme.surface;
+                border-width: 1px;
+                border-color: input.has-focus ? Theme.accent : Theme.border-strong;
+                drop-shadow-blur: 24px;
+                drop-shadow-color: #00000066;
+
+                HorizontalLayout {
+                    padding-left: 18px;
+                    padding-right: 18px;
+                    spacing: 12px;
+
+                    Image {
+                        source: @image-url("../icons/search.svg");
+                        width: 16px;
+                        height: 16px;
+                        y: (parent.height - self.height) / 2;
+                        colorize: Theme.text-faint;
+                    }
+
+                    Rectangle {
+                        clip: true;
+                        Text {
+                            x: 0;
+                            width: parent.width;
+                            text: "Suchen oder Adresse eingeben";
+                            visible: input.text == "";
+                            color: Theme.text-faint;
+                            font-size: Theme.font-large;
+                            vertical-alignment: center;
+                        }
+                        input := TextInput {
+                            x: 0;
+                            width: parent.width;
+                            height: parent.height;
+                            color: Theme.text;
+                            font-size: Theme.font-large;
+                            vertical-alignment: center;
+                            single-line: true;
+                            selection-background-color: #7c6cff66;
+                            accepted => {
+                                BrowserState.navigate(self.text);
+                                self.text = "";
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Text {
+            text: "Strg+L Adressleiste  ·  Strg+T neuer Tab  ·  Strg+W Tab schließen";
+            color: Theme.text-faint;
+            font-size: Theme.font-small + 1px;
+            horizontal-alignment: center;
+        }
+    }
+}

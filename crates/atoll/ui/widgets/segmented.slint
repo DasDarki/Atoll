@@ -1,0 +1,44 @@
+import { Theme } from "../theme.slint";
+
+export component Segmented inherits Rectangle {
+    in property <[string]> options;
+    in-out property <int> selected;
+    callback changed-by-user(int);
+
+    height: 32px;
+    border-radius: Theme.radius;
+    background: Theme.background;
+    border-width: 1px;
+    border-color: Theme.border;
+
+    HorizontalLayout {
+        padding: 3px;
+        spacing: 3px;
+        for option[index] in root.options : Rectangle {
+            horizontal-stretch: 1;
+            border-radius: Theme.radius-small;
+            background: index == root.selected ? Theme.surface-raised : touch.has-hover ? Theme.hover : transparent;
+            border-width: index == root.selected ? 1px : 0px;
+            border-color: Theme.border-strong;
+            animate background { duration: 100ms; }
+
+            Text {
+                text: option;
+                color: index == root.selected ? Theme.text : Theme.text-muted;
+                font-size: Theme.font-small + 1px;
+                font-weight: index == root.selected ? 600 : 400;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+                overflow: elide;
+            }
+
+            touch := TouchArea {
+                mouse-cursor: pointer;
+                clicked => {
+                    root.selected = index;
+                    root.changed-by-user(index);
+                }
+            }
+        }
+    }
+}

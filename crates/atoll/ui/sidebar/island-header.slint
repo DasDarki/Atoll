@@ -1,0 +1,132 @@
+import { Theme } from "../theme.slint";
+import { SidebarState } from "../state.slint";
+import { SidebarRow } from "../structs.slint";
+import { IconButton } from "../widgets/icon-button.slint";
+
+export component IslandHeader inherits Rectangle {
+    in property <SidebarRow> entry;
+
+    height: 34px;
+
+    menu := ContextMenuArea {
+        Menu {
+            MenuItem {
+                title: "Neuer Tab in dieser Insel";
+                activated => { SidebarState.island-action(root.entry.island-id, "new-tab"); }
+            }
+            MenuItem {
+                title: "Umbenennen";
+                activated => { SidebarState.island-action(root.entry.island-id, "rename"); }
+            }
+            Menu {
+                title: "Farbe";
+                for color[index] in Theme.island-colors : MenuItem {
+                    title: ["Violett", "Blau", "Cyan", "Türkis", "Grün", "Bernstein", "Rosa", "Schiefer"][index];
+                    activated => { SidebarState.set-island-color(root.entry.island-id, index); }
+                }
+            }
+            MenuSeparator { }
+            MenuItem {
+                title: "Alle Tabs schlafen legen";
+                activated => { SidebarState.island-action(root.entry.island-id, "sleep"); }
+            }
+            MenuItem {
+                title: "Als Liste exportieren";
+                activated => { SidebarState.island-action(root.entry.island-id, "export"); }
+            }
+            MenuItem {
+                title: "Nach oben";
+                activated => { SidebarState.island-action(root.entry.island-id, "move-up"); }
+            }
+            MenuItem {
+                title: "Nach unten";
+                activated => { SidebarState.island-action(root.entry.island-id, "move-down"); }
+            }
+            Menu {
+                title: "In Workspace verschieben";
+                for workspace in SidebarState.workspaces : MenuItem {
+                    title: workspace.name;
+                    enabled: !workspace.active;
+                    activated => { SidebarState.move-island-to-workspace(root.entry.island-id, workspace.id); }
+                }
+            }
+            MenuSeparator { }
+            MenuItem {
+                title: "Archivieren";
+                activated => { SidebarState.island-action(root.entry.island-id, "archive"); }
+            }
+            MenuItem {
+                title: "Insel löschen";
+                activated => { SidebarState.island-action(root.entry.island-id, "delete"); }
+            }
+        }
+
+        touch := TouchArea {
+            mouse-cursor: pointer;
+            clicked => { SidebarState.toggle-island(root.entry.island-id); }
+        }
+    }
+
+    background: touch.has-hover ? Theme.hover : transparent;
+
+    HorizontalLayout {
+        padding-left: 8px;
+        padding-right: 6px;
+        spacing: 6px;
+
+        Image {
+            source: root.entry.collapsed ? @image-url("../icons/chevron-right.svg") : @image-url("../icons/chevron-down.svg");
+            width: 14px;
+            height: 14px;
+            y: (parent.height - self.height) / 2;
+            colorize: Theme.text-faint;
+        }
+
+        Rectangle {
+            width: 8px;
+            height: 8px;
+            y: (parent.height - self.height) / 2;
+            border-radius: 4px;
+            background: root.entry.color;
+        }
+
+        Text {
+            text: root.entry.title;
+            color: Theme.text;
+            font-size: Theme.font-small + 1px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            vertical-alignment: center;
+            overflow: elide;
+            horizontal-stretch: 1;
+        }
+
+        Text {
+            text: root.entry.count;
+            color: Theme.text-faint;
+            font-size: Theme.font-small;
+            vertical-alignment: center;
+            visible: !touch.has-hover && !more.hovered && !add.hovered;
+        }
+
+        add := IconButton {
+            width: 24px;
+            height: 24px;
+            y: (parent.height - self.height) / 2;
+            icon-size: 14px;
+            icon: @image-url("../icons/plus.svg");
+            opacity: touch.has-hover || self.hovered || more.hovered ? 1 : 0;
+            clicked => { SidebarState.island-action(root.entry.island-id, "new-tab"); }
+        }
+
+        more := IconButton {
+            width: 24px;
+            height: 24px;
+            y: (parent.height - self.height) / 2;
+            icon-size: 14px;
+            icon: @image-url("../icons/more.svg");
+            opacity: touch.has-hover || self.hovered || add.hovered ? 1 : 0;
+            clicked => { menu.show({ x: self.x, y: self.y + self.height }); }
+        }
+    }
+}

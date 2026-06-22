@@ -1,0 +1,103 @@
+import { CheckBox, ListView } from "std-widgets.slint";
+import { Theme } from "../theme.slint";
+import { OverlayState } from "../state.slint";
+import { Modal } from "modal.slint";
+import { ActionButton, ButtonKind } from "../widgets/button.slint";
+import { Segmented } from "../widgets/segmented.slint";
+import { FieldLabel } from "../widgets/field-label.slint";
+
+export component ExportDialog inherits Modal {
+    title: "URL-Liste exportieren";
+    card-width: 560px;
+    dismissed => { OverlayState.export-cancel(); }
+
+    VerticalLayout {
+        spacing: 6px;
+        FieldLabel { text: "UMFANG"; }
+        Segmented {
+            options: ["Aktuelle Insel", "Workspace", "Alle Workspaces", "Auswahl"];
+            selected <=> OverlayState.export-scope;
+            changed-by-user => { OverlayState.export-changed(); }
+        }
+    }
+
+    if OverlayState.export-scope == 3 : Rectangle {
+        height: 220px;
+        border-radius: Theme.radius;
+        background: Theme.background;
+        border-width: 1px;
+        border-color: Theme.border;
+        ListView {
+            for island in OverlayState.export-islands : Rectangle {
+                height: 32px;
+                visible: OverlayState.export-archived || !island.archived;
+                HorizontalLayout {
+                    padding-left: 10px;
+                    padding-right: 10px;
+                    spacing: 8px;
+                    CheckBox {
+                        checked: island.selected;
+                        toggled => { OverlayState.export-toggle-island(island.id); }
+                    }
+                    Text {
+                        text: island.name;
+                        color: Theme.text;
+                        font-size: Theme.font-normal;
+                        vertical-alignment: center;
+                        overflow: elide;
+                        horizontal-stretch: 1;
+                    }
+                    Text {
+                        text: island.archived ? island.workspace + " · archiviert" : island.workspace;
+                        color: Theme.text-faint;
+                        font-size: Theme.font-small + 1px;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+
+    VerticalLayout {
+        spacing: 4px;
+        CheckBox {
+            text: "Insel-Markierungen schreiben";
+            checked <=> OverlayState.export-markers;
+            toggled => { OverlayState.export-changed(); }
+        }
+        CheckBox {
+            text: "Archivierte Inseln einschließen";
+            checked <=> OverlayState.export-archived;
+            toggled => { OverlayState.export-changed(); }
+        }
+    }
+
+    VerticalLayout {
+        spacing: 6px;
+        FieldLabel { text: "ZIEL"; }
+        Segmented {
+            options: ["Zwischenablage", "Textdatei (.txt)"];
+            selected <=> OverlayState.export-destination;
+        }
+    }
+
+    Text {
+        text: OverlayState.export-summary;
+        color: Theme.accent-cyan;
+        font-size: Theme.font-normal;
+    }
+
+    HorizontalLayout {
+        alignment: end;
+        spacing: 8px;
+        ActionButton {
+            text: "Abbrechen";
+            clicked => { OverlayState.export-cancel(); }
+        }
+        ActionButton {
+            text: "Exportieren";
+            kind: ButtonKind.primary;
+            clicked => { OverlayState.export-confirm(); }
+        }
+    }
+}

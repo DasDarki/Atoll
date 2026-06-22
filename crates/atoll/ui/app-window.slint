@@ -1,0 +1,118 @@
+import { Theme } from "theme.slint";
+import { SidebarState, BrowserState, OverlayState } from "state.slint";
+import { DialogKind } from "structs.slint";
+import { Sidebar } from "sidebar/sidebar.slint";
+import { Toolbar } from "toolbar/toolbar.slint";
+import { WebView } from "content/web-view.slint";
+import { NewTabPage } from "content/new-tab-page.slint";
+import { FindBar } from "content/find-bar.slint";
+import { PopupMenu } from "overlays/popup-menu.slint";
+import { PromptDialog } from "overlays/prompt-dialog.slint";
+import { ImportDialog } from "overlays/import-dialog.slint";
+import { ImportReport } from "overlays/import-report.slint";
+import { ExportDialog } from "overlays/export-dialog.slint";
+import { ArchivePanel } from "overlays/archive-panel.slint";
+import { Toast } from "overlays/toast.slint";
+
+export { SidebarState, BrowserState, OverlayState }
+export { WorkspaceItem, SidebarRow, IslandTarget, MenuItemData, ArchiveItem, ExportIslandItem, DialogData, DialogKind, RowKind, TabLoadState, PointerAction, PointerButton, WebCursor, WebPointer, WebScroll } from "structs.slint";
+
+export component AppWindow inherits Window {
+    title: BrowserState.title == "" ? "Atoll" : BrowserState.title + " - Atoll";
+    icon: @image-url("images/logo-64.png");
+    preferred-width: 1440px;
+    preferred-height: 900px;
+    min-width: 720px;
+    min-height: 480px;
+    background: Theme.background;
+    default-font-size: Theme.font-normal;
+    full-screen: BrowserState.fullscreen;
+
+    out property <bool> web-focused: web.focused;
+    out property <length> content-x: content.absolute-position.x;
+    out property <length> content-y: content.absolute-position.y;
+    out property <bool> modal-open: OverlayState.dialog.kind != DialogKind.none
+        || OverlayState.import-visible
+        || OverlayState.export-visible
+        || OverlayState.archive-visible
+        || OverlayState.report-visible
+        || OverlayState.menu-visible;
+
+    public function focus-address() {
+        toolbar.focus-address();
+    }
+
+    public function focus-web() {
+        web.focus-page();
+    }
+
+    public function focus-new-tab() {
+        new-tab.focus-input();
+    }
+
+    public function focus-find() {
+        find-bar.focus-input();
+    }
+
+    HorizontalLayout {
+        if !BrowserState.fullscreen : Sidebar { }
+
+        VerticalLayout {
+            toolbar := Toolbar {
+                visible: !BrowserState.fullscreen;
+                height: BrowserState.fullscreen ? 0px : Theme.toolbar-height;
+            }
+
+            content := Rectangle {
+                web := WebView {
+                    visible: BrowserState.has-page;
+                }
+
+                new-tab := NewTabPage {
+                    visible: !BrowserState.has-page;
+                }
+
+                find-bar := FindBar {
+                    x: parent.width - self.width - 16px;
+                    y: 12px;
+                    visible: BrowserState.find-visible && BrowserState.has-page;
+                }
+            }
+        }
+    }
+
+    if OverlayState.menu-visible : PopupMenu {
+        width: root.width;
+        height: root.height;
+    }
+
+    if OverlayState.archive-visible : ArchivePanel {
+        width: root.width;
+        height: root.height;
+    }
+
+    if OverlayState.import-visible : ImportDialog {
+        width: root.width;
+        height: root.height;
+    }
+
+    if OverlayState.export-visible : ExportDialog {
+        width: root.width;
+        height: root.height;
+    }
+
+    if OverlayState.report-visible : ImportReport {
+        width: root.width;
+        height: root.height;
+    }
+
+    if OverlayState.dialog.kind != DialogKind.none : PromptDialog {
+        width: root.width;
+        height: root.height;
+    }
+
+    if OverlayState.toast-visible : Toast {
+        x: (root.width - self.width) / 2;
+        y: root.height - self.height - 28px;
+    }
+}

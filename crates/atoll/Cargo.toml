@@ -1,0 +1,28 @@
+[package]
+name = "atoll"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+description = "A fast desktop browser that treats tabs as records until they are looked at."
+
+[dependencies]
+anyhow.workspace = true
+arboard.workspace = true
+atoll-core.workspace = true
+atoll-engine.workspace = true
+atoll-storage.workspace = true
+atoll-transfer.workspace = true
+directories.workspace = true
+image.workspace = true
+rfd.workspace = true
+slint.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+url.workspace = true
+
+[build-dependencies]
+slint-build.workspace = true
+
+[lints]
+workspace = true

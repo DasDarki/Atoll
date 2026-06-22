@@ -1,0 +1,130 @@
+import { Theme } from "../theme.slint";
+import { BrowserState } from "../state.slint";
+import { IconButton } from "../widgets/icon-button.slint";
+import { AddressBar } from "address-bar.slint";
+
+export component Toolbar inherits Rectangle {
+    height: Theme.toolbar-height;
+    background: Theme.chrome;
+
+    public function focus-address() {
+        address.focus-and-select();
+    }
+
+    HorizontalLayout {
+        padding-left: 10px;
+        padding-right: 10px;
+        spacing: 4px;
+        alignment: stretch;
+
+        IconButton {
+            y: (parent.height - self.height) / 2;
+            icon: @image-url("../icons/arrow-left.svg");
+            enabled: BrowserState.can-go-back;
+            clicked => { BrowserState.go-back(); }
+        }
+        IconButton {
+            y: (parent.height - self.height) / 2;
+            icon: @image-url("../icons/arrow-right.svg");
+            enabled: BrowserState.can-go-forward;
+            clicked => { BrowserState.go-forward(); }
+        }
+        IconButton {
+            y: (parent.height - self.height) / 2;
+            icon: BrowserState.loading ? @image-url("../icons/close.svg") : @image-url("../icons/reload.svg");
+            enabled: BrowserState.has-page;
+            clicked => {
+                if (BrowserState.loading) {
+                    BrowserState.stop();
+                } else {
+                    BrowserState.reload();
+                }
+            }
+        }
+
+        Rectangle { width: 6px; }
+
+        address := AddressBar {
+            y: (parent.height - self.height) / 2;
+            horizontal-stretch: 1;
+        }
+
+        Rectangle { width: 6px; }
+
+        menu-button := IconButton {
+            y: (parent.height - self.height) / 2;
+            icon: @image-url("../icons/more.svg");
+            clicked => { menu.show({ x: self.x + self.width - 220px, y: self.y + self.height + 4px }); }
+        }
+    }
+
+    menu := ContextMenuArea {
+        enabled: false;
+        Menu {
+            MenuItem {
+                title: "Neuer Tab";
+                activated => { BrowserState.menu-action("new-tab"); }
+            }
+            MenuItem {
+                title: "Geschlossenen Tab wiederherstellen";
+                activated => { BrowserState.menu-action("reopen-tab"); }
+            }
+            MenuSeparator { }
+            MenuItem {
+                title: "Auf Seite suchen";
+                enabled: BrowserState.has-page;
+                activated => { BrowserState.menu-action("find"); }
+            }
+            Menu {
+                title: "Zoom";
+                MenuItem {
+                    title: "Vergrößern";
+                    activated => { BrowserState.menu-action("zoom-in"); }
+                }
+                MenuItem {
+                    title: "Verkleinern";
+                    activated => { BrowserState.menu-action("zoom-out"); }
+                }
+                MenuItem {
+                    title: "Zurücksetzen";
+                    activated => { BrowserState.menu-action("zoom-reset"); }
+                }
+            }
+            MenuSeparator { }
+            MenuItem {
+                title: "URL-Liste importieren";
+                activated => { BrowserState.menu-action("import"); }
+            }
+            MenuItem {
+                title: "URL-Liste exportieren";
+                activated => { BrowserState.menu-action("export"); }
+            }
+            MenuItem {
+                title: "Archiv";
+                activated => { BrowserState.menu-action("archive"); }
+            }
+            MenuSeparator { }
+            MenuItem {
+                title: "Entwicklertools";
+                enabled: BrowserState.has-page;
+                activated => { BrowserState.menu-action("devtools"); }
+            }
+        }
+    }
+
+    Rectangle {
+        y: parent.height - 2px;
+        height: 2px;
+        width: BrowserState.loading ? parent.width * max(0.05, BrowserState.progress) : 0px;
+        background: Theme.accent-gradient;
+        opacity: BrowserState.loading ? 1 : 0;
+        animate width { duration: 180ms; easing: ease-out; }
+        animate opacity { duration: 300ms; }
+    }
+
+    Rectangle {
+        y: parent.height - 1px;
+        height: 1px;
+        background: Theme.border;
+    }
+}

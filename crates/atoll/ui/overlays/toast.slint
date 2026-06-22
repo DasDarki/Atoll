@@ -1,0 +1,34 @@
+import { Theme } from "../theme.slint";
+import { OverlayState } from "../state.slint";
+
+export component Toast inherits Rectangle {
+    width: min(label.preferred-width + 36px, 520px);
+    height: 40px;
+    border-radius: 20px;
+    background: Theme.surface-raised;
+    border-width: 1px;
+    border-color: Theme.border-strong;
+    drop-shadow-blur: 18px;
+    drop-shadow-color: #00000090;
+
+    label := Text {
+        x: 18px;
+        width: parent.width - 36px;
+        text: OverlayState.toast;
+        color: Theme.text;
+        font-size: Theme.font-normal;
+        vertical-alignment: center;
+        overflow: elide;
+    }
+
+    TouchArea {
+        mouse-cursor: pointer;
+        clicked => { OverlayState.toast-dismissed(); }
+    }
+
+    Timer {
+        interval: 4s;
+        running: OverlayState.toast-visible;
+        triggered => { OverlayState.toast-dismissed(); }
+    }
+}

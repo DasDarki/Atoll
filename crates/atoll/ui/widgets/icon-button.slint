@@ -1,0 +1,30 @@
+import { Theme } from "../theme.slint";
+
+export component IconButton inherits Rectangle {
+    in property <image> icon;
+    in property <bool> enabled: true;
+    in property <bool> active;
+    in property <length> icon-size: 16px;
+    in property <color> tint: Theme.text-muted;
+    out property <bool> hovered: touch.has-hover;
+    callback clicked();
+
+    width: 30px;
+    height: 30px;
+    border-radius: Theme.radius-small;
+    background: !root.enabled ? transparent : touch.pressed ? Theme.pressed : touch.has-hover || root.active ? Theme.hover : transparent;
+    animate background { duration: 100ms; }
+
+    Image {
+        source: root.icon;
+        width: root.icon-size;
+        height: root.icon-size;
+        colorize: !root.enabled ? Theme.text-faint : touch.has-hover || root.active ? Theme.text : root.tint;
+    }
+
+    touch := TouchArea {
+        enabled: root.enabled;
+        mouse-cursor: root.enabled ? pointer : default;
+        clicked => { root.clicked(); }
+    }
+}

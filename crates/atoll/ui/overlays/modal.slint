@@ -1,0 +1,49 @@
+import { Theme } from "../theme.slint";
+
+export component Modal inherits Rectangle {
+    in property <string> title;
+    in property <length> card-width: 460px;
+    callback dismissed();
+
+    background: Theme.scrim;
+
+    TouchArea { }
+
+    FocusScope {
+        focus-on-click: false;
+        key-pressed(event) => {
+            if (event.text == Key.Escape) {
+                root.dismissed();
+                return accept;
+            }
+            return reject;
+        }
+
+        card := Rectangle {
+            width: min(root.card-width, root.width - 40px);
+            height: min(content.preferred-height, root.height - 40px);
+            border-radius: Theme.radius-large;
+            background: Theme.surface;
+            border-width: 1px;
+            border-color: Theme.border-strong;
+            drop-shadow-blur: 40px;
+            drop-shadow-color: #000000b0;
+            clip: true;
+
+            content := VerticalLayout {
+                padding: 22px;
+                spacing: 16px;
+
+                if root.title != "" : Text {
+                    text: root.title;
+                    color: Theme.text;
+                    font-size: Theme.font-large + 2px;
+                    font-weight: 700;
+                    wrap: word-wrap;
+                }
+
+                @children
+            }
+        }
+    }
+}

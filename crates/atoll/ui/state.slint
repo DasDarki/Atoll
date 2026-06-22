@@ -1,0 +1,120 @@
+import { WorkspaceItem, SidebarRow, IslandTarget, MenuItemData, ArchiveItem, ExportIslandItem, DialogData, WebCursor, WebPointer, WebScroll } from "structs.slint";
+
+export global SidebarState {
+    in property <[WorkspaceItem]> workspaces;
+    in property <[SidebarRow]> rows;
+    in property <[IslandTarget]> island-targets;
+    in property <bool> archive-suggestion;
+
+    callback select-workspace(int);
+    callback create-workspace();
+    callback workspace-action(int, string);
+    callback move-island-to-workspace(int, int);
+
+    callback activate-tab(int);
+    callback close-tab(int);
+    callback tab-action(int, string);
+    callback move-tab-to-island(int, int);
+
+    callback toggle-island(int);
+    callback island-action(int, string);
+    callback set-island-color(int, int);
+    callback create-island();
+
+    callback open-archive();
+    callback open-import();
+    callback open-export();
+}
+
+export global BrowserState {
+    in property <string> title;
+    in property <string> address;
+    in property <bool> secure;
+    in property <bool> can-go-back;
+    in property <bool> can-go-forward;
+    in property <bool> loading;
+    in property <float> progress;
+    in property <bool> has-page;
+    in property <image> page-frame;
+    in property <image> popup-frame;
+    in property <bool> popup-visible;
+    in property <length> popup-x;
+    in property <length> popup-y;
+    in property <WebCursor> cursor;
+    in property <string> status-text;
+    in property <string> tooltip;
+    in property <bool> fullscreen;
+    in property <bool> crashed;
+    in property <bool> find-visible;
+    in property <string> find-result;
+
+    callback navigate(string);
+    callback go-back();
+    callback go-forward();
+    callback reload();
+    callback stop();
+    callback menu-action(string);
+
+    callback web-pointer(WebPointer);
+    callback web-scroll(WebScroll) -> bool;
+    callback web-hover(bool, length, length);
+    callback web-resized(length, length);
+    callback web-focus-changed(bool);
+
+    callback find(string, bool);
+    callback close-find();
+}
+
+export global OverlayState {
+    in property <bool> menu-visible;
+    in property <length> menu-x;
+    in property <length> menu-y;
+    in property <[MenuItemData]> menu-items;
+    callback menu-activated(int);
+    callback menu-dismissed();
+
+    in property <DialogData> dialog;
+    callback dialog-closed(bool, string);
+
+    in property <string> toast;
+    in property <bool> toast-visible;
+    callback toast-dismissed();
+
+    in property <bool> archive-visible;
+    in property <[ArchiveItem]> archive-items;
+    callback archive-restore(int);
+    callback archive-delete(int);
+    callback archive-close();
+
+    in property <bool> import-visible;
+    in-out property <string> import-text;
+    in property <string> import-summary;
+    in property <bool> import-ready;
+    in-out property <int> import-target;
+    in-out property <string> import-workspace-name;
+    in-out property <int> import-duplicates;
+    in-out property <int> import-islands;
+    in-out property <string> import-fallback;
+    callback import-text-edited(string);
+    callback import-choose-file();
+    callback import-paste();
+    callback import-confirm();
+    callback import-cancel();
+
+    in property <bool> report-visible;
+    in property <string> report-summary;
+    in property <[string]> report-lines;
+    callback report-close();
+
+    in property <bool> export-visible;
+    in-out property <int> export-scope;
+    in-out property <bool> export-markers;
+    in-out property <bool> export-archived;
+    in-out property <int> export-destination;
+    in property <string> export-summary;
+    in-out property <[ExportIslandItem]> export-islands;
+    callback export-changed();
+    callback export-toggle-island(int);
+    callback export-confirm();
+    callback export-cancel();
+}

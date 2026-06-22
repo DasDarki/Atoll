@@ -1,0 +1,102 @@
+export enum RowKind { island, tab }
+
+export enum TabLoadState { sleeping, frozen, live, archived }
+
+export struct WorkspaceItem {
+    id: int,
+    name: string,
+    active: bool,
+}
+
+export struct SidebarRow {
+    kind: RowKind,
+    island-id: int,
+    tab-id: int,
+    title: string,
+    url: string,
+    icon: image,
+    has-icon: bool,
+    color: color,
+    collapsed: bool,
+    count: int,
+    state: TabLoadState,
+    active: bool,
+    pinned: bool,
+    loading: bool,
+}
+
+export struct IslandTarget {
+    id: int,
+    name: string,
+    color: color,
+}
+
+export struct MenuItemData {
+    id: int,
+    label: string,
+    enabled: bool,
+    separator: bool,
+    checkable: bool,
+    checked: bool,
+    indent: bool,
+}
+
+export struct ArchiveItem {
+    id: int,
+    name: string,
+    workspace: string,
+    tab-count: int,
+    archived: string,
+    color: color,
+}
+
+export struct ExportIslandItem {
+    id: int,
+    name: string,
+    workspace: string,
+    archived: bool,
+    selected: bool,
+}
+
+export enum DialogKind { none, alert, confirm, prompt }
+
+export struct DialogData {
+    kind: DialogKind,
+    title: string,
+    message: string,
+    input: string,
+    accept-label: string,
+    cancel-label: string,
+    destructive: bool,
+}
+
+export enum PointerAction { cancel, down, up, move }
+
+export enum PointerButton { none, left, right, middle, back, forward }
+
+export enum WebCursor {
+    default, pointer, text, wait, progress, help, crosshair, move, not-allowed, no-drop,
+    grab, grabbing, copy, alias, resize-ew, resize-ns, resize-nesw, resize-nwse, resize-column, resize-row, none
+}
+
+export struct WebPointer {
+    action: PointerAction,
+    button: PointerButton,
+    x: length,
+    y: length,
+    shift: bool,
+    control: bool,
+    alt: bool,
+    meta: bool,
+}
+
+export struct WebScroll {
+    delta-x: length,
+    delta-y: length,
+    x: length,
+    y: length,
+    shift: bool,
+    control: bool,
+    alt: bool,
+    meta: bool,
+}

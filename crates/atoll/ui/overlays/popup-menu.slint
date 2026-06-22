@@ -1,0 +1,100 @@
+import { Theme } from "../theme.slint";
+import { OverlayState } from "../state.slint";
+
+component MenuRow inherits Rectangle {
+    in property <string> label;
+    in property <bool> enabled;
+    in property <bool> checkable;
+    in property <bool> checked;
+    in property <bool> indent;
+    callback activated();
+
+    height: 30px;
+    border-radius: Theme.radius-small;
+    background: root.enabled && touch.has-hover ? Theme.selected : transparent;
+
+    HorizontalLayout {
+        padding-left: root.indent ? 28px : 12px;
+        padding-right: 12px;
+        spacing: 8px;
+
+        if root.checkable : Text {
+            text: root.checked ? "✓" : "";
+            width: 12px;
+            color: Theme.accent-cyan;
+            vertical-alignment: center;
+        }
+
+        Text {
+            text: root.label;
+            color: root.enabled ? Theme.text : Theme.text-faint;
+            font-size: Theme.font-normal;
+            vertical-alignment: center;
+            overflow: elide;
+        }
+    }
+
+    touch := TouchArea {
+        enabled: root.enabled;
+        clicked => { root.activated(); }
+    }
+}
+
+export component PopupMenu inherits Rectangle {
+    TouchArea {
+        pointer-event(event) => {
+            if (event.kind == PointerEventKind.down) {
+                OverlayState.menu-dismissed();
+            }
+        }
+        scroll-event(event) => {
+            OverlayState.menu-dismissed();
+            return accept;
+        }
+    }
+
+    FocusScope {
+        init => { self.focus(); }
+        key-pressed(event) => {
+            if (event.text == Key.Escape) {
+                OverlayState.menu-dismissed();
+            }
+            return accept;
+        }
+    }
+
+    card := Rectangle {
+        x: min(OverlayState.menu-x, root.width - self.width - 8px);
+        y: min(OverlayState.menu-y, max(8px, root.height - self.height - 8px));
+        width: 250px;
+        height: layout.preferred-height;
+        border-radius: Theme.radius;
+        background: Theme.surface-raised;
+        border-width: 1px;
+        border-color: Theme.border-strong;
+        drop-shadow-blur: 20px;
+        drop-shadow-color: #000000a0;
+
+        TouchArea { }
+
+        layout := VerticalLayout {
+            padding: 5px;
+            for item in OverlayState.menu-items : Rectangle {
+                height: item.separator ? 9px : 30px;
+                if item.separator : Rectangle {
+                    y: 4px;
+                    height: 1px;
+                    background: Theme.border-strong;
+                }
+                if !item.separator : MenuRow {
+                    label: item.label;
+                    enabled: item.enabled;
+                    checkable: item.checkable;
+                    checked: item.checked;
+                    indent: item.indent;
+                    activated => { OverlayState.menu-activated(item.id); }
+                }
+            }
+        }
+    }
+}

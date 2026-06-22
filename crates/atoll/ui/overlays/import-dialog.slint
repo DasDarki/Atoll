@@ -1,0 +1,99 @@
+import { TextEdit } from "std-widgets.slint";
+import { Theme } from "../theme.slint";
+import { OverlayState } from "../state.slint";
+import { Modal } from "modal.slint";
+import { ActionButton, ButtonKind } from "../widgets/button.slint";
+import { Segmented } from "../widgets/segmented.slint";
+import { TextField } from "../widgets/text-field.slint";
+import { FieldLabel } from "../widgets/field-label.slint";
+
+export component ImportDialog inherits Modal {
+    title: "URL-Liste importieren";
+    card-width: 640px;
+    dismissed => { OverlayState.import-cancel(); }
+
+    HorizontalLayout {
+        spacing: 8px;
+        ActionButton {
+            text: "Datei wählen…";
+            clicked => { OverlayState.import-choose-file(); }
+        }
+        ActionButton {
+            text: "Aus Zwischenablage einfügen";
+            clicked => { OverlayState.import-paste(); }
+        }
+        Rectangle { horizontal-stretch: 1; }
+    }
+
+    TextEdit {
+        height: 190px;
+        font-size: Theme.font-normal;
+        text <=> OverlayState.import-text;
+        placeholder-text: "--- Inselname ---\nhttps://example.com\n\n# Kommentare werden ignoriert";
+        edited(text) => { OverlayState.import-text-edited(text); }
+    }
+
+    Text {
+        text: OverlayState.import-summary;
+        color: OverlayState.import-ready ? Theme.accent-cyan : Theme.text-faint;
+        font-size: Theme.font-normal;
+        wrap: word-wrap;
+    }
+
+    VerticalLayout {
+        spacing: 6px;
+        FieldLabel { text: "ZIEL"; }
+        Segmented {
+            options: ["Aktueller Workspace", "Neuer Workspace"];
+            selected <=> OverlayState.import-target;
+        }
+        if OverlayState.import-target == 1 : TextField {
+            text <=> OverlayState.import-workspace-name;
+            placeholder: "Name des neuen Workspaces";
+        }
+    }
+
+    VerticalLayout {
+        spacing: 6px;
+        FieldLabel { text: "DUPLIKATE"; }
+        Segmented {
+            options: ["Behalten", "Überspringen", "Zusammenführen"];
+            selected <=> OverlayState.import-duplicates;
+            changed-by-user => { OverlayState.import-text-edited(OverlayState.import-text); }
+        }
+    }
+
+    VerticalLayout {
+        spacing: 6px;
+        FieldLabel { text: "GLEICHNAMIGE INSELN"; }
+        Segmented {
+            options: ["Zusammenführen", "Als neue Insel anlegen"];
+            selected <=> OverlayState.import-islands;
+            changed-by-user => { OverlayState.import-text-edited(OverlayState.import-text); }
+        }
+    }
+
+    VerticalLayout {
+        spacing: 6px;
+        FieldLabel { text: "INSEL FÜR ADRESSEN OHNE MARKIERUNG"; }
+        TextField {
+            text <=> OverlayState.import-fallback;
+            placeholder: "Importiert";
+        }
+    }
+
+    HorizontalLayout {
+        alignment: end;
+        spacing: 8px;
+        ActionButton {
+            text: "Abbrechen";
+            clicked => { OverlayState.import-cancel(); }
+        }
+        ActionButton {
+            text: "Importieren";
+            kind: ButtonKind.primary;
+            enabled: OverlayState.import-ready;
+            clicked => { OverlayState.import-confirm(); }
+        }
+    }
+}

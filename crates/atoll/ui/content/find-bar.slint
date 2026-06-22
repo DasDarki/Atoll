@@ -1,0 +1,85 @@
+import { Theme } from "../theme.slint";
+import { BrowserState } from "../state.slint";
+import { IconButton } from "../widgets/icon-button.slint";
+
+export component FindBar inherits Rectangle {
+    public function focus-input() {
+        input.focus();
+        input.select-all();
+    }
+
+    width: 360px;
+    height: 44px;
+    border-radius: Theme.radius;
+    background: Theme.surface-raised;
+    border-width: 1px;
+    border-color: Theme.border-strong;
+    drop-shadow-blur: 18px;
+    drop-shadow-color: #00000080;
+
+    keys := FocusScope {
+        focus-on-click: false;
+        key-pressed(event) => {
+            if (event.text == Key.Escape) {
+                BrowserState.close-find();
+                return accept;
+            }
+            return reject;
+        }
+
+        HorizontalLayout {
+            padding-left: 12px;
+            padding-right: 6px;
+            spacing: 4px;
+
+            Rectangle {
+                clip: true;
+                horizontal-stretch: 1;
+                Text {
+                    x: 0;
+                    width: parent.width;
+                    text: "Auf Seite suchen";
+                    visible: input.text == "";
+                    color: Theme.text-faint;
+                    font-size: Theme.font-normal;
+                    vertical-alignment: center;
+                }
+                input := TextInput {
+                    x: 0;
+                    width: parent.width;
+                    height: parent.height;
+                    color: Theme.text;
+                    font-size: Theme.font-normal;
+                    vertical-alignment: center;
+                    single-line: true;
+                    selection-background-color: #7c6cff66;
+                    edited => { BrowserState.find(self.text, true); }
+                    accepted => { BrowserState.find(self.text, true); }
+                }
+            }
+
+            Text {
+                text: BrowserState.find-result;
+                color: Theme.text-muted;
+                font-size: Theme.font-small + 1px;
+                vertical-alignment: center;
+            }
+
+            IconButton {
+                y: (parent.height - self.height) / 2;
+                icon: @image-url("../icons/chevron-up.svg");
+                clicked => { BrowserState.find(input.text, false); }
+            }
+            IconButton {
+                y: (parent.height - self.height) / 2;
+                icon: @image-url("../icons/chevron-down.svg");
+                clicked => { BrowserState.find(input.text, true); }
+            }
+            IconButton {
+                y: (parent.height - self.height) / 2;
+                icon: @image-url("../icons/close.svg");
+                clicked => { BrowserState.close-find(); }
+            }
+        }
+    }
+}

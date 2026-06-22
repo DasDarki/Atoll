@@ -1,0 +1,98 @@
+import { ListView } from "std-widgets.slint";
+import { Theme } from "../theme.slint";
+import { OverlayState } from "../state.slint";
+import { Modal } from "modal.slint";
+import { ActionButton, ButtonKind } from "../widgets/button.slint";
+import { IconButton } from "../widgets/icon-button.slint";
+
+export component ArchivePanel inherits Modal {
+    title: "Archiv";
+    card-width: 620px;
+    dismissed => { OverlayState.archive-close(); }
+
+    Text {
+        text: "Archivierte Inseln verschwinden aus der Sidebar, bleiben aber vollständig erhalten.";
+        color: Theme.text-muted;
+        font-size: Theme.font-normal;
+        wrap: word-wrap;
+    }
+
+    if OverlayState.archive-items.length == 0 : Rectangle {
+        height: 120px;
+        border-radius: Theme.radius;
+        background: Theme.background;
+        Text {
+            text: "Das Archiv ist leer.";
+            color: Theme.text-faint;
+            font-size: Theme.font-normal;
+        }
+    }
+
+    if OverlayState.archive-items.length > 0 : Rectangle {
+        height: min(360px, OverlayState.archive-items.length * 56px + 8px);
+        border-radius: Theme.radius;
+        background: Theme.background;
+        border-width: 1px;
+        border-color: Theme.border;
+        ListView {
+            for item in OverlayState.archive-items : Rectangle {
+                height: 56px;
+                HorizontalLayout {
+                    padding-left: 14px;
+                    padding-right: 8px;
+                    spacing: 10px;
+                    Rectangle {
+                        width: 10px;
+                        height: 10px;
+                        y: (parent.height - self.height) / 2;
+                        border-radius: 5px;
+                        background: item.color;
+                    }
+                    VerticalLayout {
+                        alignment: center;
+                        spacing: 2px;
+                        horizontal-stretch: 1;
+                        Text {
+                            text: item.name;
+                            color: Theme.text;
+                            font-size: Theme.font-normal;
+                            font-weight: 600;
+                            overflow: elide;
+                        }
+                        Text {
+                            text: item.workspace + " · " + item.tab-count + " Tabs · archiviert " + item.archived;
+                            color: Theme.text-faint;
+                            font-size: Theme.font-small + 1px;
+                            overflow: elide;
+                        }
+                    }
+                    ActionButton {
+                        y: (parent.height - self.height) / 2;
+                        text: "Wiederherstellen";
+                        clicked => { OverlayState.archive-restore(item.id); }
+                    }
+                    IconButton {
+                        y: (parent.height - self.height) / 2;
+                        icon: @image-url("../icons/trash.svg");
+                        tint: Theme.danger;
+                        clicked => { OverlayState.archive-delete(item.id); }
+                    }
+                }
+                Rectangle {
+                    y: parent.height - 1px;
+                    height: 1px;
+                    background: Theme.border;
+                }
+            }
+        }
+    }
+
+    HorizontalLayout {
+        alignment: end;
+        ActionButton {
+            text: "Schließen";
+            kind: ButtonKind.primary;
+            clicked => { OverlayState.archive-close(); }
+        }
+    }
+}

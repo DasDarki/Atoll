@@ -1,0 +1,46 @@
+import { Theme } from "../theme.slint";
+
+export enum ButtonKind { primary, secondary, danger, ghost }
+
+export component ActionButton inherits Rectangle {
+    in property <string> text;
+    in property <ButtonKind> kind: ButtonKind.secondary;
+    in property <bool> enabled: true;
+    callback clicked();
+
+    min-width: 88px;
+    height: 34px;
+    border-radius: Theme.radius;
+    opacity: root.enabled ? 1.0 : 0.45;
+    background: root.kind == ButtonKind.primary ? Theme.accent-strong
+        : root.kind == ButtonKind.danger ? #e11d48
+        : root.kind == ButtonKind.ghost ? transparent
+        : Theme.surface-raised;
+    border-width: root.kind == ButtonKind.secondary ? 1px : 0px;
+    border-color: Theme.border-strong;
+
+    overlay := Rectangle {
+        border-radius: parent.border-radius;
+        background: touch.pressed ? #00000033 : touch.has-hover ? #ffffff14 : transparent;
+        animate background { duration: 100ms; }
+    }
+
+    HorizontalLayout {
+        padding-left: 16px;
+        padding-right: 16px;
+        Text {
+            text: root.text;
+            color: Theme.text;
+            font-size: Theme.font-normal;
+            font-weight: 600;
+            vertical-alignment: center;
+            horizontal-alignment: center;
+        }
+    }
+
+    touch := TouchArea {
+        enabled: root.enabled;
+        mouse-cursor: root.enabled ? pointer : default;
+        clicked => { root.clicked(); }
+    }
+}

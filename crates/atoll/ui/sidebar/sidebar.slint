@@ -1,0 +1,120 @@
+import { ListView } from "std-widgets.slint";
+import { Theme } from "../theme.slint";
+import { SidebarState } from "../state.slint";
+import { RowKind } from "../structs.slint";
+import { IconButton } from "../widgets/icon-button.slint";
+import { WorkspaceBar } from "workspace-bar.slint";
+import { IslandHeader } from "island-header.slint";
+import { TabRow } from "tab-row.slint";
+
+component FooterButton inherits Rectangle {
+    in property <image> icon;
+    in property <string> label;
+    in property <bool> badge;
+    callback clicked();
+
+    height: 30px;
+    border-radius: Theme.radius-small;
+    background: touch.pressed ? Theme.pressed : touch.has-hover ? Theme.hover : transparent;
+
+    HorizontalLayout {
+        padding-left: 4px;
+        padding-right: 4px;
+        spacing: 5px;
+        alignment: center;
+
+        Image {
+            source: root.icon;
+            width: 14px;
+            height: 14px;
+            y: (parent.height - self.height) / 2;
+            colorize: touch.has-hover ? Theme.text : Theme.text-muted;
+        }
+
+        Text {
+            text: root.label;
+            color: touch.has-hover ? Theme.text : Theme.text-muted;
+            font-size: Theme.font-small + 0.5px;
+            vertical-alignment: center;
+            overflow: elide;
+        }
+    }
+
+    if root.badge : Rectangle {
+        x: parent.width - 10px;
+        y: 5px;
+        width: 6px;
+        height: 6px;
+        border-radius: 3px;
+        background: Theme.accent-cyan;
+    }
+
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+export component Sidebar inherits Rectangle {
+    width: Theme.sidebar-width;
+    background: Theme.chrome;
+
+    VerticalLayout {
+        WorkspaceBar { }
+
+        ListView {
+            vertical-stretch: 1;
+            for row in SidebarState.rows : Rectangle {
+                height: row.kind == RowKind.island ? 34px : 32px;
+                if row.kind == RowKind.island : IslandHeader {
+                    entry: row;
+                }
+                if row.kind == RowKind.tab : TabRow {
+                    entry: row;
+                }
+            }
+        }
+
+        Rectangle {
+            height: 1px;
+            background: Theme.border;
+        }
+
+        HorizontalLayout {
+            padding: 6px;
+            spacing: 0px;
+
+            FooterButton {
+                icon: @image-url("../icons/island.svg");
+                label: "Insel";
+                horizontal-stretch: 1;
+                clicked => { SidebarState.create-island(); }
+            }
+            FooterButton {
+                icon: @image-url("../icons/archive.svg");
+                label: "Archiv";
+                badge: SidebarState.archive-suggestion;
+                horizontal-stretch: 1;
+                clicked => { SidebarState.open-archive(); }
+            }
+            FooterButton {
+                icon: @image-url("../icons/import.svg");
+                label: "Import";
+                horizontal-stretch: 1;
+                clicked => { SidebarState.open-import(); }
+            }
+            FooterButton {
+                icon: @image-url("../icons/export.svg");
+                label: "Export";
+                horizontal-stretch: 1;
+                clicked => { SidebarState.open-export(); }
+            }
+        }
+    }
+
+    Rectangle {
+        x: parent.width - 1px;
+        width: 1px;
+        background: Theme.border;
+    }
+}

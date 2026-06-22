@@ -1,0 +1,72 @@
+import { Theme } from "../theme.slint";
+import { OverlayState } from "../state.slint";
+import { DialogData, DialogKind } from "../structs.slint";
+import { Modal } from "modal.slint";
+import { ActionButton, ButtonKind } from "../widgets/button.slint";
+import { TextField } from "../widgets/text-field.slint";
+
+export component PromptDialog inherits Modal {
+    title: OverlayState.dialog.title;
+    dismissed => { OverlayState.dialog-closed(false, ""); }
+
+    property <DialogData> data: OverlayState.dialog;
+
+    function setup() {
+        if (OverlayState.dialog.kind == DialogKind.prompt) {
+            field.text = OverlayState.dialog.input;
+            field.focus-and-select();
+        } else {
+            keys.focus();
+        }
+    }
+
+    init => { self.setup(); }
+    changed data => { self.setup(); }
+
+    keys := FocusScope {
+        key-pressed(event) => {
+            if (event.text == Key.Return) {
+                OverlayState.dialog-closed(true, field.text);
+                return accept;
+            }
+            if (event.text == Key.Escape) {
+                OverlayState.dialog-closed(false, "");
+                return accept;
+            }
+            return reject;
+        }
+
+        VerticalLayout {
+            spacing: 16px;
+
+            if OverlayState.dialog.message != "" : Text {
+                text: OverlayState.dialog.message;
+                color: Theme.text-muted;
+                font-size: Theme.font-normal;
+                wrap: word-wrap;
+            }
+
+            field := TextField {
+                visible: OverlayState.dialog.kind == DialogKind.prompt;
+                height: self.visible ? 34px : 0px;
+                accepted(text) => { OverlayState.dialog-closed(true, text); }
+                escape => { OverlayState.dialog-closed(false, ""); }
+            }
+
+            HorizontalLayout {
+                alignment: end;
+                spacing: 8px;
+
+                if OverlayState.dialog.kind != DialogKind.alert : ActionButton {
+                    text: OverlayState.dialog.cancel-label != "" ? OverlayState.dialog.cancel-label : "Abbrechen";
+                    clicked => { OverlayState.dialog-closed(false, ""); }
+                }
+                ActionButton {
+                    text: OverlayState.dialog.accept-label != "" ? OverlayState.dialog.accept-label : "OK";
+                    kind: OverlayState.dialog.destructive ? ButtonKind.danger : ButtonKind.primary;
+                    clicked => { OverlayState.dialog-closed(true, field.text); }
+                }
+            }
+        }
+    }
+}

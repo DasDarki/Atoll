@@ -1,0 +1,65 @@
+import { Theme } from "../theme.slint";
+
+export component TextField inherits Rectangle {
+    in-out property <string> text;
+    in property <string> placeholder;
+    in property <length> font-size: Theme.font-normal;
+    out property <bool> focused: input.has-focus;
+    callback accepted(string);
+    callback edited(string);
+    callback escape();
+
+    public function focus-and-select() {
+        input.focus();
+        input.select-all();
+    }
+
+    height: 34px;
+    border-radius: Theme.radius;
+    background: Theme.surface;
+    border-width: 1px;
+    border-color: input.has-focus ? Theme.accent : Theme.border-strong;
+    animate border-color { duration: 120ms; }
+
+    keys := FocusScope {
+        focus-on-click: false;
+        key-pressed(event) => {
+            if (event.text == Key.Escape) {
+                root.escape();
+                return accept;
+            }
+            return reject;
+        }
+
+        HorizontalLayout {
+            padding-left: 12px;
+            padding-right: 12px;
+
+            Rectangle {
+                clip: true;
+                Text {
+                    x: 0;
+                    width: parent.width;
+                    text: root.placeholder;
+                    visible: root.text == "" && !input.has-focus;
+                    color: Theme.text-faint;
+                    font-size: root.font-size;
+                    vertical-alignment: center;
+                }
+                input := TextInput {
+                    x: 0;
+                    width: parent.width;
+                    height: parent.height;
+                    text <=> root.text;
+                    color: Theme.text;
+                    font-size: root.font-size;
+                    vertical-alignment: center;
+                    single-line: true;
+                    selection-background-color: #7c6cff66;
+                    accepted => { root.accepted(self.text); }
+                    edited => { root.edited(self.text); }
+                }
+            }
+        }
+    }
+}
