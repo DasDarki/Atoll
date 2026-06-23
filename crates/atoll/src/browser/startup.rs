@@ -42,6 +42,8 @@ impl Browser {
             }
         }
 
+        self.start_clipboard_bridge();
+
         let this = self.this();
         pump::start(move || {
             if let Some(browser) = this.upgrade() {
@@ -70,6 +72,7 @@ impl Browser {
     pub fn shutdown(&self) {
         pump::stop();
         self.cancel_context_menu();
+        self.stop_clipboard_bridge();
         self.store_scroll_positions();
         for (_, entry) in self.views.borrow_mut().drain() {
             entry.view.close();

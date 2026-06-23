@@ -5,6 +5,7 @@
 //! explicitly through the view.
 
 mod app;
+mod clipboard;
 mod config;
 mod engine;
 mod error;
@@ -16,6 +17,7 @@ mod registry;
 mod render;
 mod view;
 
+pub use clipboard::ClipboardHelper;
 pub use config::EngineConfig;
 pub use engine::Engine;
 pub use error::EngineError;

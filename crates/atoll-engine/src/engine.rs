@@ -9,6 +9,7 @@ use cef::{
 };
 
 use crate::app;
+use crate::clipboard::ClipboardHelper;
 use crate::config::EngineConfig;
 use crate::error::EngineError;
 use crate::events::{EngineEvent, RequestId};
@@ -115,6 +116,20 @@ impl Engine {
         }
         *state.browser.borrow_mut() = Some(browser);
         Ok(BrowserView::new(state))
+    }
+
+    /// Creates the hidden page that moves text between Chromium's and the system clipboard.
+    pub fn create_clipboard_helper(&self) -> Result<ClipboardHelper, EngineError> {
+        let geometry = ViewGeometry {
+            width: 64,
+            height: 64,
+            scale: 1.0,
+        };
+        let view = self.create_view(&ClipboardHelper::page_url(), geometry, true)?;
+        if let Some(state) = self.runtime.view(view.id()) {
+            state.clipboard_helper.set(true);
+        }
+        Ok(ClipboardHelper::new(view))
     }
 
     /// Takes over a view the engine created on its own, see [`EngineEvent::PopupOpened`].

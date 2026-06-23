@@ -231,7 +231,10 @@ impl Browser {
         if let Some(window) = self.window() {
             window.global::<OverlayState>().set_menu_visible(false);
         }
-        self.resolve_menu(request, command);
+        let resolve_now = command.is_none_or(|command| self.resolve_menu_command(request, command));
+        if resolve_now {
+            self.resolve_menu(request, command);
+        }
         self.focus_content();
     }
 

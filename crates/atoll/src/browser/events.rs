@@ -186,6 +186,14 @@ impl Browser {
                 self.copy_text(&text);
                 Effect::NONE
             }
+            EngineEvent::ClipboardText(text) => {
+                self.clipboard_text_read(text);
+                Effect::NONE
+            }
+            EngineEvent::ClipboardWritten => {
+                self.clipboard_written();
+                Effect::NONE
+            }
             EngineEvent::CloseRequested(view) => {
                 if let Some(tab) = self.tab_of(view) {
                     self.close_tab(tab);

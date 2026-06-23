@@ -4,11 +4,13 @@ use cef::sys::cef_cursor_type_t;
 use cef::{
     Browser, CefString, CefStringList, CursorInfo, CursorType, DisplayHandler,
     DownloadImageCallback, Frame, Image, ImplBinaryValue, ImplBrowser, ImplBrowserHost,
-    ImplDisplayHandler, ImplDownloadImageCallback, ImplFrame, ImplImage, WrapDisplayHandler,
-    WrapDownloadImageCallback, rc::Rc as _, wrap_display_handler, wrap_download_image_callback,
+    ImplDisplayHandler, ImplDownloadImageCallback, ImplFrame, ImplImage, LogSeverity,
+    WrapDisplayHandler, WrapDownloadImageCallback, rc::Rc as _, wrap_display_handler,
+    wrap_download_image_callback,
 };
 
 use super::{list, text};
+use crate::clipboard;
 use crate::events::{CursorKind, EngineEvent};
 use crate::registry;
 use crate::view::ViewId;
@@ -85,6 +87,21 @@ wrap_display_handler! {
                 view: self.view,
                 progress,
             });
+        }
+
+        fn on_console_message(
+            &self,
+            _browser: Option<&mut Browser>,
+            _level: LogSeverity,
+            message: Option<&CefString>,
+            _source: Option<&CefString>,
+            _line: c_int,
+        ) -> c_int {
+            let message = text(message);
+            let handled = registry::with_view(self.view, |runtime, view| {
+                view.clipboard_helper.get() && clipboard::handle_message(runtime, view, &message)
+            });
+            i32::from(handled.unwrap_or(false))
         }
 
         fn on_cursor_change(

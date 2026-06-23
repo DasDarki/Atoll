@@ -56,6 +56,15 @@ impl Browser {
             (PointerAction::Cancel, _) => view.capture_lost(),
             _ => {}
         });
+        if pointer.action == PointerAction::Up && pointer.button == PointerButton::Left {
+            self.schedule_clipboard_read();
+        }
+    }
+
+    fn has_live_view(&self) -> bool {
+        let mut present = false;
+        self.with_live_view(|_| present = true);
+        present
     }
 
     pub fn web_scroll(&self, scroll: WebScroll) -> bool {
@@ -117,22 +126,15 @@ impl Browser {
         {
             self.toggle_fullscreen();
         }
-        let translation = keyboard::translate(event, modifiers);
-        let mut delivered = false;
-        self.with_live_view(|view| {
-            for input in &translation.events {
-                view.key(*input);
-            }
-            if let Some(text) = &translation.commit {
-                view.commit_text(text);
-            }
-            delivered = true;
-        });
-        if delivered {
-            EventResult::PreventDefault
-        } else {
-            EventResult::Propagate
+        if !self.has_live_view() {
+            return EventResult::Propagate;
         }
+        let translation = keyboard::translate(event, modifiers);
+        self.deliver_keys(translation.events);
+        if let Some(text) = &translation.commit {
+            self.with_live_view(|view| view.commit_text(text));
+        }
+        EventResult::PreventDefault
     }
 
     pub fn handle_ime(&self, ime: &Ime, focus: KeyboardFocus) -> EventResult {

@@ -94,6 +94,10 @@ pub enum EngineEvent {
     },
     /// Text the user wants to copy through a context menu entry of Atoll.
     CopyText(String),
+    /// The content of Chromium's clipboard, read by the [`crate::ClipboardHelper`].
+    ClipboardText(String),
+    /// Text was written into Chromium's clipboard by the [`crate::ClipboardHelper`].
+    ClipboardWritten,
     /// The page asked to close itself, for example via `window.close()`.
     CloseRequested(ViewId),
     Closed(ViewId),

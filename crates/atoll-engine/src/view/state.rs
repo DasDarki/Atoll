@@ -32,6 +32,7 @@ pub(crate) struct ViewState {
     pub(crate) drag: RefCell<Option<DragSession>>,
     pub(crate) closing: Cell<bool>,
     pub(crate) paint_failed: Cell<bool>,
+    pub(crate) clipboard_helper: Cell<bool>,
 }
 
 impl ViewState {
@@ -49,6 +50,7 @@ impl ViewState {
             drag: RefCell::new(None),
             closing: Cell::new(false),
             paint_failed: Cell::new(false),
+            clipboard_helper: Cell::new(false),
         }
     }
 

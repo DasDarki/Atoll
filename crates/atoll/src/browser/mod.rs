@@ -1,4 +1,5 @@
 mod archive;
+mod clipboard;
 mod events;
 mod favicons;
 mod lifecycle;
@@ -32,6 +33,7 @@ use crate::platform::clipboard::Clipboard;
 use crate::platform::paths::Paths;
 use crate::ui::AppWindow;
 
+use clipboard::ClipboardSync;
 use favicons::FaviconCache;
 use overlays::DialogQueue;
 use page::PageState;
@@ -67,6 +69,7 @@ pub struct Browser {
     closed_tabs: RefCell<Vec<ClosedTab>>,
     clicks: RefCell<ClickTracker>,
     clipboard: Clipboard,
+    clipboard_sync: RefCell<ClipboardSync>,
     find_text: RefCell<String>,
     downloads: RefCell<HashSet<u32>>,
     this: Weak<Browser>,
@@ -108,6 +111,7 @@ impl Browser {
             closed_tabs: RefCell::default(),
             clicks: RefCell::default(),
             clipboard: Clipboard::default(),
+            clipboard_sync: RefCell::default(),
             find_text: RefCell::default(),
             downloads: RefCell::default(),
             this: this.clone(),
