@@ -62,6 +62,11 @@ component WorkspaceChip inherits Rectangle {
             mouse-cursor: pointer;
             clicked => { SidebarState.select-workspace(root.item.id); }
             double-clicked => { SidebarState.workspace-action(root.item.id, "rename"); }
+            pointer-event(event) => {
+                if (event.kind == PointerEventKind.up && event.button == PointerEventButton.right) {
+                    menu.show({ x: self.mouse-x, y: self.mouse-y });
+                }
+            }
         }
     }
 }

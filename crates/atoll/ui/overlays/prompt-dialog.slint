@@ -7,6 +7,7 @@ import { TextField } from "../widgets/text-field.slint";
 
 export component PromptDialog inherits Modal {
     title: OverlayState.dialog.title;
+    autofocus: false;
     dismissed => { OverlayState.dialog-closed(false, ""); }
 
     property <DialogData> data: OverlayState.dialog;

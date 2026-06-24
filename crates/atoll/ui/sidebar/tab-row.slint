@@ -16,7 +16,7 @@ export component TabRow inherits Rectangle {
             }
             MenuItem {
                 title: "Schlafen legen";
-                enabled: root.entry.state == TabLoadState.frozen || root.entry.state == TabLoadState.live;
+                enabled: root.entry.state == TabLoadState.frozen;
                 activated => { SidebarState.tab-action(root.entry.tab-id, "sleep"); }
             }
             MenuItem {
@@ -56,6 +56,9 @@ export component TabRow inherits Rectangle {
             pointer-event(event) => {
                 if (event.kind == PointerEventKind.up && event.button == PointerEventButton.middle) {
                     SidebarState.close-tab(root.entry.tab-id);
+                }
+                if (event.kind == PointerEventKind.up && event.button == PointerEventButton.right) {
+                    menu.show({ x: self.mouse-x, y: self.mouse-y });
                 }
             }
             clicked => { SidebarState.activate-tab(root.entry.tab-id); }

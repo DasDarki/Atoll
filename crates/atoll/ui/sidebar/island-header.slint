@@ -64,6 +64,11 @@ export component IslandHeader inherits Rectangle {
         touch := TouchArea {
             mouse-cursor: pointer;
             clicked => { SidebarState.toggle-island(root.entry.island-id); }
+            pointer-event(event) => {
+                if (event.kind == PointerEventKind.up && event.button == PointerEventButton.right) {
+                    menu.show({ x: self.mouse-x, y: self.mouse-y });
+                }
+            }
         }
     }
 

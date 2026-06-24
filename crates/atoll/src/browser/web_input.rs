@@ -46,7 +46,6 @@ impl Browser {
             (PointerAction::Move, _) => view.mouse_move(x, y, modifiers),
             (PointerAction::Down, Some(button)) => {
                 let count = self.clicks.borrow_mut().press(button, pointer.x, pointer.y);
-                view.set_focus(true);
                 view.mouse_button(x, y, button, true, count, modifiers);
             }
             (PointerAction::Up, Some(button)) => {

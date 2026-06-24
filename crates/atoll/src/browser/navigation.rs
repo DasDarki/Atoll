@@ -169,13 +169,21 @@ impl Browser {
     }
 
     /// Moves keyboard focus to the page, or to the new tab page if no page is shown.
+    ///
+    /// Runs on the next event loop iteration, so that overlays closed by the current event are
+    /// gone and cannot take the focus back.
     pub(super) fn focus_content(&self) {
-        let Some(window) = self.window() else { return };
-        if window.global::<BrowserState>().get_has_page() {
-            window.invoke_focus_web();
-        } else {
-            window.invoke_focus_new_tab();
-        }
+        let window = self.window.clone();
+        slint::Timer::single_shot(std::time::Duration::ZERO, move || {
+            let Some(window) = window.upgrade() else {
+                return;
+            };
+            if window.global::<BrowserState>().get_has_page() {
+                window.invoke_focus_web();
+            } else {
+                window.invoke_focus_new_tab();
+            }
+        });
     }
 
     pub fn focus_address(&self) {

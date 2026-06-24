@@ -3,14 +3,20 @@ import { Theme } from "../theme.slint";
 export component Modal inherits Rectangle {
     in property <string> title;
     in property <length> card-width: 460px;
+    in property <bool> autofocus: true;
     callback dismissed();
 
     background: Theme.scrim;
 
     TouchArea { }
 
-    FocusScope {
+    keys := FocusScope {
         focus-on-click: false;
+        init => {
+            if (root.autofocus) {
+                self.focus();
+            }
+        }
         key-pressed(event) => {
             if (event.text == Key.Escape) {
                 root.dismissed();
