@@ -1,5 +1,5 @@
 use std::cell::{Cell, RefCell};
-use std::rc::Rc;
+use std::rc::{Rc, Weak};
 use std::time::{Duration, Instant};
 
 use slint::{Timer, TimerMode};
@@ -7,62 +7,65 @@ use slint::{Timer, TimerMode};
 /// The longest the engine may stay without message loop work.
 const IDLE_INTERVAL: Duration = Duration::from_millis(1000 / 30);
 
-type Work = Rc<dyn Fn()>;
+type Work = Box<dyn Fn()>;
 
-#[derive(Default)]
-struct Pump {
+/// Drives the engine's message loop from the user interface event loop.
+///
+/// The engine asks for work from arbitrary threads, the requests are forwarded to the main
+/// thread and coalesced into a single timer.
+pub struct MessagePump {
     timer: Timer,
     due: Cell<Option<Instant>>,
-    work: RefCell<Option<Work>>,
+    work: Work,
 }
 
 thread_local! {
-    static PUMP: Pump = Pump::default();
+    static ACTIVE: RefCell<Weak<MessagePump>> = const { RefCell::new(Weak::new()) };
 }
 
-/// A scheduler for the engine that may be called from any thread.
-pub fn scheduler() -> Box<dyn Fn(Duration) + Send + Sync> {
-    Box::new(|delay| {
-        let _ = slint::invoke_from_event_loop(move || schedule(delay));
-    })
-}
+impl MessagePump {
+    /// Starts pumping with `work`, which performs one message loop iteration. Pumping stops
+    /// when the returned pump is dropped.
+    pub fn start(work: impl Fn() + 'static) -> Rc<Self> {
+        let pump = Rc::new(Self {
+            timer: Timer::default(),
+            due: Cell::new(None),
+            work: Box::new(work),
+        });
+        ACTIVE.with_borrow_mut(|active| *active = Rc::downgrade(&pump));
+        pump.schedule(Duration::ZERO);
+        pump
+    }
 
-/// Starts driving the engine with `work`, which performs one message loop iteration.
-pub fn start(work: impl Fn() + 'static) {
-    PUMP.with(|pump| *pump.work.borrow_mut() = Some(Rc::new(work)));
-    schedule(Duration::ZERO);
-}
+    /// A scheduler for the engine that may be called from any thread.
+    pub fn scheduler() -> Box<dyn Fn(Duration) + Send + Sync> {
+        Box::new(|delay| {
+            let _ = slint::invoke_from_event_loop(move || {
+                if let Some(pump) = ACTIVE.with_borrow(Weak::upgrade) {
+                    pump.schedule(delay);
+                }
+            });
+        })
+    }
 
-pub fn stop() {
-    PUMP.with(|pump| {
-        pump.timer.stop();
-        pump.due.set(None);
-        pump.work.borrow_mut().take();
-    });
-}
-
-/// Runs the work after `delay` unless an earlier run is already due.
-pub fn schedule(delay: Duration) {
-    PUMP.with(|pump| {
-        if pump.work.borrow().is_none() {
-            return;
-        }
+    /// Runs the work after `delay` unless an earlier run is already due.
+    fn schedule(self: &Rc<Self>, delay: Duration) {
         let due = Instant::now() + delay;
-        if pump.due.get().is_some_and(|current| current <= due) {
+        if self.due.get().is_some_and(|current| current <= due) {
             return;
         }
-        pump.due.set(Some(due));
-        pump.timer.start(TimerMode::SingleShot, delay, run);
-    });
-}
+        self.due.set(Some(due));
+        let pump = Rc::downgrade(self);
+        self.timer.start(TimerMode::SingleShot, delay, move || {
+            if let Some(pump) = pump.upgrade() {
+                pump.run();
+            }
+        });
+    }
 
-fn run() {
-    let work = PUMP.with(|pump| {
-        pump.due.set(None);
-        pump.work.borrow().clone()
-    });
-    if let Some(work) = work {
-        work();
-        schedule(IDLE_INTERVAL);
+    fn run(self: &Rc<Self>) {
+        self.due.set(None);
+        (self.work)();
+        self.schedule(IDLE_INTERVAL);
     }
 }

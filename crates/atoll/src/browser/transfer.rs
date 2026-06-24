@@ -73,7 +73,11 @@ impl Browser {
                 }
             }
             if !list.invalid.is_empty() {
-                summary.push_str(&format!(" · {} ungültige Zeilen", list.invalid.len()));
+                let invalid = list.invalid.len();
+                summary.push_str(&format!(
+                    " · {invalid} {}",
+                    plural(invalid, "ungültige Zeile", "ungültige Zeilen")
+                ));
             }
             summary
         };
@@ -302,10 +306,12 @@ impl Browser {
             };
             lines.push(format!("Übersprungen, {reason}: {}", skipped.url).into());
         }
+        let invalid = plan.invalid.len();
+        let skipped = plan.skipped.len();
         summary.push_str(&format!(
-            " {} ungültige Zeilen, {} übersprungene Adressen:",
-            plan.invalid.len(),
-            plan.skipped.len()
+            " {invalid} {}, {skipped} {}:",
+            plural(invalid, "ungültige Zeile", "ungültige Zeilen"),
+            plural(skipped, "übersprungene Adresse", "übersprungene Adressen")
         ));
 
         let Some(window) = self.window() else { return };

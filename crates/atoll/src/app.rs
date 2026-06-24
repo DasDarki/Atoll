@@ -27,6 +27,7 @@ pub fn run() -> Result<()> {
     })?;
     tracing::debug!(elapsed = ?launched.elapsed(), "database open");
     let gpu = Rc::new(GpuContext::create().context("keine geeignete Grafikkarte gefunden")?);
+    let gpu_handle = gpu.clone();
     tracing::debug!(elapsed = ?launched.elapsed(), "graphics device ready");
 
     slint::BackendSelector::new()
@@ -51,6 +52,11 @@ pub fn run() -> Result<()> {
 
     window.run()?;
     browser.shutdown();
+
+    // Slint releases its graphics device only while thread locals are destroyed, and dropping the
+    // last queue reference at that point panics inside wgpu. Keeping one reference until the
+    // process ends avoids that release entirely.
+    std::mem::forget(gpu_handle);
     Ok(())
 }
 

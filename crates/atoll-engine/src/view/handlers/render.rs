@@ -112,6 +112,7 @@ wrap_render_handler! {
         }
 
         fn on_scroll_offset_changed(&self, _browser: Option<&mut Browser>, x: f64, y: f64) {
+            tracing::trace!(x, y, "scroll offset changed");
             registry::with_view(self.view, |_, view| view.scroll.set((x, y)));
         }
 

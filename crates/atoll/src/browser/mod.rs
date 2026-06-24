@@ -31,6 +31,7 @@ use slint::ComponentHandle;
 use crate::input::pointer::ClickTracker;
 use crate::platform::clipboard::Clipboard;
 use crate::platform::paths::Paths;
+use crate::pump::MessagePump;
 use crate::ui::AppWindow;
 
 use clipboard::ClipboardSync;
@@ -56,6 +57,7 @@ pub struct Browser {
     paths: Paths,
     preferences: Preferences,
     engine: RefCell<Option<Engine>>,
+    pump: RefCell<Option<Rc<MessagePump>>>,
     session: RefCell<Session>,
     lifecycle: RefCell<TabLifecycle>,
     views: RefCell<ViewRegistry>,
@@ -98,6 +100,7 @@ impl Browser {
             paths,
             preferences,
             engine: RefCell::new(None),
+            pump: RefCell::new(None),
             session: RefCell::new(session),
             lifecycle: RefCell::new(lifecycle),
             views: RefCell::default(),

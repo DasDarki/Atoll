@@ -3,7 +3,7 @@ use std::time::Instant;
 use atoll_engine::{Engine, EngineConfig};
 
 use super::Browser;
-use crate::pump;
+use crate::pump::MessagePump;
 
 impl Browser {
     /// Shows the stored session. Only the database is read, no engine instance is created yet.
@@ -28,7 +28,7 @@ impl Browser {
             extra_switches: std::env::var("ATOLL_CHROMIUM_FLAGS")
                 .map(|flags| flags.split_whitespace().map(str::to_owned).collect())
                 .unwrap_or_default(),
-            schedule_work: pump::scheduler(),
+            schedule_work: MessagePump::scheduler(),
         };
         match Engine::initialize(config, self.gpu.clone()) {
             Ok(engine) => {
@@ -45,11 +45,11 @@ impl Browser {
         self.start_clipboard_bridge();
 
         let this = self.this();
-        pump::start(move || {
+        *self.pump.borrow_mut() = Some(MessagePump::start(move || {
             if let Some(browser) = this.upgrade() {
                 browser.pump();
             }
-        });
+        }));
 
         let pinned: Vec<_> = self
             .session
@@ -70,7 +70,7 @@ impl Browser {
 
     /// Stores what is only known at runtime and shuts the engine down.
     pub fn shutdown(&self) {
-        pump::stop();
+        self.pump.borrow_mut().take();
         self.cancel_context_menu();
         self.stop_clipboard_bridge();
         self.store_scroll_positions();
