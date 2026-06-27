@@ -1,4 +1,4 @@
-use atoll_core::{TabId, Timestamp};
+use atoll_core::{TabId, Timestamp, VisitedPage};
 use rusqlite::params;
 
 use crate::connection::Connected;
@@ -41,6 +41,15 @@ pub trait HistoryStore: Connected {
             .execute(params![tab.0, url, title, at.0])?;
         self.connection()
             .prepare_cached(
+                "INSERT INTO history (url, title, visit_count, last_visited_at) VALUES (?1, ?2, 1, ?3)
+                 ON CONFLICT(url) DO UPDATE SET
+                     visit_count = visit_count + 1,
+                     last_visited_at = excluded.last_visited_at,
+                     title = COALESCE(excluded.title, title)",
+            )?
+            .execute(params![url, title, at.0])?;
+        self.connection()
+            .prepare_cached(
                 "DELETE FROM tab_history WHERE tab_id = ?1 AND id NOT IN
                  (SELECT id FROM tab_history WHERE tab_id = ?1 ORDER BY id DESC LIMIT ?2)",
             )?
@@ -56,6 +65,45 @@ pub trait HistoryStore: Connected {
                  (SELECT id FROM tab_history WHERE tab_id = ?2 ORDER BY id DESC LIMIT 1) AND url = ?3",
             )?
             .execute(params![title, tab.0, url])?;
+        self.connection()
+            .prepare_cached("UPDATE history SET title = ?1 WHERE url = ?2")?
+            .execute(params![title, url])?;
+        Ok(())
+    }
+
+    /// The most visited and most recent pages, best first.
+    fn visited_pages(&self, limit: usize) -> StorageResult<Vec<VisitedPage>> {
+        let mut statement = self.connection().prepare_cached(
+            "SELECT url, title, visit_count, last_visited_at FROM history
+             ORDER BY last_visited_at DESC LIMIT ?1",
+        )?;
+        let pages = statement
+            .query_map([limit as i64], visited_page)?
+            .collect::<Result<_, _>>()?;
+        Ok(pages)
+    }
+
+    /// Pages whose address or title contains `text`, most visited first.
+    fn visited_pages_containing(
+        &self,
+        text: &str,
+        limit: usize,
+    ) -> StorageResult<Vec<VisitedPage>> {
+        let pattern = format!("%{}%", escape_like(text));
+        let mut statement = self.connection().prepare_cached(
+            "SELECT url, title, visit_count, last_visited_at FROM history
+             WHERE url LIKE ?1 ESCAPE '\\' OR title LIKE ?1 ESCAPE '\\'
+             ORDER BY visit_count DESC, last_visited_at DESC LIMIT ?2",
+        )?;
+        let pages = statement
+            .query_map(params![pattern, limit as i64], visited_page)?
+            .collect::<Result<_, _>>()?;
+        Ok(pages)
+    }
+
+    fn clear_history(&self) -> StorageResult<()> {
+        self.connection()
+            .execute_batch("DELETE FROM history; DELETE FROM tab_history;")?;
         Ok(())
     }
 
@@ -99,3 +147,23 @@ pub trait HistoryStore: Connected {
 }
 
 impl<T: Connected + ?Sized> HistoryStore for T {}
+
+fn visited_page(row: &rusqlite::Row<'_>) -> rusqlite::Result<VisitedPage> {
+    Ok(VisitedPage {
+        url: row.get(0)?,
+        title: row.get(1)?,
+        visit_count: row.get(2)?,
+        last_visited_at: Timestamp(row.get(3)?),
+    })
+}
+
+fn escape_like(text: &str) -> String {
+    let mut escaped = String::with_capacity(text.len());
+    for character in text.chars() {
+        if matches!(character, '%' | '_' | '\\') {
+            escaped.push('\\');
+        }
+        escaped.push(character);
+    }
+    escaped
+}

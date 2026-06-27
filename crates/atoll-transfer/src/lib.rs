@@ -9,11 +9,13 @@
 //! ```
 
 mod address;
+mod bookmarks;
 mod export;
 mod parse;
 mod plan;
 
 pub use address::{InvalidReason, validate_address};
+pub use bookmarks::{BookmarkNode, parse_bookmarks_html};
 pub use export::{ExportGroup, ExportOptions, export};
 pub use parse::{InvalidLine, ParsedGroup, ParsedList, parse};
 pub use plan::{

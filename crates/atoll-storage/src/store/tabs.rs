@@ -1,8 +1,8 @@
-use atoll_core::{FaviconId, IslandId, Tab, TabId, Timestamp, WorkspaceId};
+use atoll_core::{FaviconId, Island, IslandId, Tab, TabId, Timestamp, WorkspaceId};
 use rusqlite::{OptionalExtension, params};
 
 use super::ordering::{OrderedTable, insert_at, renumber};
-use super::rows::{self, TAB_COLUMNS};
+use super::rows::{self, ISLAND_COLUMNS, TAB_COLUMNS};
 use crate::connection::Connected;
 use crate::error::{StorageError, StorageResult};
 
@@ -17,7 +17,36 @@ pub struct NewTab<'a> {
     pub created_at: Timestamp,
 }
 
+/// A tab together with where it lives, for searches across all workspaces.
+#[derive(Debug, Clone)]
+pub struct TabEntry {
+    pub tab: Tab,
+    pub island: Island,
+    pub workspace_name: String,
+}
+
 pub trait TabStore: Connected {
+    /// Every tab of every workspace including archived islands, most recently used first.
+    fn all_tab_entries(&self) -> StorageResult<Vec<TabEntry>> {
+        let mut statement = self.connection().prepare_cached(&format!(
+            "SELECT {TAB_COLUMNS}, {ISLAND_COLUMNS}, workspace.name
+             FROM tab
+             JOIN island ON island.id = tab.island_id
+             JOIN workspace ON workspace.id = island.workspace_id
+             ORDER BY tab.last_used_at DESC NULLS LAST, tab.id DESC"
+        ))?;
+        let entries = statement
+            .query_map([], |row| {
+                Ok(TabEntry {
+                    tab: rows::tab(row)?,
+                    island: rows::island_at(row, 9)?,
+                    workspace_name: row.get(17)?,
+                })
+            })?
+            .collect::<Result<_, _>>()?;
+        Ok(entries)
+    }
+
     /// Tabs of all active islands in a workspace, ordered by island and then by tab position.
     fn tabs_in_workspace(&self, workspace: WorkspaceId) -> StorageResult<Vec<Tab>> {
         let mut statement = self.connection().prepare_cached(&format!(

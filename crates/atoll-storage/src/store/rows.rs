@@ -18,15 +18,20 @@ pub(crate) fn workspace(row: &Row<'_>) -> rusqlite::Result<Workspace> {
 }
 
 pub(crate) fn island(row: &Row<'_>) -> rusqlite::Result<Island> {
+    island_at(row, 0)
+}
+
+/// Reads an island whose columns start at `offset`, for joined queries.
+pub(crate) fn island_at(row: &Row<'_>, offset: usize) -> rusqlite::Result<Island> {
     Ok(Island {
-        id: IslandId(row.get(0)?),
-        workspace_id: WorkspaceId(row.get(1)?),
-        name: row.get(2)?,
-        position: row.get(3)?,
-        collapsed: row.get(4)?,
-        color: IslandColor::from_index(row.get(5)?),
-        archived_at: row.get::<_, Option<i64>>(6)?.map(Timestamp),
-        last_used_at: row.get::<_, Option<i64>>(7)?.map(Timestamp),
+        id: IslandId(row.get(offset)?),
+        workspace_id: WorkspaceId(row.get(offset + 1)?),
+        name: row.get(offset + 2)?,
+        position: row.get(offset + 3)?,
+        collapsed: row.get(offset + 4)?,
+        color: IslandColor::from_index(row.get(offset + 5)?),
+        archived_at: row.get::<_, Option<i64>>(offset + 6)?.map(Timestamp),
+        last_used_at: row.get::<_, Option<i64>>(offset + 7)?.map(Timestamp),
     })
 }
 

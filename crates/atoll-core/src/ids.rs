@@ -30,3 +30,7 @@ define_id!(
     /// Identifies a cached favicon.
     FaviconId
 );
+define_id!(
+    /// Identifies a bookmark or a bookmark folder.
+    BookmarkId
+);

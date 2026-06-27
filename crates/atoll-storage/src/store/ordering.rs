@@ -7,6 +7,7 @@ pub(crate) enum OrderedTable {
     Workspace,
     Island,
     Tab,
+    Bookmark,
 }
 
 impl OrderedTable {
@@ -15,6 +16,7 @@ impl OrderedTable {
             OrderedTable::Workspace => "UPDATE workspace SET position = ?1 WHERE id = ?2",
             OrderedTable::Island => "UPDATE island SET position = ?1 WHERE id = ?2",
             OrderedTable::Tab => "UPDATE tab SET position = ?1 WHERE id = ?2",
+            OrderedTable::Bookmark => "UPDATE bookmark SET position = ?1 WHERE id = ?2",
         }
     }
 }
