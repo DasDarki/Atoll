@@ -1,0 +1,132 @@
+import { ListView } from "std-widgets.slint";
+import { Theme } from "../theme.slint";
+import { OverlayState } from "../state.slint";
+import { Modal } from "modal.slint";
+import { ActionButton, ButtonKind } from "../widgets/button.slint";
+import { IconButton } from "../widgets/icon-button.slint";
+
+export component BookmarkManager inherits Modal {
+    title: "Lesezeichen";
+    card-width: 720px;
+    dismissed => { OverlayState.bookmark-manager-close(); }
+
+    HorizontalLayout {
+        spacing: 8px;
+        ActionButton {
+            text: "Neuer Ordner";
+            clicked => { OverlayState.bookmark-new-folder(); }
+        }
+        ActionButton {
+            text: "Aus HTML importieren…";
+            clicked => { OverlayState.bookmark-import(); }
+        }
+        Rectangle { horizontal-stretch: 1; }
+    }
+
+    if OverlayState.bookmark-rows.length == 0 : Rectangle {
+        height: 120px;
+        border-radius: Theme.radius;
+        background: Theme.background;
+        Text {
+            text: "Noch keine Lesezeichen. Speichere Seiten mit Strg+D oder importiere den HTML-Export aus Opera.";
+            color: Theme.text-faint;
+            font-size: Theme.font-normal;
+            wrap: word-wrap;
+            horizontal-alignment: center;
+            width: parent.width - 40px;
+        }
+    }
+
+    if OverlayState.bookmark-rows.length > 0 : Rectangle {
+        height: min(420px, OverlayState.bookmark-rows.length * 36px + 8px);
+        border-radius: Theme.radius;
+        background: Theme.background;
+        border-width: 1px;
+        border-color: Theme.border;
+
+        ListView {
+            for row in OverlayState.bookmark-rows : Rectangle {
+                height: 36px;
+                background: hover.has-hover ? Theme.hover : transparent;
+
+                hover := TouchArea {
+                    mouse-cursor: row.is-folder ? default : pointer;
+                    double-clicked => {
+                        OverlayState.bookmark-row-action(row.id, row.is-folder ? "edit" : "open");
+                    }
+                }
+
+                HorizontalLayout {
+                    padding-left: 12px + row.depth * 20px;
+                    padding-right: 6px;
+                    spacing: 8px;
+
+                    if row.has-icon : Image {
+                        source: row.icon;
+                        width: 14px;
+                        height: 14px;
+                        y: (parent.height - self.height) / 2;
+                    }
+                    if !row.has-icon : Image {
+                        source: row.is-folder ? @image-url("../icons/folder.svg") : @image-url("../icons/globe.svg");
+                        width: 14px;
+                        height: 14px;
+                        y: (parent.height - self.height) / 2;
+                        colorize: row.is-folder ? #fbbf24 : Theme.text-faint;
+                    }
+                    Text {
+                        text: row.title;
+                        color: Theme.text;
+                        font-size: Theme.font-normal;
+                        font-weight: row.is-folder ? 600 : 400;
+                        vertical-alignment: center;
+                        overflow: elide;
+                        max-width: 260px;
+                    }
+                    Text {
+                        text: row.url;
+                        color: Theme.text-faint;
+                        font-size: Theme.font-small + 1px;
+                        vertical-alignment: center;
+                        overflow: elide;
+                        horizontal-stretch: 1;
+                    }
+                    IconButton {
+                        y: (parent.height - self.height) / 2;
+                        icon: @image-url("../icons/chevron-up.svg");
+                        icon-size: 13px;
+                        clicked => { OverlayState.bookmark-row-action(row.id, "up"); }
+                    }
+                    IconButton {
+                        y: (parent.height - self.height) / 2;
+                        icon: @image-url("../icons/chevron-down.svg");
+                        icon-size: 13px;
+                        clicked => { OverlayState.bookmark-row-action(row.id, "down"); }
+                    }
+                    IconButton {
+                        y: (parent.height - self.height) / 2;
+                        icon: @image-url("../icons/more.svg");
+                        icon-size: 13px;
+                        clicked => { OverlayState.bookmark-row-action(row.id, "edit"); }
+                    }
+                    IconButton {
+                        y: (parent.height - self.height) / 2;
+                        icon: @image-url("../icons/trash.svg");
+                        icon-size: 13px;
+                        tint: Theme.danger;
+                        clicked => { OverlayState.bookmark-row-action(row.id, "delete"); }
+                    }
+                }
+            }
+        }
+    }
+
+    HorizontalLayout {
+        alignment: end;
+        ActionButton {
+            text: "Schließen";
+            kind: ButtonKind.primary;
+            clicked => { OverlayState.bookmark-manager-close(); }
+        }
+    }
+}

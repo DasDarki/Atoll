@@ -13,9 +13,16 @@ import { ImportReport } from "overlays/import-report.slint";
 import { ExportDialog } from "overlays/export-dialog.slint";
 import { ArchivePanel } from "overlays/archive-panel.slint";
 import { Toast } from "overlays/toast.slint";
+import { SuggestionList } from "overlays/suggestion-list.slint";
+import { CommandPalette } from "overlays/command-palette.slint";
+import { FolderPopup } from "overlays/folder-popup.slint";
+import { BookmarkEditor } from "overlays/bookmark-editor.slint";
+import { BookmarkManager } from "overlays/bookmark-manager.slint";
+import { HoverCard } from "overlays/hover-card.slint";
+import { BookmarksBar } from "toolbar/bookmarks-bar.slint";
 
 export { SidebarState, BrowserState, OverlayState }
-export { WorkspaceItem, SidebarRow, IslandTarget, MenuItemData, ArchiveItem, ExportIslandItem, DialogData, DialogKind, RowKind, TabLoadState, PointerAction, PointerButton, WebCursor, WebPointer, WebScroll } from "structs.slint";
+export { WorkspaceItem, SidebarRow, IslandTarget, MenuItemData, ArchiveItem, ExportIslandItem, DialogData, DialogKind, RowKind, TabLoadState, PointerAction, PointerButton, WebCursor, WebPointer, WebScroll, SuggestionKind, SuggestionItem, Completion, PaletteKind, PaletteItem, BookmarkItem } from "structs.slint";
 
 export component AppWindow inherits Window {
     title: BrowserState.title == "" ? "Atoll" : BrowserState.title + " - Atoll";
@@ -32,6 +39,10 @@ export component AppWindow inherits Window {
     out property <length> content-x: content.absolute-position.x;
     out property <length> content-y: content.absolute-position.y;
     out property <bool> modal-open: OverlayState.dialog.kind != DialogKind.none
+        || OverlayState.palette-visible
+        || OverlayState.folder-popup-visible
+        || OverlayState.bookmark-editor-visible
+        || OverlayState.bookmark-manager-visible
         || OverlayState.import-visible
         || OverlayState.export-visible
         || OverlayState.archive-visible
@@ -54,14 +65,30 @@ export component AppWindow inherits Window {
         find-bar.focus-input();
     }
 
+    property <bool> hover-card-shown;
+    property <bool> hovering: SidebarState.hovering;
+    changed hovering => {
+        if (!self.hovering) {
+            self.hover-card-shown = false;
+        }
+    }
+
+    Timer {
+        interval: 550ms;
+        running: SidebarState.hovering && !root.hover-card-shown;
+        triggered => { root.hover-card-shown = true; }
+    }
+
     HorizontalLayout {
-        if !BrowserState.fullscreen : Sidebar { }
+        if !BrowserState.fullscreen && SidebarState.visible : Sidebar { }
 
         VerticalLayout {
             toolbar := Toolbar {
                 visible: !BrowserState.fullscreen;
                 height: BrowserState.fullscreen ? 0px : Theme.toolbar-height;
             }
+
+            if BrowserState.bookmarks-bar-visible && !BrowserState.fullscreen : BookmarksBar { }
 
             content := Rectangle {
                 web := WebView {
@@ -79,6 +106,37 @@ export component AppWindow inherits Window {
                 }
             }
         }
+    }
+
+    if root.hover-card-shown && SidebarState.hovering && SidebarState.visible && !root.modal-open : HoverCard {
+        x: Theme.sidebar-width + 8px;
+        y: clamp(SidebarState.hover-y - 4px, 8px, max(8px, root.height - self.height - 8px));
+    }
+
+    if BrowserState.suggestions-visible && BrowserState.suggestions.length > 0 : SuggestionList {
+        x: BrowserState.suggestion-source == 0 ? toolbar.address-x : new-tab.anchor-x;
+        y: BrowserState.suggestion-source == 0 ? toolbar.address-y : new-tab.anchor-y;
+        width: BrowserState.suggestion-source == 0 ? toolbar.address-width : new-tab.anchor-width;
+    }
+
+    if OverlayState.folder-popup-visible : FolderPopup {
+        width: root.width;
+        height: root.height;
+    }
+
+    if OverlayState.palette-visible : CommandPalette {
+        width: root.width;
+        height: root.height;
+    }
+
+    if OverlayState.bookmark-manager-visible : BookmarkManager {
+        width: root.width;
+        height: root.height;
+    }
+
+    if OverlayState.bookmark-editor-visible : BookmarkEditor {
+        width: root.width;
+        height: root.height;
     }
 
     if OverlayState.menu-visible : PopupMenu {

@@ -31,6 +31,10 @@ export component TabRow inherits Rectangle {
                 title: "Adresse kopieren";
                 activated => { SidebarState.tab-action(root.entry.tab-id, "copy-url"); }
             }
+            MenuItem {
+                title: "Als Lesezeichen speichern";
+                activated => { SidebarState.tab-action(root.entry.tab-id, "bookmark"); }
+            }
             MenuSeparator { }
             MenuItem {
                 title: "In neue Insel verschieben";
@@ -61,7 +65,23 @@ export component TabRow inherits Rectangle {
                     menu.show({ x: self.mouse-x, y: self.mouse-y });
                 }
             }
-            clicked => { SidebarState.activate-tab(root.entry.tab-id); }
+            clicked => {
+                SidebarState.hovering = false;
+                SidebarState.activate-tab(root.entry.tab-id);
+            }
+            changed has-hover => {
+                if (self.has-hover) {
+                    SidebarState.hover-tab = root.entry.tab-id;
+                    SidebarState.hover-title = root.entry.title;
+                    SidebarState.hover-url = root.entry.url;
+                    SidebarState.hover-detail = root.entry.state == TabLoadState.sleeping ? "Schläft, wird beim Öffnen geladen"
+                        : root.entry.state == TabLoadState.frozen ? "Eingefroren im Hintergrund" : "";
+                    SidebarState.hover-y = root.absolute-position.y;
+                    SidebarState.hovering = true;
+                } else if (SidebarState.hover-tab == root.entry.tab-id) {
+                    SidebarState.hovering = false;
+                }
+            }
         }
     }
 

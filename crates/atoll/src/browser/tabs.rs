@@ -375,6 +375,36 @@ impl Browser {
         Some((island, index + 1))
     }
 
+    /// Shows `tab` wherever it lives: its island comes back from the archive and is expanded, and
+    /// the workspace is switched if necessary.
+    pub(super) fn reveal_tab(&self, tab: TabId) {
+        let Ok(record) = self.storage.tab(tab) else {
+            return;
+        };
+        let Ok(island) = self.storage.island(record.island_id) else {
+            return;
+        };
+        if island.is_archived() {
+            let result = self.storage.restore_island(island.id);
+            self.report("Wiederherstellen", result);
+            self.show_toast(&format!("Insel „{}“ aus dem Archiv geholt", island.name));
+        }
+        if island.collapsed {
+            let result = self.storage.set_island_collapsed(island.id, false);
+            self.report("Insel aufklappen", result);
+        }
+        if island.workspace_id != self.session.borrow().workspace {
+            let key = Self::active_workspace_key(island.workspace_id);
+            if let Err(error) = self.storage.set_setting(&key, &tab.0.to_string()) {
+                tracing::warn!(%error, "active tab could not be stored");
+            }
+            self.select_workspace(island.workspace_id);
+        } else {
+            self.reload_session();
+            self.activate_tab(tab);
+        }
+    }
+
     /// Reloads the active workspace from the database, keeping the active tab if it still exists.
     pub(super) fn reload_session(&self) {
         let (workspace, active) = {

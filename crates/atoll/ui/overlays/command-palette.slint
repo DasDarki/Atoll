@@ -1,0 +1,255 @@
+import { ListView } from "std-widgets.slint";
+import { Theme } from "../theme.slint";
+import { OverlayState } from "../state.slint";
+import { PaletteKind } from "../structs.slint";
+
+component PaletteRow inherits Rectangle {
+    in property <PaletteKind> kind;
+    in property <string> title;
+    in property <string> detail;
+    in property <string> badge;
+    in property <string> shortcut;
+    in property <image> icon;
+    in property <bool> has-icon;
+    in property <bool> selected;
+    callback activated();
+
+    height: 44px;
+    border-radius: Theme.radius-small;
+    background: root.selected ? Theme.selected : touch.has-hover ? Theme.hover : transparent;
+
+    HorizontalLayout {
+        padding-left: 12px;
+        padding-right: 12px;
+        spacing: 12px;
+
+        Rectangle {
+            width: 18px;
+            height: 18px;
+            y: (parent.height - self.height) / 2;
+            if root.has-icon : Image {
+                source: root.icon;
+                width: 16px;
+                height: 16px;
+                x: 1px;
+                y: 1px;
+            }
+            if !root.has-icon : Image {
+                width: 15px;
+                height: 15px;
+                colorize: root.kind == PaletteKind.command ? Theme.accent : Theme.text-faint;
+                source: root.kind == PaletteKind.command ? @image-url("../icons/command.svg")
+                    : root.kind == PaletteKind.history ? @image-url("../icons/history.svg")
+                    : root.kind == PaletteKind.bookmark ? @image-url("../icons/star.svg")
+                    : @image-url("../icons/globe.svg");
+            }
+        }
+
+        VerticalLayout {
+            alignment: center;
+            spacing: 1px;
+            horizontal-stretch: 1;
+            Text {
+                text: root.title;
+                color: Theme.text;
+                font-size: Theme.font-normal;
+                overflow: elide;
+            }
+            if root.detail != "" : Text {
+                text: root.detail;
+                color: Theme.text-faint;
+                font-size: Theme.font-small;
+                overflow: elide;
+            }
+        }
+
+        if root.badge != "" : Rectangle {
+            y: (parent.height - self.height) / 2;
+            height: 20px;
+            width: badge-text.preferred-width + 14px;
+            border-radius: 10px;
+            background: Theme.surface;
+            border-width: 1px;
+            border-color: Theme.border-strong;
+            badge-text := Text {
+                text: root.badge;
+                color: Theme.text-muted;
+                font-size: Theme.font-small;
+            }
+        }
+
+        if root.shortcut != "" : Text {
+            text: root.shortcut;
+            color: Theme.text-faint;
+            font-size: Theme.font-small;
+            vertical-alignment: center;
+        }
+    }
+
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.activated(); }
+    }
+}
+
+export component CommandPalette inherits Rectangle {
+    background: #05060c80;
+
+    property <int> selected: OverlayState.palette-index;
+    changed selected => {
+        let top = self.selected * 44px;
+        if (top < -list.content-y) {
+            list.content-y = -top;
+        } else if (top + 44px > -list.content-y + list.visible-height) {
+            list.content-y = -(top + 44px - list.visible-height);
+        }
+    }
+
+    TouchArea {
+        clicked => { OverlayState.palette-close(); }
+    }
+
+    card := Rectangle {
+        x: (parent.width - self.width) / 2;
+        y: 70px;
+        width: min(680px, parent.width - 40px);
+        height: layout.preferred-height;
+        border-radius: Theme.radius-large;
+        background: Theme.surface;
+        border-width: 1px;
+        border-color: Theme.border-strong;
+        drop-shadow-blur: 40px;
+        drop-shadow-color: #000000c0;
+        clip: true;
+
+        TouchArea { }
+
+        layout := VerticalLayout {
+            Rectangle {
+                height: 52px;
+                HorizontalLayout {
+                    padding-left: 18px;
+                    padding-right: 18px;
+                    spacing: 12px;
+                    Image {
+                        source: @image-url("../icons/search.svg");
+                        width: 16px;
+                        height: 16px;
+                        y: (parent.height - self.height) / 2;
+                        colorize: Theme.text-faint;
+                    }
+                    Rectangle {
+                        clip: true;
+                        Text {
+                            x: 0;
+                            width: parent.width;
+                            text: "Tabs, Lesezeichen und Verlauf durchsuchen · > für Befehle";
+                            visible: input.text == "";
+                            color: Theme.text-faint;
+                            font-size: Theme.font-large;
+                            vertical-alignment: center;
+                        }
+                        input := TextInput {
+                            x: 0;
+                            width: parent.width;
+                            height: parent.height;
+                            text <=> OverlayState.palette-text;
+                            color: Theme.text;
+                            font-size: Theme.font-large;
+                            vertical-alignment: center;
+                            single-line: true;
+                            selection-background-color: #7c6cff66;
+                            init => {
+                                self.focus();
+                                self.set-selection-offsets(self.text.character-count, self.text.character-count);
+                            }
+                            edited => { OverlayState.palette-edited(self.text); }
+                            accepted => { OverlayState.palette-activate(OverlayState.palette-index); }
+                            key-pressed(event) => {
+                                if (event.text == Key.DownArrow) {
+                                    OverlayState.palette-move(1);
+                                    return accept;
+                                }
+                                if (event.text == Key.UpArrow) {
+                                    OverlayState.palette-move(-1);
+                                    return accept;
+                                }
+                                if (event.text == Key.PageDown) {
+                                    OverlayState.palette-move(8);
+                                    return accept;
+                                }
+                                if (event.text == Key.PageUp) {
+                                    OverlayState.palette-move(-8);
+                                    return accept;
+                                }
+                                if (event.text == Key.Escape) {
+                                    OverlayState.palette-close();
+                                    return accept;
+                                }
+                                return reject;
+                            }
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                height: 1px;
+                background: Theme.border;
+            }
+
+            if OverlayState.palette-items.length == 0 : Text {
+                height: 56px;
+                text: OverlayState.palette-hint;
+                color: Theme.text-faint;
+                font-size: Theme.font-normal;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+
+            list := ListView {
+                visible: OverlayState.palette-items.length > 0;
+                height: self.visible ? min(OverlayState.palette-items.length * 44px + 12px, 10 * 44px + 12px) : 0px;
+                for item[index] in OverlayState.palette-items : Rectangle {
+                    height: 44px;
+                    PaletteRow {
+                        x: 6px;
+                        width: parent.width - 12px;
+                        kind: item.kind;
+                        title: item.title;
+                        detail: item.detail;
+                        badge: item.badge;
+                        shortcut: item.shortcut;
+                        icon: item.icon;
+                        has-icon: item.has-icon;
+                        selected: index == OverlayState.palette-index;
+                        activated => { OverlayState.palette-activate(index); }
+                    }
+                }
+            }
+
+            Rectangle {
+                height: 30px;
+                background: Theme.background;
+                HorizontalLayout {
+                    padding-left: 16px;
+                    padding-right: 16px;
+                    spacing: 16px;
+                    Text {
+                        text: "↑↓ auswählen   ↵ öffnen   Esc schließen";
+                        color: Theme.text-faint;
+                        font-size: Theme.font-small;
+                        vertical-alignment: center;
+                    }
+                    Rectangle { horizontal-stretch: 1; }
+                    Text {
+                        text: "Strg+K suchen · Strg+Umschalt+P Befehle";
+                        color: Theme.text-faint;
+                        font-size: Theme.font-small;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+}

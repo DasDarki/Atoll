@@ -1,0 +1,122 @@
+import { Theme } from "../theme.slint";
+import { BrowserState } from "../state.slint";
+import { BookmarkItem } from "../structs.slint";
+
+component BookmarkChip inherits Rectangle {
+    in property <BookmarkItem> item;
+
+    height: 26px;
+    width: min(layout.preferred-width, 200px);
+    border-radius: Theme.radius-small;
+    background: touch.pressed ? Theme.pressed : touch.has-hover ? Theme.hover : transparent;
+
+    menu := ContextMenuArea {
+        Menu {
+            if !root.item.is-folder : MenuItem {
+                title: "Öffnen";
+                activated => { BrowserState.open-bookmark(root.item.id, false); }
+            }
+            if !root.item.is-folder : MenuItem {
+                title: "In neuem Tab öffnen";
+                activated => { BrowserState.open-bookmark(root.item.id, true); }
+            }
+            if root.item.is-folder : MenuItem {
+                title: "Alle in neuen Tabs öffnen";
+                activated => { BrowserState.bookmark-action(root.item.id, "open-all"); }
+            }
+            MenuItem {
+                title: root.item.is-folder ? "Umbenennen" : "Bearbeiten";
+                activated => { BrowserState.bookmark-action(root.item.id, "edit"); }
+            }
+            MenuSeparator { }
+            MenuItem {
+                title: "Löschen";
+                activated => { BrowserState.bookmark-action(root.item.id, "delete"); }
+            }
+            MenuSeparator { }
+            MenuItem {
+                title: "Lesezeichen verwalten";
+                activated => { BrowserState.bookmark-action(root.item.id, "manage"); }
+            }
+        }
+
+        touch := TouchArea {
+            mouse-cursor: pointer;
+            pointer-event(event) => {
+                if (event.kind != PointerEventKind.up) {
+                    return;
+                }
+                if (event.button == PointerEventButton.right) {
+                    menu.show({ x: self.mouse-x, y: self.mouse-y });
+                } else if (event.button == PointerEventButton.middle && !root.item.is-folder) {
+                    BrowserState.open-bookmark(root.item.id, true);
+                }
+            }
+            clicked => {
+                if (root.item.is-folder) {
+                    BrowserState.open-bookmark-folder(root.item.id, root.absolute-position.x, root.absolute-position.y + root.height + 2px);
+                } else {
+                    BrowserState.open-bookmark(root.item.id, false);
+                }
+            }
+        }
+    }
+
+    layout := HorizontalLayout {
+        padding-left: 8px;
+        padding-right: 8px;
+        spacing: 6px;
+
+        if root.item.has-icon : Image {
+            source: root.item.icon;
+            width: 14px;
+            height: 14px;
+            y: (parent.height - self.height) / 2;
+        }
+        if !root.item.has-icon : Image {
+            source: root.item.is-folder ? @image-url("../icons/folder.svg") : @image-url("../icons/globe.svg");
+            width: 14px;
+            height: 14px;
+            y: (parent.height - self.height) / 2;
+            colorize: root.item.is-folder ? #fbbf24 : Theme.text-faint;
+        }
+        Text {
+            text: root.item.title;
+            color: Theme.text-muted;
+            font-size: Theme.font-small + 1px;
+            vertical-alignment: center;
+            overflow: elide;
+        }
+    }
+}
+
+export component BookmarksBar inherits Rectangle {
+    height: 32px;
+    background: Theme.chrome;
+    clip: true;
+
+    HorizontalLayout {
+        padding-left: 10px;
+        padding-right: 10px;
+        spacing: 2px;
+        alignment: start;
+
+        for item in BrowserState.bookmarks-bar : BookmarkChip {
+            y: (parent.height - self.height) / 2;
+            item: item;
+        }
+
+        if BrowserState.bookmarks-bar.length == 0 : Text {
+            text: "Lesezeichen mit Strg+D oder dem Stern in der Adressleiste hinzufügen";
+            color: Theme.text-faint;
+            font-size: Theme.font-small + 1px;
+            vertical-alignment: center;
+        }
+    }
+
+    Rectangle {
+        y: parent.height - 1px;
+        height: 1px;
+        background: Theme.border;
+    }
+}

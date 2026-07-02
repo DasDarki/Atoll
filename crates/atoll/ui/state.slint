@@ -1,6 +1,13 @@
-import { WorkspaceItem, SidebarRow, IslandTarget, MenuItemData, ArchiveItem, ExportIslandItem, DialogData, WebCursor, WebPointer, WebScroll } from "structs.slint";
+import { WorkspaceItem, SidebarRow, IslandTarget, MenuItemData, ArchiveItem, ExportIslandItem, DialogData, WebCursor, WebPointer, WebScroll, SuggestionItem, Completion, PaletteItem, BookmarkItem } from "structs.slint";
 
 export global SidebarState {
+    in property <bool> visible: true;
+    in-out property <bool> hovering;
+    in-out property <int> hover-tab;
+    in-out property <string> hover-title;
+    in-out property <string> hover-url;
+    in-out property <string> hover-detail;
+    in-out property <length> hover-y;
     in property <[WorkspaceItem]> workspaces;
     in property <[SidebarRow]> rows;
     in property <[IslandTarget]> island-targets;
@@ -49,6 +56,26 @@ export global BrowserState {
     in property <string> find-result;
 
     callback navigate(string);
+    callback toggle-sidebar();
+
+    in property <[SuggestionItem]> suggestions;
+    in property <bool> suggestions-visible;
+    in property <int> suggestion-index: -1;
+    in property <int> suggestion-source;
+    callback address-edited(int, string) -> Completion;
+    callback address-submitted(int, string);
+    callback suggestion-move(int) -> string;
+    callback suggestion-activate(int);
+    callback suggestions-dismissed();
+
+    in property <bool> page-bookmarked;
+    in property <bool> bookmarks-bar-visible;
+    in property <[BookmarkItem]> bookmarks-bar;
+    callback toggle-bookmark();
+    callback open-bookmark(int, bool);
+    callback open-bookmark-folder(int, length, length);
+    callback bookmark-action(int, string);
+
     callback go-back();
     callback go-forward();
     callback reload();
@@ -66,6 +93,43 @@ export global BrowserState {
 }
 
 export global OverlayState {
+    in property <bool> palette-visible;
+    in-out property <string> palette-text;
+    in property <[PaletteItem]> palette-items;
+    in property <int> palette-index;
+    in property <string> palette-hint;
+    callback palette-edited(string);
+    callback palette-move(int);
+    callback palette-activate(int);
+    callback palette-close();
+
+    in property <bool> folder-popup-visible;
+    in property <length> folder-popup-x;
+    in property <length> folder-popup-y;
+    in property <string> folder-popup-title;
+    in property <bool> folder-popup-nested;
+    in property <[BookmarkItem]> folder-popup-items;
+    callback folder-popup-activate(int, bool);
+    callback folder-popup-up();
+    callback folder-popup-close();
+
+    in property <bool> bookmark-editor-visible;
+    in property <bool> bookmark-editor-folder;
+    in-out property <string> bookmark-title;
+    in-out property <string> bookmark-url;
+    in property <[string]> bookmark-folders;
+    in-out property <int> bookmark-folder-index;
+    callback bookmark-save();
+    callback bookmark-remove();
+    callback bookmark-cancel();
+
+    in property <bool> bookmark-manager-visible;
+    in property <[BookmarkItem]> bookmark-rows;
+    callback bookmark-row-action(int, string);
+    callback bookmark-new-folder();
+    callback bookmark-import();
+    callback bookmark-manager-close();
+
     in property <bool> menu-visible;
     in property <length> menu-x;
     in property <length> menu-y;

@@ -1,9 +1,12 @@
 import { Theme } from "../theme.slint";
 import { BrowserState } from "../state.slint";
+import { IconButton } from "../widgets/icon-button.slint";
 
 export component AddressBar inherits Rectangle {
     property <string> address: BrowserState.address;
     out property <bool> editing: input.has-focus;
+    out property <length> anchor-x: self.absolute-position.x;
+    out property <length> anchor-y: self.absolute-position.y + self.height + 4px;
 
     public function focus-and-select() {
         input.focus();
@@ -46,7 +49,7 @@ export component AddressBar inherits Rectangle {
 
         HorizontalLayout {
             padding-left: 12px;
-            padding-right: 14px;
+            padding-right: 4px;
             spacing: 8px;
 
             Image {
@@ -81,16 +84,49 @@ export component AddressBar inherits Rectangle {
                     vertical-alignment: center;
                     single-line: true;
                     selection-background-color: #7c6cff66;
+                    key-pressed(event) => {
+                        if (event.text == Key.DownArrow && BrowserState.suggestions-visible) {
+                            self.text = BrowserState.suggestion-move(1);
+                            return accept;
+                        }
+                        if (event.text == Key.UpArrow && BrowserState.suggestions-visible) {
+                            self.text = BrowserState.suggestion-move(-1);
+                            return accept;
+                        }
+                        if (event.text == Key.Escape && BrowserState.suggestions-visible) {
+                            BrowserState.suggestions-dismissed();
+                            return accept;
+                        }
+                        return reject;
+                    }
+                    edited => {
+                        let completion = BrowserState.address-edited(0, self.text);
+                        if (completion.text != self.text) {
+                            self.text = completion.text;
+                            self.set-selection-offsets(completion.selection-start, completion.selection-end);
+                        }
+                    }
                     accepted => {
-                        BrowserState.navigate(self.text);
+                        BrowserState.address-submitted(0, self.text);
                         self.clear-focus();
                     }
                     changed has-focus => {
                         if (!self.has-focus) {
                             self.text = BrowserState.address;
+                            BrowserState.suggestions-dismissed();
                         }
                     }
                 }
+            }
+
+            if BrowserState.has-page : IconButton {
+                width: 26px;
+                height: 26px;
+                y: (parent.height - self.height) / 2;
+                icon-size: 15px;
+                icon: BrowserState.page-bookmarked ? @image-url("../icons/star-filled.svg") : @image-url("../icons/star.svg");
+                tint: BrowserState.page-bookmarked ? #fbbf24 : Theme.text-faint;
+                clicked => { BrowserState.toggle-bookmark(); }
             }
         }
     }

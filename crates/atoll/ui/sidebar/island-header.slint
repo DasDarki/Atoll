@@ -31,6 +31,10 @@ export component IslandHeader inherits Rectangle {
                 activated => { SidebarState.island-action(root.entry.island-id, "sleep"); }
             }
             MenuItem {
+                title: "Alle Tabs als Lesezeichen speichern";
+                activated => { SidebarState.island-action(root.entry.island-id, "bookmark"); }
+            }
+            MenuItem {
                 title: "Als Liste exportieren";
                 activated => { SidebarState.island-action(root.entry.island-id, "export"); }
             }

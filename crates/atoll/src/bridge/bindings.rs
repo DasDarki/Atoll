@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use atoll_core::{IslandId, TabId, WorkspaceId};
+use atoll_core::{BookmarkId, IslandId, TabId, WorkspaceId};
 use slint::ComponentHandle;
 
 use crate::browser::Browser;
@@ -43,6 +43,10 @@ fn tab(id: i32) -> TabId {
     TabId(i64::from(id))
 }
 
+fn bookmark(id: i32) -> BookmarkId {
+    BookmarkId(i64::from(id))
+}
+
 fn connect_sidebar(window: &AppWindow, browser: &Rc<Browser>) {
     let state = window.global::<SidebarState>();
     on!(state, on_select_workspace, browser, |target, id| target
@@ -74,6 +78,7 @@ fn connect_sidebar(window: &AppWindow, browser: &Rc<Browser>) {
             "duplicate" => target.duplicate_tab(tab(id)),
             "copy-url" => target.copy_tab_address(tab(id)),
             "new-island" => target.move_tab_to_new_island(tab(id)),
+            "bookmark" => target.bookmark_tab(tab(id)),
             other => tracing::warn!(action = other, "unknown tab action"),
         }
     );
@@ -85,9 +90,15 @@ fn connect_sidebar(window: &AppWindow, browser: &Rc<Browser>) {
     );
     on!(state, on_toggle_island, browser, |target, id| target
         .toggle_island(island(id)));
-    on!(state, on_island_action, browser, |target, id, action| {
-        target.island_action(island(id), &action)
-    });
+    on!(
+        state,
+        on_island_action,
+        browser,
+        |target, id, action| match action.as_str() {
+            "bookmark" => target.bookmark_island(island(id)),
+            other => target.island_action(island(id), other),
+        }
+    );
     on!(state, on_set_island_color, browser, |target, id, color| {
         target.set_island_color(island(id), usize::try_from(color).unwrap_or_default())
     });
@@ -105,6 +116,35 @@ fn connect_browser(window: &AppWindow, browser: &Rc<Browser>) {
     let state = window.global::<BrowserState>();
     on!(state, on_navigate, browser, |target, input| target
         .navigate(&input));
+    on!(state, on_toggle_sidebar, browser, |target| target
+        .toggle_sidebar());
+    on!(state, on_address_edited, browser, |target, source, text| -> Default::default(), target.address_edited(source, &text));
+    on!(
+        state,
+        on_address_submitted,
+        browser,
+        |target, _source, text| target.address_submitted(&text)
+    );
+    on!(state, on_suggestion_move, browser, |target, delta| -> Default::default(), target.suggestion_move(delta));
+    on!(state, on_suggestion_activate, browser, |target, index| {
+        target.suggestion_activate(index)
+    });
+    on!(state, on_suggestions_dismissed, browser, |target| target
+        .dismiss_suggestions());
+    on!(state, on_toggle_bookmark, browser, |target| target
+        .bookmark_page());
+    on!(state, on_open_bookmark, browser, |target, id, new_tab| {
+        target.open_bookmark(bookmark(id), new_tab)
+    });
+    on!(
+        state,
+        on_open_bookmark_folder,
+        browser,
+        |target, id, x, y| target.open_bookmark_folder(bookmark(id), x, y)
+    );
+    on!(state, on_bookmark_action, browser, |target, id, action| {
+        target.bookmark_action(bookmark(id), &action)
+    });
     on!(state, on_go_back, browser, |target| target.go_back());
     on!(state, on_go_forward, browser, |target| target.go_forward());
     on!(state, on_reload, browser, |target| target.reload(false));
@@ -129,6 +169,42 @@ fn connect_browser(window: &AppWindow, browser: &Rc<Browser>) {
 
 fn connect_overlays(window: &AppWindow, browser: &Rc<Browser>) {
     let state = window.global::<OverlayState>();
+    on!(state, on_palette_edited, browser, |target, text| target
+        .palette_edited(&text));
+    on!(state, on_palette_move, browser, |target, delta| target
+        .palette_move(delta));
+    on!(state, on_palette_activate, browser, |target, index| target
+        .palette_activate(index));
+    on!(state, on_palette_close, browser, |target| target
+        .close_palette());
+    on!(
+        state,
+        on_folder_popup_activate,
+        browser,
+        |target, id, new_tab| target.folder_popup_activate(bookmark(id), new_tab)
+    );
+    on!(state, on_folder_popup_up, browser, |target| target
+        .folder_popup_up());
+    on!(state, on_folder_popup_close, browser, |target| target
+        .close_folder_popup());
+    on!(state, on_bookmark_save, browser, |target| target
+        .save_bookmark_editor());
+    on!(state, on_bookmark_remove, browser, |target| target
+        .remove_bookmark_in_editor());
+    on!(state, on_bookmark_cancel, browser, |target| target
+        .cancel_bookmark_editor());
+    on!(
+        state,
+        on_bookmark_row_action,
+        browser,
+        |target, id, action| target.bookmark_action(bookmark(id), &action)
+    );
+    on!(state, on_bookmark_new_folder, browser, |target| target
+        .new_bookmark_folder());
+    on!(state, on_bookmark_import, browser, |target| target
+        .import_bookmarks());
+    on!(state, on_bookmark_manager_close, browser, |target| target
+        .close_bookmark_manager());
     on!(state, on_menu_activated, browser, |target, command| target
         .context_menu_closed(Some(command)));
     on!(state, on_menu_dismissed, browser, |target| target

@@ -1,0 +1,102 @@
+import { Theme } from "../theme.slint";
+import { BrowserState } from "../state.slint";
+import { SuggestionKind } from "../structs.slint";
+
+component SuggestionRow inherits Rectangle {
+    in property <SuggestionKind> kind;
+    in property <string> title;
+    in property <string> url;
+    in property <string> detail;
+    in property <image> icon;
+    in property <bool> has-icon;
+    in property <bool> selected;
+    callback activated();
+
+    height: 38px;
+    border-radius: Theme.radius-small;
+    background: root.selected ? Theme.selected : touch.has-hover ? Theme.hover : transparent;
+
+    HorizontalLayout {
+        padding-left: 12px;
+        padding-right: 12px;
+        spacing: 10px;
+
+        Rectangle {
+            width: 16px;
+            height: 16px;
+            y: (parent.height - self.height) / 2;
+            if root.has-icon : Image {
+                source: root.icon;
+                width: 16px;
+                height: 16px;
+            }
+            if !root.has-icon : Image {
+                width: 14px;
+                height: 14px;
+                colorize: Theme.text-faint;
+                source: root.kind == SuggestionKind.search ? @image-url("../icons/search.svg")
+                    : root.kind == SuggestionKind.history ? @image-url("../icons/history.svg")
+                    : root.kind == SuggestionKind.bookmark ? @image-url("../icons/star.svg")
+                    : root.kind == SuggestionKind.tab ? @image-url("../icons/tab.svg")
+                    : @image-url("../icons/globe.svg");
+            }
+        }
+
+        Text {
+            text: root.title;
+            color: Theme.text;
+            font-size: Theme.font-normal;
+            vertical-alignment: center;
+            overflow: elide;
+            max-width: parent.width * 0.55;
+        }
+
+        if root.url != "" : Text {
+            text: "· " + root.url;
+            color: Theme.accent-cyan;
+            font-size: Theme.font-small + 1px;
+            vertical-alignment: center;
+            overflow: elide;
+            horizontal-stretch: 1;
+        }
+        if root.url == "" : Rectangle { horizontal-stretch: 1; }
+
+        if root.detail != "" : Text {
+            text: root.detail;
+            color: Theme.text-faint;
+            font-size: Theme.font-small;
+            vertical-alignment: center;
+        }
+    }
+
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.activated(); }
+    }
+}
+
+export component SuggestionList inherits Rectangle {
+    height: layout.preferred-height;
+    border-radius: Theme.radius;
+    background: Theme.surface-raised;
+    border-width: 1px;
+    border-color: Theme.border-strong;
+    drop-shadow-blur: 22px;
+    drop-shadow-color: #000000a0;
+
+    TouchArea { }
+
+    layout := VerticalLayout {
+        padding: 5px;
+        for item[index] in BrowserState.suggestions : SuggestionRow {
+            kind: item.kind;
+            title: item.title;
+            url: item.url;
+            detail: item.detail;
+            icon: item.icon;
+            has-icon: item.has-icon;
+            selected: index == BrowserState.suggestion-index;
+            activated => { BrowserState.suggestion-activate(index); }
+        }
+    }
+}

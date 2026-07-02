@@ -1,0 +1,130 @@
+import { Theme } from "../theme.slint";
+import { OverlayState } from "../state.slint";
+
+export component FolderPopup inherits Rectangle {
+    TouchArea {
+        pointer-event(event) => {
+            if (event.kind == PointerEventKind.down) {
+                OverlayState.folder-popup-close();
+            }
+        }
+    }
+
+    FocusScope {
+        init => { self.focus(); }
+        key-pressed(event) => {
+            if (event.text == Key.Escape) {
+                OverlayState.folder-popup-close();
+            }
+            return accept;
+        }
+    }
+
+    card := Rectangle {
+        x: min(OverlayState.folder-popup-x, root.width - self.width - 8px);
+        y: OverlayState.folder-popup-y;
+        width: 300px;
+        height: min(layout.preferred-height, root.height - self.y - 12px);
+        border-radius: Theme.radius;
+        background: Theme.surface-raised;
+        border-width: 1px;
+        border-color: Theme.border-strong;
+        drop-shadow-blur: 20px;
+        drop-shadow-color: #000000a0;
+        clip: true;
+
+        TouchArea { }
+
+        layout := VerticalLayout {
+            padding: 5px;
+
+            if OverlayState.folder-popup-nested : Rectangle {
+                height: 30px;
+                border-radius: Theme.radius-small;
+                background: back.has-hover ? Theme.hover : transparent;
+                HorizontalLayout {
+                    padding-left: 10px;
+                    spacing: 8px;
+                    Image {
+                        source: @image-url("../icons/arrow-left.svg");
+                        width: 13px;
+                        height: 13px;
+                        y: (parent.height - self.height) / 2;
+                        colorize: Theme.text-muted;
+                    }
+                    Text {
+                        text: OverlayState.folder-popup-title;
+                        color: Theme.text-muted;
+                        font-size: Theme.font-normal;
+                        font-weight: 600;
+                        vertical-alignment: center;
+                        overflow: elide;
+                    }
+                }
+                back := TouchArea {
+                    mouse-cursor: pointer;
+                    clicked => { OverlayState.folder-popup-up(); }
+                }
+            }
+
+            if OverlayState.folder-popup-items.length == 0 : Text {
+                height: 30px;
+                x: 10px;
+                text: "Dieser Ordner ist leer.";
+                color: Theme.text-faint;
+                font-size: Theme.font-normal;
+                vertical-alignment: center;
+            }
+
+            for item in OverlayState.folder-popup-items : Rectangle {
+                height: 30px;
+                border-radius: Theme.radius-small;
+                background: row.has-hover ? Theme.selected : transparent;
+
+                HorizontalLayout {
+                    padding-left: 10px;
+                    padding-right: 10px;
+                    spacing: 8px;
+                    if item.has-icon : Image {
+                        source: item.icon;
+                        width: 14px;
+                        height: 14px;
+                        y: (parent.height - self.height) / 2;
+                    }
+                    if !item.has-icon : Image {
+                        source: item.is-folder ? @image-url("../icons/folder.svg") : @image-url("../icons/globe.svg");
+                        width: 14px;
+                        height: 14px;
+                        y: (parent.height - self.height) / 2;
+                        colorize: item.is-folder ? #fbbf24 : Theme.text-faint;
+                    }
+                    Text {
+                        text: item.title;
+                        color: Theme.text;
+                        font-size: Theme.font-normal;
+                        vertical-alignment: center;
+                        overflow: elide;
+                        horizontal-stretch: 1;
+                    }
+                    if item.is-folder : Image {
+                        source: @image-url("../icons/chevron-right.svg");
+                        width: 12px;
+                        height: 12px;
+                        y: (parent.height - self.height) / 2;
+                        colorize: Theme.text-faint;
+                    }
+                }
+
+                row := TouchArea {
+                    mouse-cursor: pointer;
+                    pointer-event(event) => {
+                        if (event.kind == PointerEventKind.up && event.button == PointerEventButton.middle) {
+                            OverlayState.folder-popup-activate(item.id, true);
+                        }
+                    }
+                    clicked => { OverlayState.folder-popup-activate(item.id, false); }
+                }
+            }
+        }
+    }
+}

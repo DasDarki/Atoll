@@ -1,17 +1,21 @@
 mod archive;
+mod bookmarks;
 mod clipboard;
 mod events;
 mod favicons;
+mod layout;
 mod lifecycle;
 mod menu;
 mod navigation;
 mod organize;
 mod overlays;
 mod page;
+mod palette;
 mod preferences;
 mod session;
 mod sidebar;
 mod startup;
+mod suggestions;
 mod tabs;
 mod transfer;
 mod views;
@@ -34,13 +38,16 @@ use crate::platform::paths::Paths;
 use crate::pump::MessagePump;
 use crate::ui::AppWindow;
 
+use bookmarks::BookmarkState;
 use clipboard::ClipboardSync;
 use favicons::FaviconCache;
 use overlays::DialogQueue;
 use page::PageState;
+use palette::PaletteState;
 use preferences::Preferences;
 use session::Session;
 use sidebar::SidebarModels;
+use suggestions::SuggestionState;
 use tabs::ClosedTab;
 use transfer::TransferState;
 use views::ViewRegistry;
@@ -74,6 +81,9 @@ pub struct Browser {
     clipboard_sync: RefCell<ClipboardSync>,
     find_text: RefCell<String>,
     downloads: RefCell<HashSet<u32>>,
+    suggestions: RefCell<SuggestionState>,
+    palette: RefCell<PaletteState>,
+    bookmarks: RefCell<BookmarkState>,
     this: Weak<Browser>,
 }
 
@@ -117,6 +127,9 @@ impl Browser {
             clipboard_sync: RefCell::default(),
             find_text: RefCell::default(),
             downloads: RefCell::default(),
+            suggestions: RefCell::default(),
+            palette: RefCell::default(),
+            bookmarks: RefCell::default(),
             this: this.clone(),
         }))
     }

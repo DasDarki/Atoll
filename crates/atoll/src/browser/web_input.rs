@@ -172,6 +172,12 @@ impl Browser {
             Shortcut::ZoomReset => self.zoom(ZoomCommand::Reset),
             Shortcut::DevTools => self.show_dev_tools(),
             Shortcut::ToggleFullscreen => self.toggle_fullscreen(),
+            Shortcut::ToggleSidebar => self.toggle_sidebar(),
+            Shortcut::BookmarkPage => self.bookmark_page(),
+            Shortcut::ToggleBookmarksBar => self.toggle_bookmarks_bar(),
+            Shortcut::ManageBookmarks => self.open_bookmark_manager(),
+            Shortcut::QuickSearch => self.open_palette(false),
+            Shortcut::Commands => self.open_palette(true),
         }
     }
 }

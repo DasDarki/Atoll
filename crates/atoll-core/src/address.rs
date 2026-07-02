@@ -12,6 +12,18 @@ pub fn host_of(address: &str) -> Option<String> {
     parsed.host_str().map(str::to_ascii_lowercase)
 }
 
+/// The address without scheme and leading `www.`, as it is typed and shown in suggestions.
+pub fn display_url(address: &str) -> String {
+    let without_scheme = address.split_once("://").map_or(address, |(_, rest)| rest);
+    let without_www = without_scheme
+        .strip_prefix("www.")
+        .unwrap_or(without_scheme);
+    without_www
+        .strip_suffix('/')
+        .unwrap_or(without_www)
+        .to_owned()
+}
+
 /// Normalises an address so that equivalent spellings compare equal.
 pub fn normalize(address: &str) -> String {
     Url::parse(address.trim())
@@ -37,6 +49,13 @@ mod tests {
             display_host("https://www.rust-lang.org"),
             Some("rust-lang.org".into())
         );
+    }
+
+    #[test]
+    fn display_url_drops_scheme_www_and_trailing_slash() {
+        assert_eq!(display_url("https://www.github.com/"), "github.com");
+        assert_eq!(display_url("http://example.com/a/b"), "example.com/a/b");
+        assert_eq!(display_url("about:blank"), "about:blank");
     }
 
     #[test]

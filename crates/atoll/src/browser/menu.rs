@@ -16,6 +16,12 @@ impl Browser {
             "export" => self.open_export(None),
             "archive" => self.open_archive(),
             "devtools" => self.show_dev_tools(),
+            "palette" => self.open_palette(false),
+            "commands" => self.open_palette(true),
+            "bookmark" => self.bookmark_page(),
+            "bookmarks-bar" => self.toggle_bookmarks_bar(),
+            "bookmarks" => self.open_bookmark_manager(),
+            "sidebar" => self.toggle_sidebar(),
             other => tracing::warn!(action = other, "unknown menu action"),
         }
     }

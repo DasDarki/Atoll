@@ -2,6 +2,10 @@ import { Theme } from "../theme.slint";
 import { BrowserState } from "../state.slint";
 
 export component NewTabPage inherits Rectangle {
+    out property <length> anchor-x: field.absolute-position.x + 12px;
+    out property <length> anchor-y: field.absolute-position.y + field.height + 6px;
+    out property <length> anchor-width: field.width - 24px;
+
     public function focus-input() {
         input.focus();
     }
@@ -86,9 +90,36 @@ export component NewTabPage inherits Rectangle {
                             vertical-alignment: center;
                             single-line: true;
                             selection-background-color: #7c6cff66;
+                            key-pressed(event) => {
+                                if (event.text == Key.DownArrow && BrowserState.suggestions-visible) {
+                                    self.text = BrowserState.suggestion-move(1);
+                                    return accept;
+                                }
+                                if (event.text == Key.UpArrow && BrowserState.suggestions-visible) {
+                                    self.text = BrowserState.suggestion-move(-1);
+                                    return accept;
+                                }
+                                if (event.text == Key.Escape && BrowserState.suggestions-visible) {
+                                    BrowserState.suggestions-dismissed();
+                                    return accept;
+                                }
+                                return reject;
+                            }
+                            edited => {
+                                let completion = BrowserState.address-edited(1, self.text);
+                                if (completion.text != self.text) {
+                                    self.text = completion.text;
+                                    self.set-selection-offsets(completion.selection-start, completion.selection-end);
+                                }
+                            }
                             accepted => {
-                                BrowserState.navigate(self.text);
+                                BrowserState.address-submitted(1, self.text);
                                 self.text = "";
+                            }
+                            changed has-focus => {
+                                if (!self.has-focus) {
+                                    BrowserState.suggestions-dismissed();
+                                }
                             }
                         }
                     }

@@ -100,3 +100,42 @@ export struct WebScroll {
     alt: bool,
     meta: bool,
 }
+
+export enum SuggestionKind { navigate, search, tab, bookmark, history }
+
+export struct SuggestionItem {
+    kind: SuggestionKind,
+    title: string,
+    url: string,
+    detail: string,
+    icon: image,
+    has-icon: bool,
+}
+
+export struct Completion {
+    text: string,
+    selection-start: int,
+    selection-end: int,
+}
+
+export enum PaletteKind { tab, bookmark, history, command }
+
+export struct PaletteItem {
+    kind: PaletteKind,
+    title: string,
+    detail: string,
+    badge: string,
+    shortcut: string,
+    icon: image,
+    has-icon: bool,
+}
+
+export struct BookmarkItem {
+    id: int,
+    title: string,
+    url: string,
+    is-folder: bool,
+    icon: image,
+    has-icon: bool,
+    depth: int,
+}

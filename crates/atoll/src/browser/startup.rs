@@ -8,6 +8,8 @@ use crate::pump::MessagePump;
 impl Browser {
     /// Shows the stored session. Only the database is read, no engine instance is created yet.
     pub fn show_session(&self) {
+        self.restore_layout();
+        self.refresh_bookmarks();
         self.show_remembered_tab();
     }
 

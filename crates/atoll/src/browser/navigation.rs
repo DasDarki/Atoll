@@ -226,15 +226,32 @@ fn focus_address_bar(window: &AppWindow) {
     window.invoke_focus_address();
 }
 
+/// What address bar input stands for.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(super) enum Resolved {
+    Address(String),
+    Search(String),
+}
+
+impl Resolved {
+    pub(super) fn into_url(self) -> String {
+        match self {
+            Resolved::Address(url) | Resolved::Search(url) => url,
+        }
+    }
+}
+
 /// Turns address bar input into an address: URLs are used as they are, everything else is a
 /// search.
-fn resolve_input(input: &str, search_url: &str) -> Option<String> {
+pub(super) fn resolve(input: &str, search_url: &str) -> Option<Resolved> {
     let input = input.trim();
     if input.is_empty() {
         return None;
     }
     if is_local_address(input) {
-        return atoll_transfer::validate_address(&format!("http://{input}")).ok();
+        return atoll_transfer::validate_address(&format!("http://{input}"))
+            .ok()
+            .map(Resolved::Address);
     }
     if let Ok(url) = atoll_transfer::validate_address(input) {
         let explicit_scheme =
@@ -242,14 +259,18 @@ fn resolve_input(input: &str, search_url: &str) -> Option<String> {
         let looks_like_host =
             !input.contains(' ') && (input.contains('.') || input.starts_with("localhost"));
         if explicit_scheme || looks_like_host {
-            return Some(url);
+            return Some(Resolved::Address(url));
         }
     }
     let query: String = url::form_urlencoded::byte_serialize(input.as_bytes()).collect();
-    Some(search_url.replace("{query}", &query))
+    Some(Resolved::Search(search_url.replace("{query}", &query)))
 }
 
-fn is_local_address(input: &str) -> bool {
+pub(super) fn resolve_input(input: &str, search_url: &str) -> Option<String> {
+    resolve(input, search_url).map(Resolved::into_url)
+}
+
+pub(super) fn is_local_address(input: &str) -> bool {
     let host = input.split(['/', ':']).next().unwrap_or_default();
     !input.contains("://") && (host == "localhost" || host.parse::<std::net::Ipv4Addr>().is_ok())
 }

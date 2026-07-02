@@ -1,0 +1,39 @@
+import { Theme } from "../theme.slint";
+import { SidebarState } from "../state.slint";
+
+export component HoverCard inherits Rectangle {
+    width: min(max(title.preferred-width, url.preferred-width) + 28px, 460px);
+    height: layout.preferred-height;
+    border-radius: Theme.radius;
+    background: Theme.surface-raised;
+    border-width: 1px;
+    border-color: Theme.border-strong;
+    drop-shadow-blur: 18px;
+    drop-shadow-color: #000000a0;
+
+    layout := VerticalLayout {
+        padding: 10px;
+        padding-left: 14px;
+        padding-right: 14px;
+        spacing: 3px;
+
+        title := Text {
+            text: SidebarState.hover-title;
+            color: Theme.text;
+            font-size: Theme.font-normal;
+            font-weight: 600;
+            wrap: word-wrap;
+        }
+        url := Text {
+            text: SidebarState.hover-url;
+            color: Theme.accent-cyan;
+            font-size: Theme.font-small + 1px;
+            overflow: elide;
+        }
+        if SidebarState.hover-detail != "" : Text {
+            text: SidebarState.hover-detail;
+            color: Theme.text-faint;
+            font-size: Theme.font-small;
+        }
+    }
+}

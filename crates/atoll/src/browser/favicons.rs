@@ -54,6 +54,31 @@ impl FaviconCache {
             .and_then(|id| self.images.get(&id).cloned())
     }
 
+    /// The favicon of the host of `url`, decoded on first use.
+    pub fn image_for_url(&mut self, storage: &Storage, url: &str) -> Option<Image> {
+        let id = host_of(url).and_then(|host| self.hosts.get(&host).copied())?;
+        self.ensure(storage, id)
+    }
+
+    /// The favicon of a tab that may belong to another workspace, decoded on first use.
+    pub fn image_for_tab(&mut self, storage: &Storage, tab: &Tab) -> Option<Image> {
+        let id = self.favicon_id(tab)?;
+        self.ensure(storage, id)
+    }
+
+    fn ensure(&mut self, storage: &Storage, id: FaviconId) -> Option<Image> {
+        if let Some(image) = self.images.get(&id) {
+            return Some(image.clone());
+        }
+        let image = storage
+            .favicon(id)
+            .ok()
+            .flatten()
+            .and_then(|png| decode_png(&png))?;
+        self.images.insert(id, image.clone());
+        Some(image)
+    }
+
     pub fn insert(&mut self, id: FaviconId, host: String, png: &[u8]) {
         if let Some(image) = decode_png(png) {
             self.images.insert(id, image);

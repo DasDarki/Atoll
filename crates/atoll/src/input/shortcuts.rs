@@ -21,6 +21,12 @@ pub enum Shortcut {
     ZoomReset,
     DevTools,
     ToggleFullscreen,
+    ToggleSidebar,
+    BookmarkPage,
+    ToggleBookmarksBar,
+    ManageBookmarks,
+    QuickSearch,
+    Commands,
 }
 
 pub fn detect(event: &KeyEvent, modifiers: ModifiersState) -> Option<Shortcut> {
@@ -54,6 +60,12 @@ pub fn detect(event: &KeyEvent, modifiers: ModifiersState) -> Option<Shortcut> {
             ("r", true) => Shortcut::ReloadIgnoringCache,
             ("f", false) => Shortcut::Find,
             ("i", true) => Shortcut::DevTools,
+            ("b", false) => Shortcut::ToggleSidebar,
+            ("b", true) => Shortcut::ToggleBookmarksBar,
+            ("d", false) => Shortcut::BookmarkPage,
+            ("o", true) => Shortcut::ManageBookmarks,
+            ("k", false) => Shortcut::QuickSearch,
+            ("p", true) => Shortcut::Commands,
             ("+" | "=", _) => Shortcut::ZoomIn,
             ("-", _) => Shortcut::ZoomOut,
             ("0", false) => Shortcut::ZoomReset,

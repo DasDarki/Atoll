@@ -71,7 +71,7 @@ pub trait HistoryStore: Connected {
         Ok(())
     }
 
-    /// The most visited and most recent pages, best first.
+    /// The most recently visited pages, newest first.
     fn visited_pages(&self, limit: usize) -> StorageResult<Vec<VisitedPage>> {
         let mut statement = self.connection().prepare_cached(
             "SELECT url, title, visit_count, last_visited_at FROM history
@@ -101,6 +101,7 @@ pub trait HistoryStore: Connected {
         Ok(pages)
     }
 
+    /// Forgets all visited pages, including the per-tab logs.
     fn clear_history(&self) -> StorageResult<()> {
         self.connection()
             .execute_batch("DELETE FROM history; DELETE FROM tab_history;")?;

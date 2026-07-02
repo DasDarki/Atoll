@@ -1,0 +1,64 @@
+import { ComboBox } from "std-widgets.slint";
+import { Theme } from "../theme.slint";
+import { OverlayState } from "../state.slint";
+import { Modal } from "modal.slint";
+import { ActionButton, ButtonKind } from "../widgets/button.slint";
+import { TextField } from "../widgets/text-field.slint";
+import { FieldLabel } from "../widgets/field-label.slint";
+
+export component BookmarkEditor inherits Modal {
+    title: OverlayState.bookmark-editor-folder ? "Ordner bearbeiten" : "Lesezeichen";
+    card-width: 480px;
+    autofocus: false;
+    dismissed => { OverlayState.bookmark-cancel(); }
+
+    init => { title-field.focus-and-select(); }
+
+    VerticalLayout {
+        spacing: 6px;
+        FieldLabel { text: "NAME"; }
+        title-field := TextField {
+            text <=> OverlayState.bookmark-title;
+            accepted => { OverlayState.bookmark-save(); }
+            escape => { OverlayState.bookmark-cancel(); }
+        }
+    }
+
+    if !OverlayState.bookmark-editor-folder : VerticalLayout {
+        spacing: 6px;
+        FieldLabel { text: "ADRESSE"; }
+        TextField {
+            text <=> OverlayState.bookmark-url;
+            accepted => { OverlayState.bookmark-save(); }
+            escape => { OverlayState.bookmark-cancel(); }
+        }
+    }
+
+    VerticalLayout {
+        spacing: 6px;
+        FieldLabel { text: "ORDNER"; }
+        ComboBox {
+            model: OverlayState.bookmark-folders;
+            current-index <=> OverlayState.bookmark-folder-index;
+        }
+    }
+
+    HorizontalLayout {
+        spacing: 8px;
+        ActionButton {
+            text: "Entfernen";
+            kind: ButtonKind.danger;
+            clicked => { OverlayState.bookmark-remove(); }
+        }
+        Rectangle { horizontal-stretch: 1; }
+        ActionButton {
+            text: "Abbrechen";
+            clicked => { OverlayState.bookmark-cancel(); }
+        }
+        ActionButton {
+            text: "Fertig";
+            kind: ButtonKind.primary;
+            clicked => { OverlayState.bookmark-save(); }
+        }
+    }
+}

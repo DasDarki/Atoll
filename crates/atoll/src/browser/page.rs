@@ -80,6 +80,7 @@ impl Browser {
         }
         self.present_frame();
         self.present_popup();
+        self.update_bookmark_star();
     }
 
     /// Shows the newest frame of the live view.

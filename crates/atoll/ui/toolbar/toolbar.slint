@@ -1,11 +1,15 @@
 import { Theme } from "../theme.slint";
-import { BrowserState } from "../state.slint";
+import { BrowserState, SidebarState } from "../state.slint";
 import { IconButton } from "../widgets/icon-button.slint";
 import { AddressBar } from "address-bar.slint";
 
 export component Toolbar inherits Rectangle {
     height: Theme.toolbar-height;
     background: Theme.chrome;
+
+    out property <length> address-x: address.anchor-x;
+    out property <length> address-y: address.anchor-y;
+    out property <length> address-width: address.width;
 
     public function focus-address() {
         address.focus-and-select();
@@ -16,6 +20,15 @@ export component Toolbar inherits Rectangle {
         padding-right: 10px;
         spacing: 4px;
         alignment: stretch;
+
+        IconButton {
+            y: (parent.height - self.height) / 2;
+            icon: @image-url("../icons/sidebar.svg");
+            active: !SidebarState.visible;
+            clicked => { BrowserState.toggle-sidebar(); }
+        }
+
+        Rectangle { width: 4px; }
 
         IconButton {
             y: (parent.height - self.height) / 2;
@@ -71,6 +84,14 @@ export component Toolbar inherits Rectangle {
             }
             MenuSeparator { }
             MenuItem {
+                title: "Alle Tabs durchsuchen";
+                activated => { BrowserState.menu-action("palette"); }
+            }
+            MenuItem {
+                title: "Befehle";
+                activated => { BrowserState.menu-action("commands"); }
+            }
+            MenuItem {
                 title: "Auf Seite suchen";
                 enabled: BrowserState.has-page;
                 activated => { BrowserState.menu-action("find"); }
@@ -89,6 +110,27 @@ export component Toolbar inherits Rectangle {
                     title: "Zurücksetzen";
                     activated => { BrowserState.menu-action("zoom-reset"); }
                 }
+            }
+            MenuSeparator { }
+            Menu {
+                title: "Lesezeichen";
+                MenuItem {
+                    title: "Seite als Lesezeichen speichern";
+                    enabled: BrowserState.has-page;
+                    activated => { BrowserState.menu-action("bookmark"); }
+                }
+                MenuItem {
+                    title: BrowserState.bookmarks-bar-visible ? "Lesezeichenleiste ausblenden" : "Lesezeichenleiste einblenden";
+                    activated => { BrowserState.menu-action("bookmarks-bar"); }
+                }
+                MenuItem {
+                    title: "Lesezeichen verwalten";
+                    activated => { BrowserState.menu-action("bookmarks"); }
+                }
+            }
+            MenuItem {
+                title: SidebarState.visible ? "Sidebar ausblenden" : "Sidebar einblenden";
+                activated => { BrowserState.menu-action("sidebar"); }
             }
             MenuSeparator { }
             MenuItem {
