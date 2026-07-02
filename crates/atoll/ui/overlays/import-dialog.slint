@@ -10,7 +10,10 @@ import { FieldLabel } from "../widgets/field-label.slint";
 export component ImportDialog inherits Modal {
     title: "URL-Liste importieren";
     card-width: 640px;
+    autofocus: false;
     dismissed => { OverlayState.import-cancel(); }
+
+    init => { editor.focus(); }
 
     HorizontalLayout {
         spacing: 8px;
@@ -25,7 +28,7 @@ export component ImportDialog inherits Modal {
         Rectangle { horizontal-stretch: 1; }
     }
 
-    TextEdit {
+    editor := TextEdit {
         height: 190px;
         font-size: Theme.font-normal;
         text <=> OverlayState.import-text;
