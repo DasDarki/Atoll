@@ -15,6 +15,14 @@ saved tabs therefore cost nothing at startup.
   *Sleeping* (plain record, the normal state) and *Archived* (part of an archived island).
   Frozen tabs beyond the limit and tabs put to sleep release their engine instance.
 - **Archive**: islands can be archived and restored with one click.
+- **Quick search and command palette**: `Ctrl+K` searches the tabs of all workspaces (archived
+  ones included), bookmarks and history. `Ctrl+Shift+P` or a leading `>` lists commands instead.
+- **Address bar autocomplete**: addresses are completed inline from history and bookmarks. The
+  suggestions offer open tabs to switch to, bookmarks and visited pages, ranked by how often and
+  how recently they were visited.
+- **Bookmarks**: a bookmarks bar with folders, `Ctrl+D` to bookmark the current page, whole
+  islands saved as folders, a bookmark manager and import from the HTML export of other browsers.
+- **Collapsible sidebar** (`Ctrl+B`). Hovering a tab shows its full title and address.
 - **URL list import and export** in a plain text format, see below.
 - **Fast startup**: the window shows the stored session in roughly 100 ms, the engine starts once
   the first frame is on screen.
@@ -45,8 +53,8 @@ The build copies the CEF runtime files next to the binary in `target/<profile>/`
 | `ATOLL_CHROMIUM_FLAGS` | Additional Chromium switches, e.g. `remote-debugging-port=9222` |
 | `RUST_LOG` | Log filter, e.g. `info,atoll=debug` |
 
-Data lives in `~/.local/share/atoll/`: `atoll.db` holds workspaces, islands, tabs, favicons and
-settings, `engine/` the Chromium profile (cookies, cache, local storage).
+Data lives in `~/.local/share/atoll/`: `atoll.db` holds workspaces, islands, tabs, bookmarks,
+history, favicons and settings, `engine/` the Chromium profile (cookies, cache, local storage).
 
 ## Keyboard shortcuts
 
@@ -60,6 +68,12 @@ settings, `engine/` the Chromium profile (cookies, cache, local storage).
 | `Alt+Left`, `Alt+Right` | Back, forward |
 | `Ctrl+Tab`, `Ctrl+PageDown` | Next tab, add `Shift` or use `PageUp` for the previous one |
 | `Ctrl+F` | Find on page |
+| `Ctrl+K` | Search all tabs, bookmarks and history |
+| `Ctrl+Shift+P` | Command palette |
+| `Ctrl+B` | Show or hide the sidebar |
+| `Ctrl+D` | Bookmark the current page |
+| `Ctrl+Shift+B` | Show or hide the bookmarks bar |
+| `Ctrl+Shift+O` | Manage bookmarks |
 | `Ctrl+Plus`, `Ctrl+Minus`, `Ctrl+0` | Zoom |
 | `F11` | Full screen |
 | `F12`, `Ctrl+Shift+I` | Developer tools |
@@ -109,8 +123,9 @@ crates/
 ## Status
 
 Phase 1 of the concept (shell, tab model, workspaces and islands, database, fast startup, URL list
-import and export) is implemented. Next up are adblocking, the global quick search and archive
-suggestions, then uploads from the clipboard and the memory limit, then 1Password.
+import and export) is implemented, together with the global quick search, a command palette,
+address bar autocomplete and bookmarks. Next up are adblocking and archive suggestions, then
+uploads from the clipboard and the memory limit, then 1Password.
 
 Known limitations:
 
