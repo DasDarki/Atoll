@@ -37,9 +37,17 @@ export component BookmarkEditor inherits Modal {
     VerticalLayout {
         spacing: 6px;
         FieldLabel { text: "ORDNER"; }
-        ComboBox {
-            model: OverlayState.bookmark-folders;
-            current-index <=> OverlayState.bookmark-folder-index;
+        HorizontalLayout {
+            spacing: 8px;
+            ComboBox {
+                horizontal-stretch: 1;
+                model: OverlayState.bookmark-folders;
+                current-index <=> OverlayState.bookmark-folder-index;
+            }
+            ActionButton {
+                text: "Neuer Ordner…";
+                clicked => { OverlayState.bookmark-editor-new-folder(); }
+            }
         }
     }
 

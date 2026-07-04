@@ -78,6 +78,7 @@ export global BrowserState {
     callback open-bookmark(int, bool);
     callback open-bookmark-folder(int, length, length);
     callback bookmark-action(int, string);
+    callback bookmark-dropped(int, int, int);
 
     callback go-back();
     callback go-forward();
@@ -124,6 +125,7 @@ export global OverlayState {
     in-out property <int> bookmark-folder-index;
     callback bookmark-save();
     callback bookmark-remove();
+    callback bookmark-editor-new-folder();
     callback bookmark-cancel();
 
     in property <bool> bookmark-manager-visible;

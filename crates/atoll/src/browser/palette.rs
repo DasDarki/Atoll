@@ -32,6 +32,7 @@ enum Command {
     ToggleBookmarksBar,
     BookmarkPage,
     ManageBookmarks,
+    NewBookmarkFolder,
     ImportList,
     ExportList,
     OpenArchive,
@@ -410,6 +411,12 @@ impl Browser {
                 "bookmarks import",
             ),
             (
+                Command::NewBookmarkFolder,
+                "Neuer Lesezeichenordner".to_owned(),
+                "",
+                "bookmarks ordner folder",
+            ),
+            (
                 Command::ImportList,
                 "URL-Liste importieren".to_owned(),
                 "",
@@ -578,6 +585,7 @@ impl Browser {
             Command::ToggleBookmarksBar => self.toggle_bookmarks_bar(),
             Command::BookmarkPage => self.bookmark_page(),
             Command::ManageBookmarks => self.open_bookmark_manager(),
+            Command::NewBookmarkFolder => self.new_bookmark_folder(),
             Command::ImportList => self.open_import(),
             Command::ExportList => self.open_export(None),
             Command::OpenArchive => self.open_archive(),

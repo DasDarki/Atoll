@@ -147,6 +147,16 @@ fn connect_browser(window: &AppWindow, browser: &Rc<Browser>) {
     on!(state, on_bookmark_action, browser, |target, id, action| {
         target.bookmark_action(bookmark(id), &action)
     });
+    on!(
+        state,
+        on_bookmark_dropped,
+        browser,
+        |target, dragged, destination, placement| target.bookmark_dropped(
+            bookmark(dragged),
+            bookmark(destination),
+            placement
+        )
+    );
     on!(state, on_go_back, browser, |target| target.go_back());
     on!(state, on_go_forward, browser, |target| target.go_forward());
     on!(state, on_reload, browser, |target| target.reload(false));
@@ -193,6 +203,9 @@ fn connect_overlays(window: &AppWindow, browser: &Rc<Browser>) {
         .save_bookmark_editor());
     on!(state, on_bookmark_remove, browser, |target| target
         .remove_bookmark_in_editor());
+    on!(state, on_bookmark_editor_new_folder, browser, |target| {
+        target.bookmark_editor_new_folder()
+    });
     on!(state, on_bookmark_cancel, browser, |target| target
         .cancel_bookmark_editor());
     on!(

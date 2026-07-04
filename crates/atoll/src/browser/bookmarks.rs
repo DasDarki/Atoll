@@ -255,6 +255,7 @@ impl Browser {
                 }
             }
             "edit" => self.edit_bookmark(id),
+            "new-folder" => self.create_bookmark_folder(Some(id), |_, _| {}),
             "delete" => self.delete_bookmark(id),
             "manage" => self.open_bookmark_manager(),
             "up" | "down" => self.shift_bookmark(id, if action == "up" { -1 } else { 1 }),
@@ -267,14 +268,7 @@ impl Browser {
         let Some(bookmark) = self.bookmark(id) else {
             return;
         };
-        let excluded = if bookmark.is_folder() {
-            self.descendants(id)
-        } else {
-            HashSet::new()
-        };
-        let mut names = vec![SharedString::from(BAR_NAME)];
-        let mut choices = vec![None];
-        self.collect_folders(None, 1, &excluded, &mut names, &mut choices);
+        let (names, choices) = self.folder_choices(&bookmark);
         let selected = choices
             .iter()
             .position(|choice| *choice == bookmark.parent_id)
@@ -292,6 +286,79 @@ impl Browser {
             is_folder: bookmark.is_folder(),
             folder_choices: choices,
         });
+    }
+
+    /// Every folder `bookmark` can be moved to, as display names and their ids.
+    fn folder_choices(&self, bookmark: &Bookmark) -> (Vec<SharedString>, Vec<Option<BookmarkId>>) {
+        let excluded = if bookmark.is_folder() {
+            self.descendants(bookmark.id)
+        } else {
+            HashSet::new()
+        };
+        let mut names = vec![SharedString::from(BAR_NAME)];
+        let mut choices = vec![None];
+        self.collect_folders(None, 1, &excluded, &mut names, &mut choices);
+        (names, choices)
+    }
+
+    /// Bookmark editor: creates a folder inside the selected one and moves the bookmark there.
+    pub fn bookmark_editor_new_folder(&self) {
+        let Some(window) = self.window() else { return };
+        let parent = {
+            let state = self.bookmarks.borrow();
+            let Some(editing) = state.editing.as_ref() else {
+                return;
+            };
+            usize::try_from(window.global::<OverlayState>().get_bookmark_folder_index())
+                .ok()
+                .and_then(|index| editing.folder_choices.get(index).copied())
+                .flatten()
+        };
+        self.create_bookmark_folder(parent, |browser, folder| {
+            browser.select_editor_folder(folder)
+        });
+    }
+
+    fn select_editor_folder(&self, folder: BookmarkId) {
+        let Some(window) = self.window() else { return };
+        let edited = self
+            .bookmarks
+            .borrow()
+            .editing
+            .as_ref()
+            .and_then(|editing| self.bookmark(editing.id));
+        let Some(edited) = edited else { return };
+        let (names, choices) = self.folder_choices(&edited);
+        let selected = choices
+            .iter()
+            .position(|choice| *choice == Some(folder))
+            .unwrap_or(0);
+        let overlay = window.global::<OverlayState>();
+        overlay.set_bookmark_folders(ModelRc::from(Rc::new(VecModel::from(names))));
+        overlay.set_bookmark_folder_index(selected as i32);
+        if let Some(editing) = self.bookmarks.borrow_mut().editing.as_mut() {
+            editing.folder_choices = choices;
+        }
+    }
+
+    /// Bookmarks bar: moves `dragged` next to or into `target`.
+    pub fn bookmark_dropped(&self, dragged: BookmarkId, target: BookmarkId, placement: i32) {
+        let placement = match placement {
+            0 => DropPlacement::Before,
+            1 => DropPlacement::After,
+            2 => DropPlacement::Into,
+            _ => return,
+        };
+        let Some(target) = self.bookmark(target) else {
+            return;
+        };
+        let siblings = self.bookmark_children(target.parent_id);
+        let Some((parent, index)) = drop_destination(dragged, &target, &siblings, placement) else {
+            return;
+        };
+        let result = self.storage.move_bookmark(dragged, parent, index);
+        self.report("Lesezeichen verschieben", result);
+        self.refresh_bookmarks();
     }
 
     pub fn save_bookmark_editor(&self) {
@@ -439,27 +506,39 @@ impl Browser {
     }
 
     pub fn new_bookmark_folder(&self) {
+        self.create_bookmark_folder(None, |_, _| {});
+    }
+
+    /// Asks for a name, creates a folder in `parent` and passes its id to `created`.
+    fn create_bookmark_folder(
+        &self,
+        parent: Option<BookmarkId>,
+        created: impl FnOnce(&Browser, BookmarkId) + 'static,
+    ) {
+        let message = match parent.and_then(|parent| self.bookmark(parent)) {
+            Some(folder) => format!("Der Ordner wird in „{}“ angelegt.", folder.title),
+            None => "Der Ordner erscheint in der Lesezeichenleiste.".to_owned(),
+        };
         let this = self.this();
-        self.prompt_text(
-            "Neuer Ordner",
-            "Der Ordner erscheint in der Lesezeichenleiste.",
-            "",
-            "Anlegen",
-            move |name| {
-                let Some(browser) = this.upgrade() else {
-                    return;
-                };
-                let result = browser.storage.create_bookmark(NewBookmark {
-                    parent_id: None,
-                    title: &name,
-                    url: None,
-                    index: None,
-                    created_at: Self::now(),
-                });
-                browser.report("Ordner anlegen", result.map(|_| ()));
-                browser.refresh_bookmarks();
-            },
-        );
+        self.prompt_text("Neuer Ordner", &message, "", "Anlegen", move |name| {
+            let Some(browser) = this.upgrade() else {
+                return;
+            };
+            let result = browser.storage.create_bookmark(NewBookmark {
+                parent_id: parent,
+                title: &name,
+                url: None,
+                index: None,
+                created_at: Self::now(),
+            });
+            match result {
+                Ok(folder) => {
+                    browser.refresh_bookmarks();
+                    created(&browser, folder.id);
+                }
+                Err(error) => browser.report("Ordner anlegen", Err::<(), _>(error)),
+            }
+        });
     }
 
     pub fn import_bookmarks(&self) {
@@ -631,6 +710,41 @@ impl Browser {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum DropPlacement {
+    Before,
+    After,
+    Into,
+}
+
+/// The parent and index a bookmark dropped onto `target` moves to. `siblings` are the children of
+/// the target's parent in order.
+fn drop_destination(
+    dragged: BookmarkId,
+    target: &Bookmark,
+    siblings: &[Bookmark],
+    placement: DropPlacement,
+) -> Option<(Option<BookmarkId>, usize)> {
+    if dragged == target.id {
+        return None;
+    }
+    match placement {
+        DropPlacement::Into => target.is_folder().then_some((Some(target.id), usize::MAX)),
+        DropPlacement::Before | DropPlacement::After => {
+            let position = siblings
+                .iter()
+                .filter(|sibling| sibling.id != dragged)
+                .position(|sibling| sibling.id == target.id)?;
+            let index = if placement == DropPlacement::After {
+                position + 1
+            } else {
+                position
+            };
+            Some((target.parent_id, index))
+        }
+    }
+}
+
 fn import_nodes(
     transaction: &StorageTransaction<'_>,
     parent: Option<BookmarkId>,
@@ -730,6 +844,65 @@ mod tests {
             .into_iter()
             .map(|bookmark| bookmark.title)
             .collect()
+    }
+
+    fn entry(id: i64, url: Option<&str>) -> Bookmark {
+        Bookmark {
+            id: BookmarkId(id),
+            parent_id: None,
+            title: format!("{id}"),
+            url: url.map(str::to_owned),
+            position: id,
+        }
+    }
+
+    #[test]
+    fn drops_land_before_after_or_inside_the_target() {
+        let siblings = [
+            entry(1, Some("https://a.example/")),
+            entry(2, None),
+            entry(3, Some("https://c.example/")),
+        ];
+        let dragged = BookmarkId(1);
+        assert_eq!(
+            drop_destination(dragged, &siblings[2], &siblings, DropPlacement::After),
+            Some((None, 2))
+        );
+        assert_eq!(
+            drop_destination(dragged, &siblings[2], &siblings, DropPlacement::Before),
+            Some((None, 1))
+        );
+        assert_eq!(
+            drop_destination(dragged, &siblings[1], &siblings, DropPlacement::Into),
+            Some((Some(BookmarkId(2)), usize::MAX))
+        );
+        assert_eq!(
+            drop_destination(
+                BookmarkId(3),
+                &siblings[0],
+                &siblings,
+                DropPlacement::Before
+            ),
+            Some((None, 0))
+        );
+    }
+
+    #[test]
+    fn drops_onto_links_or_the_dragged_entry_are_ignored() {
+        let siblings = [entry(1, Some("https://a.example/")), entry(2, None)];
+        assert_eq!(
+            drop_destination(BookmarkId(2), &siblings[0], &siblings, DropPlacement::Into),
+            None
+        );
+        assert_eq!(
+            drop_destination(
+                BookmarkId(2),
+                &siblings[1],
+                &siblings,
+                DropPlacement::Before
+            ),
+            None
+        );
     }
 
     #[test]

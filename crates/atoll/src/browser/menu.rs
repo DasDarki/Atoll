@@ -23,6 +23,7 @@ impl Browser {
             "bookmarks" => self.open_bookmark_manager(),
             "sidebar" => self.toggle_sidebar(),
             "settings" => self.open_settings(),
+            "new-bookmark-folder" => self.new_bookmark_folder(),
             other => tracing::warn!(action = other, "unknown menu action"),
         }
     }

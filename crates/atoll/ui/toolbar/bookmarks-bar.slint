@@ -4,11 +4,38 @@ import { BookmarkItem } from "../structs.slint";
 
 component BookmarkChip inherits Rectangle {
     in property <BookmarkItem> item;
+    in property <int> drag-id: -1;
+    in property <length> drag-x;
+    in property <int> drop-target: -1;
+    in property <int> drop-mode;
+    callback drag-started(int);
+    callback drag-moved(length, length);
+    callback drag-ended();
+    callback hover-target(int, int);
+
+    property <bool> dragged;
+    property <length> left: self.absolute-position.x;
+    property <int> drag-mode: root.drag-id == -1 || root.drag-id == root.item.id
+        || root.drag-x < root.left || root.drag-x >= root.left + root.width ? -1
+        : root.item.is-folder && root.drag-x > root.left + root.width * 0.25 && root.drag-x < root.left + root.width * 0.75 ? 2
+        : root.drag-x < root.left + root.width / 2 ? 0 : 1;
+    property <bool> is-target: root.drag-id != -1 && root.drop-target == root.item.id;
+
+    changed drag-mode => {
+        if (self.drag-mode >= 0) {
+            root.hover-target(root.item.id, self.drag-mode);
+        }
+    }
 
     height: 26px;
     width: min(layout.preferred-width, 200px);
     border-radius: Theme.radius-small;
-    background: touch.pressed ? Theme.pressed : touch.has-hover ? Theme.hover : transparent;
+    opacity: root.drag-id == root.item.id ? 0.45 : 1.0;
+    background: root.is-target && root.drop-mode == 2 ? Theme.selected
+        : touch.pressed && root.drag-id == -1 ? Theme.pressed
+        : touch.has-hover && root.drag-id == -1 ? Theme.hover : transparent;
+    border-width: root.is-target && root.drop-mode == 2 ? 1px : 0px;
+    border-color: Theme.accent;
 
     menu := ContextMenuArea {
         Menu {
@@ -28,6 +55,10 @@ component BookmarkChip inherits Rectangle {
                 title: root.item.is-folder ? "Umbenennen" : "Bearbeiten";
                 activated => { BrowserState.bookmark-action(root.item.id, "edit"); }
             }
+            if root.item.is-folder : MenuItem {
+                title: "Neuer Ordner darin…";
+                activated => { BrowserState.bookmark-action(root.item.id, "new-folder"); }
+            }
             MenuSeparator { }
             MenuItem {
                 title: "Löschen";
@@ -35,14 +66,26 @@ component BookmarkChip inherits Rectangle {
             }
             MenuSeparator { }
             MenuItem {
+                title: "Neuer Ordner…";
+                activated => { BrowserState.menu-action("new-bookmark-folder"); }
+            }
+            MenuItem {
                 title: "Lesezeichen verwalten";
                 activated => { BrowserState.bookmark-action(root.item.id, "manage"); }
             }
         }
 
         touch := TouchArea {
-            mouse-cursor: pointer;
+            mouse-cursor: root.drag-id == -1 ? MouseCursor.pointer : MouseCursor.grabbing;
             pointer-event(event) => {
+                if (event.button == PointerEventButton.left) {
+                    if (event.kind == PointerEventKind.down) {
+                        root.dragged = false;
+                    } else if (event.kind == PointerEventKind.up && root.dragged) {
+                        root.drag-ended();
+                    }
+                    return;
+                }
                 if (event.kind != PointerEventKind.up) {
                     return;
                 }
@@ -52,7 +95,19 @@ component BookmarkChip inherits Rectangle {
                     BrowserState.open-bookmark(root.item.id, true);
                 }
             }
+            moved => {
+                if (!root.dragged && (abs(self.mouse-x - self.pressed-x) > 6px || abs(self.mouse-y - self.pressed-y) > 6px)) {
+                    root.dragged = true;
+                    root.drag-started(root.item.id);
+                }
+                if (root.dragged) {
+                    root.drag-moved(root.left + self.mouse-x, self.mouse-y);
+                }
+            }
             clicked => {
+                if (root.dragged) {
+                    return;
+                }
                 if (root.item.is-folder) {
                     BrowserState.open-bookmark-folder(root.item.id, root.absolute-position.x, root.absolute-position.y + root.height + 2px);
                 } else {
@@ -88,12 +143,58 @@ component BookmarkChip inherits Rectangle {
             overflow: elide;
         }
     }
+
+    if root.is-target && root.drop-mode != 2 : Rectangle {
+        x: root.drop-mode == 0 ? -2px : root.width;
+        y: 3px;
+        width: 2px;
+        height: root.height - 6px;
+        border-radius: 1px;
+        background: Theme.accent;
+    }
 }
 
 export component BookmarksBar inherits Rectangle {
     height: 32px;
     background: Theme.chrome;
     clip: true;
+
+    property <int> drag-id: -1;
+    property <length> drag-x;
+    property <bool> drag-inside;
+    property <int> drop-target: -1;
+    property <int> drop-mode;
+
+    menu := ContextMenuArea {
+        Menu {
+            MenuItem {
+                title: "Seite als Lesezeichen speichern";
+                enabled: BrowserState.has-page;
+                activated => { BrowserState.menu-action("bookmark"); }
+            }
+            MenuItem {
+                title: "Neuer Ordner…";
+                activated => { BrowserState.menu-action("new-bookmark-folder"); }
+            }
+            MenuSeparator { }
+            MenuItem {
+                title: "Lesezeichen verwalten";
+                activated => { BrowserState.menu-action("bookmarks"); }
+            }
+            MenuItem {
+                title: "Lesezeichenleiste ausblenden";
+                activated => { BrowserState.menu-action("bookmarks-bar"); }
+            }
+        }
+
+        TouchArea {
+            pointer-event(event) => {
+                if (event.kind == PointerEventKind.up && event.button == PointerEventButton.right) {
+                    menu.show({ x: self.mouse-x, y: self.mouse-y });
+                }
+            }
+        }
+    }
 
     HorizontalLayout {
         padding-left: 10px;
@@ -104,6 +205,30 @@ export component BookmarksBar inherits Rectangle {
         for item in BrowserState.bookmarks-bar : BookmarkChip {
             y: (parent.height - self.height) / 2;
             item: item;
+            drag-id: root.drag-id;
+            drag-x: root.drag-x;
+            drop-target: root.drop-target;
+            drop-mode: root.drop-mode;
+            drag-started(id) => {
+                root.drag-id = id;
+                root.drop-target = -1;
+                root.drag-inside = true;
+            }
+            drag-moved(x, y) => {
+                root.drag-x = x;
+                root.drag-inside = y > -24px && y < root.height + 24px;
+            }
+            hover-target(id, mode) => {
+                root.drop-target = id;
+                root.drop-mode = mode;
+            }
+            drag-ended => {
+                if (root.drop-target != -1 && root.drag-inside) {
+                    BrowserState.bookmark-dropped(root.drag-id, root.drop-target, root.drop-mode);
+                }
+                root.drag-id = -1;
+                root.drop-target = -1;
+            }
         }
 
         if BrowserState.bookmarks-bar.length == 0 : Text {
