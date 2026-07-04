@@ -4,13 +4,14 @@ use atoll_core::{BookmarkId, IslandId, TabId, WorkspaceId};
 use slint::ComponentHandle;
 
 use crate::browser::Browser;
-use crate::ui::{AppWindow, BrowserState, OverlayState, SidebarState};
+use crate::ui::{AppWindow, BrowserState, OverlayState, SettingsState, SidebarState};
 
 /// Connects every callback of the user interface to the browser controller.
 pub fn connect(window: &AppWindow, browser: &Rc<Browser>) {
     connect_sidebar(window, browser);
     connect_browser(window, browser);
     connect_overlays(window, browser);
+    connect_settings(window, browser);
 }
 
 macro_rules! on {
@@ -118,6 +119,7 @@ fn connect_browser(window: &AppWindow, browser: &Rc<Browser>) {
         .navigate(&input));
     on!(state, on_toggle_sidebar, browser, |target| target
         .toggle_sidebar());
+    on!(state, on_go_home, browser, |target| target.go_home());
     on!(state, on_address_edited, browser, |target, source, text| -> Default::default(), target.address_edited(source, &text));
     on!(
         state,
@@ -243,4 +245,17 @@ fn connect_overlays(window: &AppWindow, browser: &Rc<Browser>) {
         .export_confirm());
     on!(state, on_export_cancel, browser, |target| target
         .export_cancel());
+}
+
+fn connect_settings(window: &AppWindow, browser: &Rc<Browser>) {
+    let state = window.global::<SettingsState>();
+    on!(state, on_changed, browser, |target, key| target
+        .setting_changed(&key));
+    on!(state, on_use_current_page, browser, |target| target
+        .use_current_page_as_start_page());
+    on!(state, on_clear_history, browser, |target| target
+        .clear_history());
+    on!(state, on_clear_cookies, browser, |target| target
+        .clear_cookies());
+    on!(state, on_close, browser, |target| target.close_settings());
 }

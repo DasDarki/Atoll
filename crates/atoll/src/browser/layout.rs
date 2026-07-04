@@ -1,55 +1,74 @@
-use atoll_storage::prelude::*;
 use slint::ComponentHandle;
 
 use super::Browser;
+use super::preferences::PreferenceKey;
 use crate::ui::{BrowserState, SidebarState};
 
-const SIDEBAR_VISIBLE_KEY: &str = "sidebar_visible";
-const BOOKMARKS_BAR_VISIBLE_KEY: &str = "bookmarks_bar_visible";
-
 impl Browser {
-    /// Shows the sidebar and the bookmarks bar as they were left.
+    /// Shows the sidebar, the bookmarks bar and the home button as configured.
     pub(super) fn restore_layout(&self) {
         let Some(window) = self.window() else { return };
+        let preferences = self.preferences.borrow();
         window
             .global::<SidebarState>()
-            .set_visible(self.stored_flag(SIDEBAR_VISIBLE_KEY, true));
+            .set_visible(preferences.sidebar_visible);
         window
             .global::<BrowserState>()
-            .set_bookmarks_bar_visible(self.stored_flag(BOOKMARKS_BAR_VISIBLE_KEY, true));
+            .set_home_button_visible(preferences.home_button);
+        drop(preferences);
+        self.update_bookmarks_bar_visibility();
     }
 
     pub fn toggle_sidebar(&self) {
-        let Some(window) = self.window() else { return };
-        let state = window.global::<SidebarState>();
-        let visible = !state.get_visible();
-        state.set_visible(visible);
-        state.set_hovering(false);
-        self.store_flag(SIDEBAR_VISIBLE_KEY, visible);
+        let visible = !self.preferences.borrow().sidebar_visible;
+        self.set_sidebar_visible(visible);
+    }
+
+    pub(super) fn set_sidebar_visible(&self, visible: bool) {
+        self.update_preference(PreferenceKey::SidebarVisible, |preferences| {
+            preferences.sidebar_visible = visible;
+        });
+        if let Some(window) = self.window() {
+            let state = window.global::<SidebarState>();
+            state.set_visible(visible);
+            state.set_hovering(false);
+        }
     }
 
     pub fn toggle_bookmarks_bar(&self) {
-        let Some(window) = self.window() else { return };
-        let state = window.global::<BrowserState>();
-        let visible = !state.get_bookmarks_bar_visible();
-        state.set_bookmarks_bar_visible(visible);
-        self.store_flag(BOOKMARKS_BAR_VISIBLE_KEY, visible);
-    }
-
-    fn stored_flag(&self, key: &str, default: bool) -> bool {
-        self.storage
-            .setting(key)
-            .ok()
-            .flatten()
-            .map_or(default, |value| value == "true")
-    }
-
-    fn store_flag(&self, key: &str, value: bool) {
-        if let Err(error) = self
-            .storage
-            .set_setting(key, if value { "true" } else { "false" })
-        {
-            tracing::warn!(%error, key, "layout setting could not be stored");
+        let visible = !self.preferences.borrow().bookmarks_bar_visible;
+        self.set_bookmarks_bar_visible(visible);
+        if visible && !self.is_bookmarks_bar_shown() {
+            self.show_toast("Die Lesezeichenleiste erscheint, sobald sie Lesezeichen enthält");
         }
+    }
+
+    pub(super) fn set_bookmarks_bar_visible(&self, visible: bool) {
+        self.update_preference(PreferenceKey::BookmarksBarVisible, |preferences| {
+            preferences.bookmarks_bar_visible = visible;
+        });
+        self.update_bookmarks_bar_visibility();
+    }
+
+    pub(super) fn set_bookmarks_bar_auto_hide(&self, auto_hide: bool) {
+        self.update_preference(PreferenceKey::BookmarksBarAutoHide, |preferences| {
+            preferences.bookmarks_bar_auto_hide = auto_hide;
+        });
+        self.update_bookmarks_bar_visibility();
+    }
+
+    /// Shows the bookmarks bar if it is enabled and, with auto hide, not empty.
+    pub(super) fn update_bookmarks_bar_visibility(&self) {
+        if let Some(window) = self.window() {
+            window
+                .global::<BrowserState>()
+                .set_bookmarks_bar_visible(self.is_bookmarks_bar_shown());
+        }
+    }
+
+    fn is_bookmarks_bar_shown(&self) -> bool {
+        let preferences = self.preferences.borrow();
+        preferences.bookmarks_bar_visible
+            && (!preferences.bookmarks_bar_auto_hide || self.has_bar_bookmarks())
     }
 }

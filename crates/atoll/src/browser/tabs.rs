@@ -82,7 +82,7 @@ impl Browser {
         }
     }
 
-    /// Opens a blank tab after the active one, or at the end of the first island.
+    /// Opens a new tab after the active one, or at the end of the first island.
     pub fn new_tab(&self) {
         let target = self.insertion_point_after_active();
         let island = match target {
@@ -92,11 +92,23 @@ impl Browser {
                 None => return,
             },
         };
-        self.create_tab(island, target.map(|(_, index)| index), "", None, true);
+        self.open_new_tab(island, target.map(|(_, index)| index));
     }
 
     pub fn new_tab_in_island(&self, island: IslandId) {
-        self.create_tab(island, None, "", None, true);
+        self.open_new_tab(island, None);
+    }
+
+    /// Creates a tab showing the start page, focusing the address bar so typing starts a search.
+    fn open_new_tab(&self, island: IslandId, index: Option<usize>) {
+        let address = self.new_tab_address();
+        if address.is_some() {
+            self.address_focus_requested.set(true);
+        }
+        let url = address.unwrap_or_default();
+        if self.create_tab(island, index, &url, None, true).is_none() {
+            self.address_focus_requested.set(false);
+        }
     }
 
     /// Opens `url` in a new tab next to `source`.

@@ -1,35 +1,205 @@
 use atoll_storage::Storage;
 use atoll_storage::prelude::*;
 
-const DEFAULT_SEARCH_URL: &str = "https://www.google.com/search?q={query}";
 const DEFAULT_FROZEN_LIMIT: usize = 6;
+pub const MAX_FROZEN_LIMIT: usize = 20;
 
-/// User preferences, stored in the settings table.
-#[derive(Debug, Clone)]
+/// A search provider offered in the settings.
+pub struct SearchEngine {
+    pub name: &'static str,
+    pub url: &'static str,
+}
+
+pub const SEARCH_ENGINES: &[SearchEngine] = &[
+    SearchEngine {
+        name: "Google",
+        url: "https://www.google.com/search?q={query}",
+    },
+    SearchEngine {
+        name: "DuckDuckGo",
+        url: "https://duckduckgo.com/?q={query}",
+    },
+    SearchEngine {
+        name: "Bing",
+        url: "https://www.bing.com/search?q={query}",
+    },
+    SearchEngine {
+        name: "Startpage",
+        url: "https://www.startpage.com/do/search?q={query}",
+    },
+    SearchEngine {
+        name: "Ecosia",
+        url: "https://www.ecosia.org/search?q={query}",
+    },
+    SearchEngine {
+        name: "Brave Search",
+        url: "https://search.brave.com/search?q={query}",
+    },
+];
+
+/// Every preference the user can change, stored in the settings table.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Preferences {
     /// Search address with a `{query}` placeholder.
     pub search_url: String,
     /// How many recently used tabs keep their engine instance in the background.
     pub frozen_limit: usize,
+    /// The page opened by the home button, empty for the Atoll start page.
+    pub start_page: String,
+    /// Whether new tabs load the start page instead of showing the Atoll start page.
+    pub new_tab_start_page: bool,
+    pub home_button: bool,
+    pub sidebar_visible: bool,
+    pub bookmarks_bar_visible: bool,
+    /// Hides the bookmarks bar while it has no entries.
+    pub bookmarks_bar_auto_hide: bool,
+}
+
+/// A single preference, used to store exactly what changed.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PreferenceKey {
+    SearchUrl,
+    FrozenLimit,
+    StartPage,
+    NewTabStartPage,
+    HomeButton,
+    SidebarVisible,
+    BookmarksBarVisible,
+    BookmarksBarAutoHide,
+}
+
+impl PreferenceKey {
+    fn storage_key(self) -> &'static str {
+        match self {
+            PreferenceKey::SearchUrl => "search_url",
+            PreferenceKey::FrozenLimit => "frozen_limit",
+            PreferenceKey::StartPage => "start_page",
+            PreferenceKey::NewTabStartPage => "new_tab_start_page",
+            PreferenceKey::HomeButton => "home_button",
+            PreferenceKey::SidebarVisible => "sidebar_visible",
+            PreferenceKey::BookmarksBarVisible => "bookmarks_bar_visible",
+            PreferenceKey::BookmarksBarAutoHide => "bookmarks_bar_auto_hide",
+        }
+    }
+}
+
+impl Default for Preferences {
+    fn default() -> Self {
+        Self {
+            search_url: SEARCH_ENGINES[0].url.to_owned(),
+            frozen_limit: DEFAULT_FROZEN_LIMIT,
+            start_page: String::new(),
+            new_tab_start_page: false,
+            home_button: false,
+            sidebar_visible: true,
+            bookmarks_bar_visible: true,
+            bookmarks_bar_auto_hide: false,
+        }
+    }
 }
 
 impl Preferences {
     pub fn load(storage: &Storage) -> Self {
-        let search_url = storage
-            .setting("search_url")
-            .ok()
-            .flatten()
-            .filter(|url| url.contains("{query}"))
-            .unwrap_or_else(|| DEFAULT_SEARCH_URL.to_owned());
-        let frozen_limit = storage
-            .setting_i64("frozen_limit")
-            .ok()
-            .flatten()
-            .and_then(|limit| usize::try_from(limit).ok())
-            .unwrap_or(DEFAULT_FROZEN_LIMIT);
+        let defaults = Self::default();
+        let text = |key: PreferenceKey| storage.setting(key.storage_key()).ok().flatten();
+        let flag =
+            |key: PreferenceKey, default: bool| text(key).map_or(default, |value| value == "true");
         Self {
-            search_url,
-            frozen_limit,
+            search_url: text(PreferenceKey::SearchUrl)
+                .filter(|url| url.contains("{query}"))
+                .unwrap_or(defaults.search_url),
+            frozen_limit: text(PreferenceKey::FrozenLimit)
+                .and_then(|limit| limit.parse::<usize>().ok())
+                .map_or(defaults.frozen_limit, |limit| limit.min(MAX_FROZEN_LIMIT)),
+            start_page: text(PreferenceKey::StartPage).unwrap_or_default(),
+            new_tab_start_page: flag(PreferenceKey::NewTabStartPage, defaults.new_tab_start_page),
+            home_button: flag(PreferenceKey::HomeButton, defaults.home_button),
+            sidebar_visible: flag(PreferenceKey::SidebarVisible, defaults.sidebar_visible),
+            bookmarks_bar_visible: flag(
+                PreferenceKey::BookmarksBarVisible,
+                defaults.bookmarks_bar_visible,
+            ),
+            bookmarks_bar_auto_hide: flag(
+                PreferenceKey::BookmarksBarAutoHide,
+                defaults.bookmarks_bar_auto_hide,
+            ),
         }
+    }
+
+    /// Writes the value of `key` to the settings table.
+    pub fn store(&self, storage: &Storage, key: PreferenceKey) {
+        let flag = |value: bool| if value { "true" } else { "false" }.to_owned();
+        let value = match key {
+            PreferenceKey::SearchUrl => self.search_url.clone(),
+            PreferenceKey::FrozenLimit => self.frozen_limit.to_string(),
+            PreferenceKey::StartPage => self.start_page.clone(),
+            PreferenceKey::NewTabStartPage => flag(self.new_tab_start_page),
+            PreferenceKey::HomeButton => flag(self.home_button),
+            PreferenceKey::SidebarVisible => flag(self.sidebar_visible),
+            PreferenceKey::BookmarksBarVisible => flag(self.bookmarks_bar_visible),
+            PreferenceKey::BookmarksBarAutoHide => flag(self.bookmarks_bar_auto_hide),
+        };
+        if let Err(error) = storage.set_setting(key.storage_key(), &value) {
+            tracing::warn!(%error, key = key.storage_key(), "preference could not be stored");
+        }
+    }
+
+    /// The index of the configured search engine in [`SEARCH_ENGINES`], or its length for a
+    /// custom address.
+    pub fn search_engine_index(&self) -> usize {
+        SEARCH_ENGINES
+            .iter()
+            .position(|engine| engine.url == self.search_url)
+            .unwrap_or(SEARCH_ENGINES.len())
+    }
+
+    pub fn has_start_page(&self) -> bool {
+        !self.start_page.trim().is_empty()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn preferences_survive_a_round_trip() {
+        let storage = Storage::open_in_memory().unwrap();
+        let preferences = Preferences {
+            search_url: SEARCH_ENGINES[1].url.to_owned(),
+            frozen_limit: 3,
+            start_page: "https://example.org/".to_owned(),
+            new_tab_start_page: true,
+            home_button: true,
+            sidebar_visible: false,
+            bookmarks_bar_visible: false,
+            bookmarks_bar_auto_hide: true,
+        };
+        for key in [
+            PreferenceKey::SearchUrl,
+            PreferenceKey::FrozenLimit,
+            PreferenceKey::StartPage,
+            PreferenceKey::NewTabStartPage,
+            PreferenceKey::HomeButton,
+            PreferenceKey::SidebarVisible,
+            PreferenceKey::BookmarksBarVisible,
+            PreferenceKey::BookmarksBarAutoHide,
+        ] {
+            preferences.store(&storage, key);
+        }
+        assert_eq!(Preferences::load(&storage), preferences);
+        assert_eq!(preferences.search_engine_index(), 1);
+    }
+
+    #[test]
+    fn invalid_values_fall_back_to_defaults() {
+        let storage = Storage::open_in_memory().unwrap();
+        storage
+            .set_setting("search_url", "https://example.org")
+            .unwrap();
+        storage.set_setting("frozen_limit", "many").unwrap();
+        let preferences = Preferences::load(&storage);
+        assert_eq!(preferences, Preferences::default());
+        assert_eq!(preferences.search_engine_index(), 0);
     }
 }

@@ -42,6 +42,7 @@ impl Browser {
         window
             .global::<BrowserState>()
             .set_bookmarks_bar(ModelRc::from(Rc::new(VecModel::from(bar))));
+        self.update_bookmarks_bar_visibility();
         self.update_bookmark_star();
         if window
             .global::<OverlayState>()
@@ -615,7 +616,15 @@ impl Browser {
         }
     }
 
-    fn current_page_url(&self) -> Option<String> {
+    pub(super) fn has_bar_bookmarks(&self) -> bool {
+        self.bookmarks
+            .borrow()
+            .all
+            .iter()
+            .any(|bookmark| bookmark.parent_id.is_none())
+    }
+
+    pub(super) fn current_page_url(&self) -> Option<String> {
         let session = self.session.borrow();
         let tab = session.active_tab.and_then(|tab| session.tab(tab))?;
         (!tab.is_blank()).then(|| tab.url.clone())

@@ -1,5 +1,5 @@
 import { Theme } from "theme.slint";
-import { SidebarState, BrowserState, OverlayState } from "state.slint";
+import { SidebarState, BrowserState, OverlayState, SettingsState } from "state.slint";
 import { DialogKind } from "structs.slint";
 import { Sidebar } from "sidebar/sidebar.slint";
 import { Toolbar } from "toolbar/toolbar.slint";
@@ -19,9 +19,10 @@ import { FolderPopup } from "overlays/folder-popup.slint";
 import { BookmarkEditor } from "overlays/bookmark-editor.slint";
 import { BookmarkManager } from "overlays/bookmark-manager.slint";
 import { HoverCard } from "overlays/hover-card.slint";
+import { SettingsPage } from "overlays/settings-page.slint";
 import { BookmarksBar } from "toolbar/bookmarks-bar.slint";
 
-export { SidebarState, BrowserState, OverlayState }
+export { SidebarState, BrowserState, OverlayState, SettingsState }
 export { WorkspaceItem, SidebarRow, IslandTarget, MenuItemData, ArchiveItem, ExportIslandItem, DialogData, DialogKind, RowKind, TabLoadState, PointerAction, PointerButton, WebCursor, WebPointer, WebScroll, SuggestionKind, SuggestionItem, Completion, PaletteKind, PaletteItem, BookmarkItem } from "structs.slint";
 
 export component AppWindow inherits Window {
@@ -43,6 +44,7 @@ export component AppWindow inherits Window {
         || OverlayState.folder-popup-visible
         || OverlayState.bookmark-editor-visible
         || OverlayState.bookmark-manager-visible
+        || SettingsState.visible
         || OverlayState.import-visible
         || OverlayState.export-visible
         || OverlayState.archive-visible
@@ -135,6 +137,11 @@ export component AppWindow inherits Window {
     }
 
     if OverlayState.bookmark-editor-visible : BookmarkEditor {
+        width: root.width;
+        height: root.height;
+    }
+
+    if SettingsState.visible : SettingsPage {
         width: root.width;
         height: root.height;
     }

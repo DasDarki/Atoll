@@ -13,6 +13,7 @@ mod page;
 mod palette;
 mod preferences;
 mod session;
+mod settings;
 mod sidebar;
 mod startup;
 mod suggestions;
@@ -62,7 +63,7 @@ pub struct Browser {
     storage: Storage,
     gpu: Rc<GpuContext>,
     paths: Paths,
-    preferences: Preferences,
+    preferences: RefCell<Preferences>,
     engine: RefCell<Option<Engine>>,
     pump: RefCell<Option<Rc<MessagePump>>>,
     session: RefCell<Session>,
@@ -80,6 +81,7 @@ pub struct Browser {
     clipboard: Clipboard,
     clipboard_sync: RefCell<ClipboardSync>,
     find_text: RefCell<String>,
+    address_focus_requested: Cell<bool>,
     downloads: RefCell<HashSet<u32>>,
     suggestions: RefCell<SuggestionState>,
     palette: RefCell<PaletteState>,
@@ -108,7 +110,7 @@ impl Browser {
             storage,
             gpu,
             paths,
-            preferences,
+            preferences: RefCell::new(preferences),
             engine: RefCell::new(None),
             pump: RefCell::new(None),
             session: RefCell::new(session),
@@ -126,6 +128,7 @@ impl Browser {
             clipboard: Clipboard::default(),
             clipboard_sync: RefCell::default(),
             find_text: RefCell::default(),
+            address_focus_requested: Cell::new(false),
             downloads: RefCell::default(),
             suggestions: RefCell::default(),
             palette: RefCell::default(),

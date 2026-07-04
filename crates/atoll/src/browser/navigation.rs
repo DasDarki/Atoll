@@ -9,7 +9,8 @@ use crate::ui::{AppWindow, BrowserState};
 impl Browser {
     /// Loads what the user typed into the address bar or the new tab page.
     pub fn navigate(&self, input: &str) {
-        let Some(url) = resolve_input(input, &self.preferences.search_url) else {
+        let search_url = self.preferences.borrow().search_url.clone();
+        let Some(url) = resolve_input(input, &search_url) else {
             return;
         };
         let active = self.session.borrow().active_tab;
@@ -173,15 +174,20 @@ impl Browser {
     /// Runs on the next event loop iteration, so that overlays closed by the current event are
     /// gone and cannot take the focus back. Does nothing if another overlay opened meanwhile.
     pub(super) fn focus_content(&self) {
-        let window = self.window.clone();
+        let this = self.this();
         slint::Timer::single_shot(std::time::Duration::ZERO, move || {
-            let Some(window) = window.upgrade() else {
+            let Some(browser) = this.upgrade() else {
+                return;
+            };
+            let Some(window) = browser.window() else {
                 return;
             };
             if window.get_modal_open() {
                 return;
             }
-            if window.global::<BrowserState>().get_has_page() {
+            if browser.address_focus_requested.take() {
+                focus_address_bar(&window);
+            } else if window.global::<BrowserState>().get_has_page() {
                 window.invoke_focus_web();
             } else {
                 window.invoke_focus_new_tab();

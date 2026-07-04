@@ -55,6 +55,12 @@ export component Toolbar inherits Rectangle {
             }
         }
 
+        if BrowserState.home-button-visible : IconButton {
+            y: (parent.height - self.height) / 2;
+            icon: @image-url("../icons/home.svg");
+            clicked => { BrowserState.go-home(); }
+        }
+
         Rectangle { width: 6px; }
 
         address := AddressBar {
@@ -146,6 +152,10 @@ export component Toolbar inherits Rectangle {
                 activated => { BrowserState.menu-action("archive"); }
             }
             MenuSeparator { }
+            MenuItem {
+                title: "Einstellungen";
+                activated => { BrowserState.menu-action("settings"); }
+            }
             MenuItem {
                 title: "Entwicklertools";
                 enabled: BrowserState.has-page;

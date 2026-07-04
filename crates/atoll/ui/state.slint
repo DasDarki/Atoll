@@ -68,6 +68,9 @@ export global BrowserState {
     callback suggestion-activate(int);
     callback suggestions-dismissed();
 
+    in property <bool> home-button-visible;
+    callback go-home();
+
     in property <bool> page-bookmarked;
     in property <bool> bookmarks-bar-visible;
     in property <[BookmarkItem]> bookmarks-bar;
@@ -181,4 +184,30 @@ export global OverlayState {
     callback export-toggle-island(int);
     callback export-confirm();
     callback export-cancel();
+}
+
+export global SettingsState {
+    in property <bool> visible;
+    in-out property <int> section;
+
+    in-out property <string> start-page;
+    in-out property <bool> new-tab-start-page;
+    in-out property <bool> home-button;
+    in property <[string]> search-engines;
+    in-out property <int> search-engine;
+    in-out property <string> search-url;
+    in property <bool> search-url-valid: true;
+
+    in-out property <bool> sidebar-visible;
+    in-out property <bool> bookmarks-bar-visible;
+    in-out property <bool> bookmarks-bar-auto-hide;
+
+    in-out property <int> frozen-limit;
+    in property <int> max-frozen-limit;
+
+    callback changed(string);
+    callback use-current-page();
+    callback clear-history();
+    callback clear-cookies();
+    callback close();
 }

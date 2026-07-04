@@ -4,8 +4,8 @@ use std::time::{Duration, Instant};
 
 use cef::args::Args;
 use cef::{
-    BrowserSettings, CefString, CefStringList, ImplFileDialogCallback, ImplJsdialogCallback,
-    ImplRunContextMenuCallback, Settings, WindowInfo,
+    BrowserSettings, CefString, CefStringList, ImplCookieManager, ImplFileDialogCallback,
+    ImplJsdialogCallback, ImplRunContextMenuCallback, Settings, WindowInfo,
 };
 
 use crate::app;
@@ -170,6 +170,12 @@ impl Engine {
             let input = input.map(CefString::from);
             callback.cont(i32::from(accepted), input.as_ref());
         }
+    }
+
+    /// Deletes every cookie of the profile. Returns `false` if the cookie store is unavailable.
+    pub fn delete_all_cookies(&self) -> bool {
+        cef::cookie_manager_get_global_manager(None)
+            .is_some_and(|manager| manager.delete_cookies(None, None, None) != 0)
     }
 
     /// Closes every browser, waits for them to finish and shuts Chromium down.

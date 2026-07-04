@@ -22,6 +22,7 @@ impl Browser {
             "bookmarks-bar" => self.toggle_bookmarks_bar(),
             "bookmarks" => self.open_bookmark_manager(),
             "sidebar" => self.toggle_sidebar(),
+            "settings" => self.open_settings(),
             other => tracing::warn!(action = other, "unknown menu action"),
         }
     }

@@ -178,6 +178,8 @@ impl Browser {
             Shortcut::ManageBookmarks => self.open_bookmark_manager(),
             Shortcut::QuickSearch => self.open_palette(false),
             Shortcut::Commands => self.open_palette(true),
+            Shortcut::Settings => self.open_settings(),
+            Shortcut::Home => self.go_home(),
         }
     }
 }

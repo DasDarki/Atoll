@@ -193,7 +193,8 @@ impl Browser {
     }
 
     fn primary_candidate(&self, text: &str, query: &str) -> Candidate {
-        let (item, url) = match resolve(text, &self.preferences.search_url) {
+        let search_url = self.preferences.borrow().search_url.clone();
+        let (item, url) = match resolve(text, &search_url) {
             Some(Resolved::Search(url)) => (
                 SuggestionItem {
                     kind: SuggestionKind::Search,

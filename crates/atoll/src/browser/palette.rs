@@ -10,8 +10,9 @@ use atoll_storage::prelude::*;
 use slint::{ComponentHandle, ModelRc, VecModel};
 
 use super::Browser;
+use super::preferences::{PreferenceKey, SEARCH_ENGINES};
 use super::suggestions::frecency;
-use crate::ui::{BrowserState, OverlayState, PaletteItem, PaletteKind, SidebarState};
+use crate::ui::{OverlayState, PaletteItem, PaletteKind, SidebarState};
 
 const COMMAND_PREFIX: char = '>';
 const MAX_TABS: usize = 30;
@@ -44,6 +45,14 @@ enum Command {
     ZoomOut,
     ZoomReset,
     ClearHistory,
+    ClearCookies,
+    OpenSettings,
+    GoHome,
+    UseCurrentPageAsStartPage,
+    ToggleHomeButton,
+    ToggleNewTabStartPage,
+    ToggleBookmarksBarAutoHide,
+    SearchEngine(usize),
 }
 
 #[derive(Debug, Clone)]
@@ -338,7 +347,8 @@ impl Browser {
             return Vec::new();
         };
         let sidebar_visible = window.global::<SidebarState>().get_visible();
-        let bar_visible = window.global::<BrowserState>().get_bookmarks_bar_visible();
+        let preferences = self.preferences.borrow().clone();
+        let bar_visible = preferences.bookmarks_bar_visible;
         let mut commands = vec![
             (
                 Command::NewTab,
@@ -467,7 +477,79 @@ impl Browser {
                 "",
                 "history datenschutz",
             ),
+            (
+                Command::ClearCookies,
+                "Cookies löschen".to_owned(),
+                "",
+                "datenschutz abmelden",
+            ),
+            (
+                Command::OpenSettings,
+                "Einstellungen".to_owned(),
+                "Strg+,",
+                "optionen preferences",
+            ),
+            (
+                Command::GoHome,
+                "Startseite öffnen".to_owned(),
+                "Alt+Pos1",
+                "home",
+            ),
+            (
+                Command::ToggleHomeButton,
+                if preferences.home_button {
+                    "Startseiten-Button ausblenden"
+                } else {
+                    "Startseiten-Button einblenden"
+                }
+                .to_owned(),
+                "",
+                "home symbolleiste einstellung",
+            ),
+            (
+                Command::ToggleBookmarksBarAutoHide,
+                if preferences.bookmarks_bar_auto_hide {
+                    "Lesezeichenleiste immer anzeigen"
+                } else {
+                    "Lesezeichenleiste nur mit Lesezeichen anzeigen"
+                }
+                .to_owned(),
+                "",
+                "bookmarks leer ausblenden einstellung",
+            ),
         ];
+        if self.current_page_url().is_some() {
+            commands.push((
+                Command::UseCurrentPageAsStartPage,
+                "Aktuelle Seite als Startseite festlegen".to_owned(),
+                "",
+                "home einstellung",
+            ));
+        }
+        if preferences.has_start_page() {
+            commands.push((
+                Command::ToggleNewTabStartPage,
+                if preferences.new_tab_start_page {
+                    "Neue Tabs mit der Atoll-Startseite öffnen"
+                } else {
+                    "Neue Tabs mit der Startseite öffnen"
+                }
+                .to_owned(),
+                "",
+                "home einstellung",
+            ));
+        }
+        let current_engine = preferences.search_engine_index();
+        for (index, engine) in SEARCH_ENGINES.iter().enumerate() {
+            if index != current_engine {
+                commands.push((
+                    Command::SearchEngine(index),
+                    format!("Suchmaschine: {}", engine.name),
+                    "",
+                    "suche einstellung",
+                ));
+            }
+        }
         let session = self.session.borrow();
         for workspace in session
             .workspaces
@@ -516,20 +598,30 @@ impl Browser {
             Command::ZoomOut => self.zoom(ZoomCommand::Out),
             Command::ZoomReset => self.zoom(ZoomCommand::Reset),
             Command::DevTools => self.show_dev_tools(),
-            Command::ClearHistory => {
-                let this = self.this();
-                self.confirm(
-                    "Verlauf löschen?",
-                    "Der gesamte Verlauf wird gelöscht. Tabs, Inseln und Lesezeichen bleiben erhalten.",
-                    "Löschen",
-                    move || {
-                        if let Some(browser) = this.upgrade() {
-                            let result = browser.storage.clear_history();
-                            browser.report("Verlauf löschen", result);
-                            browser.show_toast("Verlauf gelöscht");
-                        }
-                    },
-                );
+            Command::ClearHistory => self.clear_history(),
+            Command::ClearCookies => self.clear_cookies(),
+            Command::OpenSettings => self.open_settings(),
+            Command::GoHome => self.go_home(),
+            Command::UseCurrentPageAsStartPage => self.use_current_page_as_start_page(),
+            Command::ToggleHomeButton => {
+                let visible = !self.preferences.borrow().home_button;
+                self.set_home_button(visible);
+            }
+            Command::ToggleNewTabStartPage => {
+                let enabled = !self.preferences.borrow().new_tab_start_page;
+                self.update_preference(PreferenceKey::NewTabStartPage, |preferences| {
+                    preferences.new_tab_start_page = enabled;
+                });
+            }
+            Command::ToggleBookmarksBarAutoHide => {
+                let auto_hide = !self.preferences.borrow().bookmarks_bar_auto_hide;
+                self.set_bookmarks_bar_auto_hide(auto_hide);
+            }
+            Command::SearchEngine(index) => {
+                if let Some(engine) = SEARCH_ENGINES.get(index) {
+                    self.set_search_url(engine.url);
+                    self.show_toast(&format!("Suchmaschine: {}", engine.name));
+                }
             }
         }
     }

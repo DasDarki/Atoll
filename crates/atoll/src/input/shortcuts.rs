@@ -27,6 +27,8 @@ pub enum Shortcut {
     ManageBookmarks,
     QuickSearch,
     Commands,
+    Settings,
+    Home,
 }
 
 pub fn detect(event: &KeyEvent, modifiers: ModifiersState) -> Option<Shortcut> {
@@ -66,6 +68,7 @@ pub fn detect(event: &KeyEvent, modifiers: ModifiersState) -> Option<Shortcut> {
             ("o", true) => Shortcut::ManageBookmarks,
             ("k", false) => Shortcut::QuickSearch,
             ("p", true) => Shortcut::Commands,
+            (",", false) => Shortcut::Settings,
             ("+" | "=", _) => Shortcut::ZoomIn,
             ("-", _) => Shortcut::ZoomOut,
             ("0", false) => Shortcut::ZoomReset,
@@ -98,6 +101,8 @@ fn named_shortcut(key: NamedKey, control: bool, shift: bool, alt: bool) -> Optio
         NamedKey::PageUp if control => Shortcut::PreviousTab,
         NamedKey::ArrowLeft if alt && !control => Shortcut::Back,
         NamedKey::ArrowRight if alt && !control => Shortcut::Forward,
+        NamedKey::Home if alt && !control => Shortcut::Home,
+        NamedKey::BrowserHome => Shortcut::Home,
         NamedKey::BrowserBack => Shortcut::Back,
         NamedKey::BrowserForward => Shortcut::Forward,
         NamedKey::BrowserRefresh => Shortcut::Reload,
