@@ -15,6 +15,7 @@ mod preferences;
 mod session;
 mod settings;
 mod sidebar;
+mod site_info;
 mod startup;
 mod suggestions;
 mod tabs;

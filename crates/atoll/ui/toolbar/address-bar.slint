@@ -1,6 +1,7 @@
 import { Theme } from "../theme.slint";
 import { BrowserState } from "../state.slint";
 import { IconButton } from "../widgets/icon-button.slint";
+import { PageSecurity } from "../structs.slint";
 
 export component AddressBar inherits Rectangle {
     property <string> address: BrowserState.address;
@@ -48,16 +49,34 @@ export component AddressBar inherits Rectangle {
         }
 
         HorizontalLayout {
-            padding-left: 12px;
+            padding-left: 7px;
             padding-right: 4px;
-            spacing: 8px;
+            spacing: 4px;
 
-            Image {
-                source: BrowserState.secure ? @image-url("../icons/lock.svg") : @image-url("../icons/search.svg");
-                width: 13px;
-                height: 13px;
+            Rectangle {
+                width: 22px;
+                height: 22px;
                 y: (parent.height - self.height) / 2;
-                colorize: BrowserState.secure ? #6ee7b7 : Theme.text-faint;
+                border-radius: self.height / 2;
+                background: badge.pressed ? Theme.pressed : badge.has-hover && badge.enabled ? Theme.hover : transparent;
+
+                Image {
+                    width: 13px;
+                    height: 13px;
+                    source: BrowserState.security == PageSecurity.secure ? @image-url("../icons/lock.svg")
+                        : BrowserState.security == PageSecurity.insecure ? @image-url("../icons/alert.svg")
+                        : BrowserState.security == PageSecurity.internal ? @image-url("../icons/info.svg")
+                        : @image-url("../icons/search.svg");
+                    colorize: BrowserState.security == PageSecurity.secure ? #6ee7b7
+                        : BrowserState.security == PageSecurity.insecure ? #fbbf24
+                        : Theme.text-faint;
+                }
+
+                badge := TouchArea {
+                    enabled: BrowserState.security != PageSecurity.none;
+                    mouse-cursor: self.enabled ? MouseCursor.pointer : MouseCursor.text;
+                    clicked => { BrowserState.show-site-info(); }
+                }
             }
 
             Rectangle {

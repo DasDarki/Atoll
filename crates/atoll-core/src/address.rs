@@ -24,6 +24,13 @@ pub fn display_url(address: &str) -> String {
         .to_owned()
 }
 
+/// The web origin of an address such as `https://example.org:8443`, or `None` for addresses
+/// without one, like `data:` or `about:` pages.
+pub fn origin_of(address: &str) -> Option<String> {
+    let origin = Url::parse(address).ok()?.origin();
+    origin.is_tuple().then(|| origin.ascii_serialization())
+}
+
 /// Normalises an address so that equivalent spellings compare equal.
 pub fn normalize(address: &str) -> String {
     Url::parse(address.trim())
@@ -56,6 +63,15 @@ mod tests {
         assert_eq!(display_url("https://www.github.com/"), "github.com");
         assert_eq!(display_url("http://example.com/a/b"), "example.com/a/b");
         assert_eq!(display_url("about:blank"), "about:blank");
+    }
+
+    #[test]
+    fn origins_exist_only_for_network_addresses() {
+        assert_eq!(
+            origin_of("https://example.org:8443/a?b").as_deref(),
+            Some("https://example.org:8443")
+        );
+        assert_eq!(origin_of("data:text/html,x"), None);
     }
 
     #[test]

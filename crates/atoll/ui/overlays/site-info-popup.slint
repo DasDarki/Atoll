@@ -1,0 +1,175 @@
+import { Theme } from "../theme.slint";
+import { OverlayState } from "../state.slint";
+import { PageSecurity } from "../structs.slint";
+
+component LinkButton inherits Rectangle {
+    in property <string> text;
+    in property <color> text-color: Theme.text;
+    callback clicked();
+
+    height: 32px;
+    border-radius: Theme.radius-small;
+    background: touch.pressed ? Theme.pressed : touch.has-hover ? Theme.hover : transparent;
+
+    HorizontalLayout {
+        padding-left: 10px;
+        padding-right: 10px;
+        Text {
+            text: root.text;
+            color: root.text-color;
+            font-size: Theme.font-normal;
+            vertical-alignment: center;
+        }
+    }
+
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+export component SiteInfoPopup inherits Rectangle {
+    in property <length> anchor-x;
+    in property <length> anchor-y;
+
+    property <color> accent: OverlayState.site-info-security == PageSecurity.secure ? #6ee7b7
+        : OverlayState.site-info-security == PageSecurity.insecure ? #fbbf24
+        : Theme.text-muted;
+
+    TouchArea {
+        pointer-event(event) => {
+            if (event.kind == PointerEventKind.down) {
+                OverlayState.site-info-close();
+            }
+        }
+    }
+
+    FocusScope {
+        init => { self.focus(); }
+        key-pressed(event) => {
+            if (event.text == Key.Escape) {
+                OverlayState.site-info-close();
+            }
+            return accept;
+        }
+    }
+
+    card := Rectangle {
+        x: min(root.anchor-x, root.width - self.width - 8px);
+        y: root.anchor-y;
+        width: 360px;
+        height: layout.preferred-height;
+        border-radius: Theme.radius;
+        background: Theme.surface-raised;
+        border-width: 1px;
+        border-color: Theme.border-strong;
+        drop-shadow-blur: 24px;
+        drop-shadow-color: #000000a8;
+        clip: true;
+
+        TouchArea { }
+
+        layout := VerticalLayout {
+            padding: 16px;
+            padding-bottom: 10px;
+            spacing: 12px;
+
+            HorizontalLayout {
+                spacing: 12px;
+                Rectangle {
+                    width: 34px;
+                    height: 34px;
+                    border-radius: self.height / 2;
+                    background: root.accent.with-alpha(0.14);
+                    Image {
+                        width: 17px;
+                        height: 17px;
+                        source: OverlayState.site-info-security == PageSecurity.secure ? @image-url("../icons/lock.svg")
+                            : OverlayState.site-info-security == PageSecurity.insecure ? @image-url("../icons/alert.svg")
+                            : @image-url("../icons/info.svg");
+                        colorize: root.accent;
+                    }
+                }
+                VerticalLayout {
+                    alignment: center;
+                    spacing: 2px;
+                    Text {
+                        text: OverlayState.site-info-host;
+                        color: Theme.text;
+                        font-size: Theme.font-large;
+                        font-weight: 700;
+                        overflow: elide;
+                    }
+                    Text {
+                        text: OverlayState.site-info-title;
+                        color: root.accent;
+                        font-size: Theme.font-normal;
+                        font-weight: 600;
+                    }
+                }
+            }
+
+            if OverlayState.site-info-message != "" : Text {
+                text: OverlayState.site-info-message;
+                color: Theme.text-muted;
+                font-size: Theme.font-normal;
+                wrap: word-wrap;
+            }
+
+            if OverlayState.site-info-details.length > 0 : Rectangle {
+                border-radius: Theme.radius-small;
+                background: Theme.surface;
+                border-width: 1px;
+                border-color: Theme.border;
+                height: details.preferred-height;
+
+                details := VerticalLayout {
+                    padding: 10px;
+                    spacing: 6px;
+                    for detail in OverlayState.site-info-details : HorizontalLayout {
+                        spacing: 12px;
+                        Text {
+                            width: 110px;
+                            text: detail.label;
+                            color: Theme.text-faint;
+                            font-size: Theme.font-small + 1px;
+                        }
+                        Text {
+                            horizontal-stretch: 1;
+                            text: detail.value;
+                            color: Theme.text;
+                            font-size: Theme.font-small + 1px;
+                            wrap: word-wrap;
+                        }
+                    }
+                }
+            }
+
+            VerticalLayout {
+                spacing: 2px;
+
+                if OverlayState.site-info-zoom != 100 : HorizontalLayout {
+                    padding-left: 10px;
+                    Text {
+                        text: "Zoom: " + OverlayState.site-info-zoom + " %";
+                        color: Theme.text-muted;
+                        font-size: Theme.font-normal;
+                        vertical-alignment: center;
+                        horizontal-stretch: 1;
+                    }
+                    LinkButton {
+                        text: "Zurücksetzen";
+                        text-color: Theme.accent;
+                        clicked => { OverlayState.site-info-reset-zoom(); }
+                    }
+                }
+
+                if OverlayState.site-info-can-clear : LinkButton {
+                    text: "Cookies und Websitedaten löschen";
+                    text-color: Theme.danger;
+                    clicked => { OverlayState.site-info-clear-data(); }
+                }
+            }
+        }
+    }
+}

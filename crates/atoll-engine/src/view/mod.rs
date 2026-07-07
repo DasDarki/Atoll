@@ -1,12 +1,13 @@
 mod client;
 mod handlers;
+mod security;
 mod state;
 
 use std::rc::Rc;
 
 use cef::{
-    BrowserSettings, CefString, ImplBrowser, ImplBrowserHost, ImplFrame, MouseEvent, Point, Range,
-    WindowInfo,
+    BrowserSettings, CefString, ImplBrowser, ImplBrowserHost, ImplDictionaryValue, ImplFrame,
+    MouseEvent, Point, Range, WindowInfo,
 };
 
 /// Chromium's "no range", used when input method text does not replace existing text.
@@ -16,6 +17,7 @@ const NO_RANGE: Range = Range {
 };
 
 pub(crate) use client::build_client;
+pub use security::{CertificateInfo, SecurityInfo};
 pub(crate) use state::{DragSession, ViewState};
 
 use crate::input::{EditCommand, KeyInput, Modifiers, MouseButton, ZoomCommand};
@@ -330,6 +332,35 @@ impl BrowserView {
         {
             frame.execute_java_script(Some(&code.into()), None, 0);
         }
+    }
+
+    /// The connection security of the visible page, if the engine knows it.
+    pub fn security_info(&self) -> Option<SecurityInfo> {
+        security::security_info(&self.state.host()?)
+    }
+
+    /// The zoom factor in percent.
+    pub fn zoom_percent(&self) -> u32 {
+        self.state.host().map_or(100, |host| {
+            (1.2_f64.powf(host.zoom_level()) * 100.0).round() as u32
+        })
+    }
+
+    /// Deletes cookies, storage, caches and service workers of `origin`, for example
+    /// `https://example.org`. Returns `false` if the request could not be sent.
+    pub fn clear_site_data(&self, origin: &str) -> bool {
+        let (Some(host), Some(mut parameters)) =
+            (self.state.host(), cef::dictionary_value_create())
+        else {
+            return false;
+        };
+        parameters.set_string(Some(&"origin".into()), Some(&origin.into()));
+        parameters.set_string(Some(&"storageTypes".into()), Some(&"all".into()));
+        host.execute_dev_tools_method(
+            0,
+            Some(&"Storage.clearDataForOrigin".into()),
+            Some(&mut parameters),
+        ) != 0
     }
 
     pub fn show_dev_tools(&self, inspect_at: Option<(i32, i32)>) {

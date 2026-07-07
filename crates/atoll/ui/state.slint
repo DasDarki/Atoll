@@ -1,4 +1,4 @@
-import { WorkspaceItem, SidebarRow, IslandTarget, MenuItemData, ArchiveItem, ExportIslandItem, DialogData, WebCursor, WebPointer, WebScroll, SuggestionItem, Completion, PaletteItem, BookmarkItem } from "structs.slint";
+import { WorkspaceItem, SidebarRow, IslandTarget, MenuItemData, ArchiveItem, ExportIslandItem, DialogData, WebCursor, WebPointer, WebScroll, SuggestionItem, Completion, PaletteItem, BookmarkItem, PageSecurity, SiteInfoDetail } from "structs.slint";
 
 export global SidebarState {
     in property <bool> visible: true;
@@ -36,7 +36,7 @@ export global SidebarState {
 export global BrowserState {
     in property <string> title;
     in property <string> address;
-    in property <bool> secure;
+    in property <PageSecurity> security;
     in property <bool> can-go-back;
     in property <bool> can-go-forward;
     in property <bool> loading;
@@ -56,6 +56,7 @@ export global BrowserState {
     in property <string> find-result;
 
     callback navigate(string);
+    callback show-site-info();
     callback toggle-sidebar();
 
     in property <[SuggestionItem]> suggestions;
@@ -97,6 +98,18 @@ export global BrowserState {
 }
 
 export global OverlayState {
+    in property <bool> site-info-visible;
+    in property <string> site-info-host;
+    in property <PageSecurity> site-info-security;
+    in property <string> site-info-title;
+    in property <string> site-info-message;
+    in property <[SiteInfoDetail]> site-info-details;
+    in property <int> site-info-zoom: 100;
+    in property <bool> site-info-can-clear;
+    callback site-info-clear-data();
+    callback site-info-reset-zoom();
+    callback site-info-close();
+
     in property <bool> palette-visible;
     in-out property <string> palette-text;
     in property <[PaletteItem]> palette-items;

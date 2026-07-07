@@ -139,3 +139,10 @@ export struct BookmarkItem {
     has-icon: bool,
     depth: int,
 }
+
+export enum PageSecurity { none, secure, insecure, internal }
+
+export struct SiteInfoDetail {
+    label: string,
+    value: string,
+}

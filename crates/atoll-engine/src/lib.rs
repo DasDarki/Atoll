@@ -28,4 +28,4 @@ pub use events::{
 pub use input::{EditCommand, KeyInput, KeyInputKind, Modifiers, MouseButton, ZoomCommand};
 pub use process::run_subprocess;
 pub use render::{GpuContext, GpuError, SurfaceFrame, prune_unusable_vulkan_drivers};
-pub use view::{BrowserView, ViewGeometry, ViewId, ViewRect};
+pub use view::{BrowserView, CertificateInfo, SecurityInfo, ViewGeometry, ViewId, ViewRect};

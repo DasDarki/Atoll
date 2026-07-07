@@ -30,7 +30,7 @@ fn text(value: Option<&CefString>) -> String {
 ///
 /// Cloning a borrowed `CefStringList` yields an empty list, so the entries are read through the
 /// C API directly.
-fn list(value: Option<&mut CefStringList>) -> Vec<String> {
+pub(crate) fn list(value: Option<&mut CefStringList>) -> Vec<String> {
     let Some(list) = value else { return Vec::new() };
     let raw: *mut cef::sys::_cef_string_list_t = list.into();
     if raw.is_null() {

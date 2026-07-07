@@ -120,6 +120,8 @@ fn connect_browser(window: &AppWindow, browser: &Rc<Browser>) {
     on!(state, on_toggle_sidebar, browser, |target| target
         .toggle_sidebar());
     on!(state, on_go_home, browser, |target| target.go_home());
+    on!(state, on_show_site_info, browser, |target| target
+        .show_site_info());
     on!(state, on_address_edited, browser, |target, source, text| -> Default::default(), target.address_edited(source, &text));
     on!(
         state,
@@ -181,6 +183,12 @@ fn connect_browser(window: &AppWindow, browser: &Rc<Browser>) {
 
 fn connect_overlays(window: &AppWindow, browser: &Rc<Browser>) {
     let state = window.global::<OverlayState>();
+    on!(state, on_site_info_close, browser, |target| target
+        .close_site_info());
+    on!(state, on_site_info_reset_zoom, browser, |target| target
+        .site_info_reset_zoom());
+    on!(state, on_site_info_clear_data, browser, |target| target
+        .site_info_clear_data());
     on!(state, on_palette_edited, browser, |target, text| target
         .palette_edited(&text));
     on!(state, on_palette_move, browser, |target, delta| target

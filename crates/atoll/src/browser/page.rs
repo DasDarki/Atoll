@@ -2,8 +2,9 @@ use atoll_engine::{CursorKind, ViewId};
 use slint::{ComponentHandle, Image};
 
 use super::Browser;
+use super::site_info::page_security;
 use crate::bridge::images::frame_image;
-use crate::ui::{BrowserState, WebCursor};
+use crate::ui::{BrowserState, PageSecurity, WebCursor};
 
 /// What the page area currently displays, to avoid re-wrapping textures on every frame.
 #[derive(Default)]
@@ -25,7 +26,7 @@ impl Browser {
             state.set_has_page(false);
             state.set_title("".into());
             state.set_address("".into());
-            state.set_secure(false);
+            state.set_security(PageSecurity::None);
             state.set_can_go_back(false);
             state.set_can_go_forward(false);
             state.set_loading(false);
@@ -44,8 +45,12 @@ impl Browser {
             .and_then(|entry| entry.view.url())
             .unwrap_or_else(|| tab.url.clone());
         state.set_has_page(!tab.is_blank());
+        state.set_security(if tab.is_blank() {
+            PageSecurity::None
+        } else {
+            page_security(&address)
+        });
         state.set_title(tab.title.clone().unwrap_or_default().into());
-        state.set_secure(address.starts_with("https://"));
         state.set_address(address.into());
         state.set_can_go_back(
             entry.is_some_and(|entry| entry.view.can_go_back())
