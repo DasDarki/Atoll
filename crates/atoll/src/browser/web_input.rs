@@ -96,7 +96,13 @@ impl Browser {
         }
     }
 
+    /// Forwards keyboard focus changes of the page area to the engine. Losing focus is ignored
+    /// while a context menu is open, because the engine cancels the menu when its browser loses
+    /// focus, and the menu takes the focus as soon as it opens.
     pub fn web_focus_changed(&self, focused: bool) {
+        if !focused && self.context_menu.get().is_some() {
+            return;
+        }
         self.with_live_view(|view| view.set_focus(focused));
     }
 
