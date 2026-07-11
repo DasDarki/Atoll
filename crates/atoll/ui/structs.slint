@@ -146,3 +146,13 @@ export struct SiteInfoDetail {
     label: string,
     value: string,
 }
+
+export enum DownloadItemStatus { running, paused, complete, missing, canceled, failed }
+
+export struct DownloadItem {
+    id: int,
+    file-name: string,
+    detail: string,
+    progress: float,
+    status: DownloadItemStatus,
+}

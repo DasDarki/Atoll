@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use atoll_storage::Storage;
 use atoll_storage::prelude::*;
 
@@ -53,6 +55,12 @@ pub struct Preferences {
     pub bookmarks_bar_visible: bool,
     /// Hides the bookmarks bar while it has no entries.
     pub bookmarks_bar_auto_hide: bool,
+    /// Where downloads are saved, `None` for the system download directory.
+    pub download_directory: Option<PathBuf>,
+    /// Asks for a location before every download.
+    pub download_ask: bool,
+    /// Opens the download list when a download starts.
+    pub download_panel: bool,
 }
 
 /// A single preference, used to store exactly what changed.
@@ -66,6 +74,9 @@ pub enum PreferenceKey {
     SidebarVisible,
     BookmarksBarVisible,
     BookmarksBarAutoHide,
+    DownloadDirectory,
+    DownloadAsk,
+    DownloadPanel,
 }
 
 impl PreferenceKey {
@@ -79,6 +90,9 @@ impl PreferenceKey {
             PreferenceKey::SidebarVisible => "sidebar_visible",
             PreferenceKey::BookmarksBarVisible => "bookmarks_bar_visible",
             PreferenceKey::BookmarksBarAutoHide => "bookmarks_bar_auto_hide",
+            PreferenceKey::DownloadDirectory => "download_directory",
+            PreferenceKey::DownloadAsk => "download_ask",
+            PreferenceKey::DownloadPanel => "download_panel",
         }
     }
 }
@@ -94,6 +108,9 @@ impl Default for Preferences {
             sidebar_visible: true,
             bookmarks_bar_visible: true,
             bookmarks_bar_auto_hide: false,
+            download_directory: None,
+            download_ask: false,
+            download_panel: true,
         }
     }
 }
@@ -123,6 +140,11 @@ impl Preferences {
                 PreferenceKey::BookmarksBarAutoHide,
                 defaults.bookmarks_bar_auto_hide,
             ),
+            download_directory: text(PreferenceKey::DownloadDirectory)
+                .filter(|path| !path.is_empty())
+                .map(PathBuf::from),
+            download_ask: flag(PreferenceKey::DownloadAsk, defaults.download_ask),
+            download_panel: flag(PreferenceKey::DownloadPanel, defaults.download_panel),
         }
     }
 
@@ -138,6 +160,13 @@ impl Preferences {
             PreferenceKey::SidebarVisible => flag(self.sidebar_visible),
             PreferenceKey::BookmarksBarVisible => flag(self.bookmarks_bar_visible),
             PreferenceKey::BookmarksBarAutoHide => flag(self.bookmarks_bar_auto_hide),
+            PreferenceKey::DownloadDirectory => self
+                .download_directory
+                .as_ref()
+                .map(|path| path.to_string_lossy().into_owned())
+                .unwrap_or_default(),
+            PreferenceKey::DownloadAsk => flag(self.download_ask),
+            PreferenceKey::DownloadPanel => flag(self.download_panel),
         };
         if let Err(error) = storage.set_setting(key.storage_key(), &value) {
             tracing::warn!(%error, key = key.storage_key(), "preference could not be stored");
@@ -174,6 +203,9 @@ mod tests {
             sidebar_visible: false,
             bookmarks_bar_visible: false,
             bookmarks_bar_auto_hide: true,
+            download_directory: Some(PathBuf::from("/tmp/downloads")),
+            download_ask: true,
+            download_panel: false,
         };
         for key in [
             PreferenceKey::SearchUrl,
@@ -184,6 +216,9 @@ mod tests {
             PreferenceKey::SidebarVisible,
             PreferenceKey::BookmarksBarVisible,
             PreferenceKey::BookmarksBarAutoHide,
+            PreferenceKey::DownloadDirectory,
+            PreferenceKey::DownloadAsk,
+            PreferenceKey::DownloadPanel,
         ] {
             preferences.store(&storage, key);
         }

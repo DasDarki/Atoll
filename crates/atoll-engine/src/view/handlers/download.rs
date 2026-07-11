@@ -32,13 +32,18 @@ wrap_download_handler! {
             let (Some(item), Some(callback)) = (download_item, callback) else { return 0 };
             let Some(runtime) = registry::runtime() else { return 0 };
             let name = sanitize_file_name(&text(suggested_name));
-            let path = unique_path(&runtime.download_directory, &name);
-            if let Err(error) = std::fs::create_dir_all(&runtime.download_directory) {
+            let directory = runtime.download_directory.borrow().clone();
+            if let Err(error) = std::fs::create_dir_all(&directory) {
                 tracing::warn!(%error, "download directory could not be created");
             }
-            callback.cont(Some(&path.to_string_lossy().as_ref().into()), 0);
+            let path = unique_path(&directory, &name);
+            let ask = runtime.ask_download_location.get();
+            callback.cont(Some(&path.to_string_lossy().as_ref().into()), i32::from(ask));
             let mut state = download_state(self.view, item);
-            state.path = Some(path);
+            if !ask {
+                state.path = Some(path);
+            }
+            state.file_name = name;
             runtime.emit(EngineEvent::Download(state));
             1
         }
@@ -47,11 +52,23 @@ wrap_download_handler! {
             &self,
             _browser: Option<&mut Browser>,
             download_item: Option<&mut DownloadItem>,
-            _callback: Option<&mut DownloadItemCallback>,
+            callback: Option<&mut DownloadItemCallback>,
         ) {
-            if let Some(item) = download_item {
-                registry::emit(EngineEvent::Download(download_state(self.view, item)));
+            let (Some(item), Some(runtime)) = (download_item, registry::runtime()) else { return };
+            let state = download_state(self.view, item);
+            let finished = state.complete || state.canceled || state.interrupted;
+            let mut downloads = runtime.downloads.borrow_mut();
+            match callback {
+                Some(callback) if !finished => {
+                    downloads.insert(state.id, callback.clone());
+                }
+                _ if finished => {
+                    downloads.remove(&state.id);
+                }
+                _ => {}
             }
+            drop(downloads);
+            runtime.emit(EngineEvent::Download(state));
         }
     }
 }
@@ -67,13 +84,17 @@ fn download_state(view: ViewId, item: &DownloadItem) -> DownloadState {
     DownloadState {
         id: item.id(),
         view: Some(view),
+        url: CefString::from(&item.url()).to_string(),
         file_name,
         path,
         received_bytes: item.received_bytes(),
         total_bytes: item.total_bytes(),
+        speed: item.current_speed(),
         in_progress: item.is_in_progress() != 0,
+        paused: item.is_paused() != 0,
         complete: item.is_complete() != 0,
-        canceled: item.is_canceled() != 0 || item.is_interrupted() != 0,
+        canceled: item.is_canceled() != 0,
+        interrupted: item.is_interrupted() != 0,
     }
 }
 

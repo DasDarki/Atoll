@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use atoll_core::{BookmarkId, IslandId, TabId, WorkspaceId};
+use atoll_core::{BookmarkId, DownloadId, IslandId, TabId, WorkspaceId};
 use slint::ComponentHandle;
 
 use crate::browser::Browser;
@@ -120,6 +120,8 @@ fn connect_browser(window: &AppWindow, browser: &Rc<Browser>) {
     on!(state, on_toggle_sidebar, browser, |target| target
         .toggle_sidebar());
     on!(state, on_go_home, browser, |target| target.go_home());
+    on!(state, on_open_downloads, browser, |target| target
+        .open_downloads());
     on!(state, on_show_site_info, browser, |target| target
         .show_site_info());
     on!(state, on_address_edited, browser, |target, source, text| -> Default::default(), target.address_edited(source, &text));
@@ -185,6 +187,15 @@ fn connect_overlays(window: &AppWindow, browser: &Rc<Browser>) {
     let state = window.global::<OverlayState>();
     on!(state, on_site_info_close, browser, |target| target
         .close_site_info());
+    on!(state, on_download_action, browser, |target, id, action| {
+        target.download_action(DownloadId(i64::from(id)), &action)
+    });
+    on!(state, on_downloads_clear, browser, |target| target
+        .clear_downloads());
+    on!(state, on_downloads_open_folder, browser, |target| target
+        .open_download_folder());
+    on!(state, on_downloads_close, browser, |target| target
+        .close_downloads());
     on!(state, on_site_info_reset_zoom, browser, |target| target
         .site_info_reset_zoom());
     on!(state, on_site_info_clear_data, browser, |target| target
@@ -278,5 +289,10 @@ fn connect_settings(window: &AppWindow, browser: &Rc<Browser>) {
         .clear_history());
     on!(state, on_clear_cookies, browser, |target| target
         .clear_cookies());
+    on!(state, on_choose_download_directory, browser, |target| {
+        target.choose_download_directory()
+    });
+    on!(state, on_reset_download_directory, browser, |target| target
+        .reset_download_directory());
     on!(state, on_close, browser, |target| target.close_settings());
 }

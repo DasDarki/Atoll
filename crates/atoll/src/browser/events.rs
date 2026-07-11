@@ -1,6 +1,6 @@
 use atoll_core::TabId;
 use atoll_core::address::host_of;
-use atoll_engine::{DownloadState, EngineEvent, OpenDisposition, ViewId};
+use atoll_engine::{EngineEvent, OpenDisposition, ViewId};
 use atoll_storage::prelude::*;
 use slint::ComponentHandle;
 
@@ -427,24 +427,6 @@ impl Browser {
             }
             Some(Err(error)) => tracing::error!(%error, "view could not be recreated"),
             None => {}
-        }
-    }
-
-    fn download_updated(&self, download: &DownloadState) {
-        let mut known = self.downloads.borrow_mut();
-        if download.complete || download.canceled {
-            if known.remove(&download.id) {
-                let outcome = if download.complete {
-                    "abgeschlossen"
-                } else {
-                    "abgebrochen"
-                };
-                drop(known);
-                self.show_toast(&format!("Download {outcome}: {}", download.file_name));
-            }
-        } else if known.insert(download.id) {
-            drop(known);
-            self.show_toast(&format!("Download gestartet: {}", download.file_name));
         }
     }
 }

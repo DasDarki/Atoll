@@ -121,10 +121,16 @@ export component SettingsPage inherits Modal {
                 clicked => { SettingsState.section = 2; }
             }
             SectionButton {
-                text: "Datenschutz";
-                icon: @image-url("../icons/shield.svg");
+                text: "Downloads";
+                icon: @image-url("../icons/download.svg");
                 selected: SettingsState.section == 3;
                 clicked => { SettingsState.section = 3; }
+            }
+            SectionButton {
+                text: "Datenschutz";
+                icon: @image-url("../icons/shield.svg");
+                selected: SettingsState.section == 4;
+                clicked => { SettingsState.section = 4; }
             }
         }
 
@@ -257,6 +263,58 @@ export component SettingsPage inherits Modal {
                 }
 
                 if SettingsState.section == 3 : VerticalLayout {
+                    SectionTitle { text: "SPEICHERORT"; }
+                    HorizontalLayout {
+                        spacing: 8px;
+                        padding-top: 4px;
+                        padding-bottom: 12px;
+                        Rectangle {
+                            horizontal-stretch: 1;
+                            height: 34px;
+                            border-radius: Theme.radius;
+                            background: Theme.background;
+                            border-width: 1px;
+                            border-color: Theme.border;
+                            Text {
+                                x: 12px;
+                                width: parent.width - 24px;
+                                text: SettingsState.download-directory;
+                                color: Theme.text;
+                                font-size: Theme.font-normal;
+                                vertical-alignment: center;
+                                overflow: elide;
+                            }
+                        }
+                        if SettingsState.download-directory-custom : ActionButton {
+                            text: "Standard";
+                            clicked => { SettingsState.reset-download-directory(); }
+                        }
+                        ActionButton {
+                            text: "Ändern…";
+                            clicked => { SettingsState.choose-download-directory(); }
+                        }
+                    }
+                    Divider { }
+                    SettingRow {
+                        title: "Vor jedem Download nach dem Speicherort fragen";
+                        description: "Zeigt einen Speichern-Dialog, statt direkt im Download-Ordner zu speichern.";
+                        Toggle {
+                            checked <=> SettingsState.download-ask;
+                            toggled => { SettingsState.changed("download-ask"); }
+                        }
+                    }
+                    Divider { }
+                    SettingRow {
+                        title: "Download-Übersicht beim Start eines Downloads öffnen";
+                        description: "Sonst erscheint nur eine kurze Meldung. Die Übersicht öffnet Strg+J.";
+                        Toggle {
+                            checked <=> SettingsState.download-panel;
+                            toggled => { SettingsState.changed("download-panel"); }
+                        }
+                    }
+                }
+
+                if SettingsState.section == 4 : VerticalLayout {
                     SettingRow {
                         title: "Verlauf löschen";
                         description: "Entfernt alle besuchten Seiten. Tabs, Inseln und Lesezeichen bleiben erhalten.";

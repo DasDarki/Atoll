@@ -5,7 +5,9 @@ pub mod model;
 pub mod search;
 pub mod time;
 
-pub use ids::{BookmarkId, FaviconId, IslandId, TabId, WorkspaceId};
+pub use ids::{BookmarkId, DownloadId, FaviconId, IslandId, TabId, WorkspaceId};
 pub use lifecycle::{LifecycleCommand, TabLifecycle, TabState};
-pub use model::{Bookmark, Island, IslandColor, Tab, VisitedPage, Workspace};
+pub use model::{
+    Bookmark, Download, DownloadStatus, Island, IslandColor, Tab, VisitedPage, Workspace,
+};
 pub use time::Timestamp;

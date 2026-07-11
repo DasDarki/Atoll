@@ -34,3 +34,7 @@ define_id!(
     /// Identifies a bookmark or a bookmark folder.
     BookmarkId
 );
+define_id!(
+    /// Identifies an entry of the download list.
+    DownloadId
+);

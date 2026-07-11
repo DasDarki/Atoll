@@ -1,4 +1,5 @@
 pub mod bookmarks;
+pub mod downloads;
 pub mod favicons;
 pub mod history;
 pub mod islands;

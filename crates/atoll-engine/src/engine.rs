@@ -4,8 +4,8 @@ use std::time::{Duration, Instant};
 
 use cef::args::Args;
 use cef::{
-    BrowserSettings, CefString, CefStringList, ImplCookieManager, ImplFileDialogCallback,
-    ImplJsdialogCallback, ImplRunContextMenuCallback, Settings, WindowInfo,
+    BrowserSettings, CefString, CefStringList, ImplCookieManager, ImplDownloadItemCallback,
+    ImplFileDialogCallback, ImplJsdialogCallback, ImplRunContextMenuCallback, Settings, WindowInfo,
 };
 
 use crate::app;
@@ -57,6 +57,7 @@ impl Engine {
         let runtime = Rc::new(Runtime::new(
             gpu,
             config.download_directory,
+            config.ask_download_location,
             config.frame_rate.clamp(1, 240) as i32,
             accelerated,
         ));
@@ -170,6 +171,37 @@ impl Engine {
             let input = input.map(CefString::from);
             callback.cont(i32::from(accepted), input.as_ref());
         }
+    }
+
+    /// Where new downloads go, and whether to ask for a location each time instead.
+    pub fn set_download_options(&self, directory: PathBuf, ask_for_location: bool) {
+        *self.runtime.download_directory.borrow_mut() = directory;
+        self.runtime.ask_download_location.set(ask_for_location);
+    }
+
+    /// Cancels a running download, see [`crate::DownloadState::id`].
+    pub fn cancel_download(&self, id: u32) {
+        if let Some(callback) = self.download_callback(id) {
+            callback.cancel();
+        }
+    }
+
+    pub fn pause_download(&self, id: u32) {
+        if let Some(callback) = self.download_callback(id) {
+            callback.pause();
+        }
+    }
+
+    pub fn resume_download(&self, id: u32) {
+        if let Some(callback) = self.download_callback(id) {
+            callback.resume();
+        }
+    }
+
+    /// The callback is cloned out of the registry because the engine may report the change
+    /// while the call is still running.
+    fn download_callback(&self, id: u32) -> Option<cef::DownloadItemCallback> {
+        self.runtime.downloads.borrow().get(&id).cloned()
     }
 
     /// Deletes every cookie of the profile. Returns `false` if the cookie store is unavailable.

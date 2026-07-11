@@ -9,6 +9,8 @@ pub struct EngineConfig {
     pub cache_path: PathBuf,
     /// Where downloads are stored.
     pub download_directory: PathBuf,
+    /// Asks for a location before every download instead of saving to `download_directory`.
+    pub ask_download_location: bool,
     /// UI locale such as `de`, `None` uses the system locale.
     pub locale: Option<String>,
     /// Upper bound for frames per second produced by a page.

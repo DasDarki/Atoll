@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::rc::Rc;
 
 use atoll_storage::prelude::*;
@@ -6,6 +7,7 @@ use slint::{ComponentHandle, ModelRc, SharedString, VecModel};
 use super::Browser;
 use super::navigation::resolve_input;
 use super::preferences::{MAX_FROZEN_LIMIT, PreferenceKey, Preferences, SEARCH_ENGINES};
+use crate::platform::dialogs::{self, FileDialogKind, FileDialogOptions};
 use crate::ui::{BrowserState, SettingsState};
 
 const CUSTOM_SEARCH_ENGINE: &str = "Eigene Adresse";
@@ -33,6 +35,9 @@ impl Browser {
         state.set_bookmarks_bar_auto_hide(preferences.bookmarks_bar_auto_hide);
         state.set_frozen_limit(preferences.frozen_limit as i32);
         state.set_max_frozen_limit(MAX_FROZEN_LIMIT as i32);
+        state.set_download_ask(preferences.download_ask);
+        state.set_download_panel(preferences.download_panel);
+        self.show_download_directory();
         state.set_visible(true);
     }
 
@@ -83,11 +88,69 @@ impl Browser {
             "bookmarks-bar-auto-hide" => {
                 self.set_bookmarks_bar_auto_hide(state.get_bookmarks_bar_auto_hide())
             }
+            "download-ask" => {
+                let ask = state.get_download_ask();
+                self.update_preference(PreferenceKey::DownloadAsk, |preferences| {
+                    preferences.download_ask = ask;
+                });
+                self.apply_download_options();
+            }
+            "download-panel" => {
+                let open = state.get_download_panel();
+                self.update_preference(PreferenceKey::DownloadPanel, |preferences| {
+                    preferences.download_panel = open;
+                });
+            }
             "frozen-limit" => {
                 let limit = usize::try_from(state.get_frozen_limit()).unwrap_or_default();
                 self.set_frozen_limit(limit);
             }
             other => tracing::warn!(key = other, "unknown setting"),
+        }
+    }
+
+    pub fn choose_download_directory(&self) {
+        let this = self.this();
+        dialogs::show(
+            FileDialogOptions {
+                kind: FileDialogKind::OpenFolder,
+                title: "Download-Ordner wählen".into(),
+                directory: Some(self.download_directory()),
+                file_name: None,
+                filters: Vec::new(),
+            },
+            move |paths| {
+                let Some(browser) = this.upgrade() else {
+                    return;
+                };
+                if let Some(directory) = paths.and_then(|paths| paths.into_iter().next()) {
+                    browser.set_download_directory(Some(directory));
+                }
+            },
+        );
+    }
+
+    pub fn reset_download_directory(&self) {
+        self.set_download_directory(None);
+    }
+
+    fn set_download_directory(&self, directory: Option<PathBuf>) {
+        self.update_preference(PreferenceKey::DownloadDirectory, |preferences| {
+            preferences.download_directory = directory;
+        });
+        self.apply_download_options();
+        self.show_download_directory();
+    }
+
+    fn show_download_directory(&self) {
+        if let Some(window) = self.window() {
+            let state = window.global::<SettingsState>();
+            state.set_download_directory(
+                self.download_directory().to_string_lossy().as_ref().into(),
+            );
+            state.set_download_directory_custom(
+                self.preferences.borrow().download_directory.is_some(),
+            );
         }
     }
 

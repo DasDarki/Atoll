@@ -21,7 +21,9 @@ pub(crate) enum PendingCallback {
 /// thread every handler used by Atoll is called on.
 pub(crate) struct Runtime {
     pub(crate) gpu: Rc<GpuContext>,
-    pub(crate) download_directory: PathBuf,
+    pub(crate) download_directory: RefCell<PathBuf>,
+    pub(crate) ask_download_location: Cell<bool>,
+    pub(crate) downloads: RefCell<HashMap<u32, cef::DownloadItemCallback>>,
     pub(crate) frame_rate: i32,
     pub(crate) accelerated: Cell<bool>,
     events: RefCell<VecDeque<EngineEvent>>,
@@ -40,12 +42,15 @@ impl Runtime {
     pub(crate) fn new(
         gpu: Rc<GpuContext>,
         download_directory: PathBuf,
+        ask_download_location: bool,
         frame_rate: i32,
         accelerated: bool,
     ) -> Self {
         Self {
             gpu,
-            download_directory,
+            download_directory: RefCell::new(download_directory),
+            ask_download_location: Cell::new(ask_download_location),
+            downloads: RefCell::default(),
             frame_rate,
             accelerated: Cell::new(accelerated),
             events: RefCell::default(),
@@ -120,6 +125,7 @@ impl Runtime {
 
     pub(crate) fn clear_pending(&self) {
         self.pending.borrow_mut().clear();
+        self.downloads.borrow_mut().clear();
     }
 }
 

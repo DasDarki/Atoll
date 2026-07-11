@@ -21,10 +21,11 @@ import { BookmarkManager } from "overlays/bookmark-manager.slint";
 import { HoverCard } from "overlays/hover-card.slint";
 import { SettingsPage } from "overlays/settings-page.slint";
 import { SiteInfoPopup } from "overlays/site-info-popup.slint";
+import { DownloadsPanel } from "overlays/downloads-panel.slint";
 import { BookmarksBar } from "toolbar/bookmarks-bar.slint";
 
 export { SidebarState, BrowserState, OverlayState, SettingsState }
-export { WorkspaceItem, SidebarRow, IslandTarget, MenuItemData, ArchiveItem, ExportIslandItem, DialogData, DialogKind, RowKind, TabLoadState, PointerAction, PointerButton, WebCursor, WebPointer, WebScroll, SuggestionKind, SuggestionItem, Completion, PaletteKind, PaletteItem, BookmarkItem, PageSecurity, SiteInfoDetail } from "structs.slint";
+export { WorkspaceItem, SidebarRow, IslandTarget, MenuItemData, ArchiveItem, ExportIslandItem, DialogData, DialogKind, RowKind, TabLoadState, PointerAction, PointerButton, WebCursor, WebPointer, WebScroll, SuggestionKind, SuggestionItem, Completion, PaletteKind, PaletteItem, BookmarkItem, PageSecurity, SiteInfoDetail, DownloadItem, DownloadItemStatus } from "structs.slint";
 
 export component AppWindow inherits Window {
     title: BrowserState.title == "" ? "Atoll" : BrowserState.title + " - Atoll";
@@ -44,6 +45,7 @@ export component AppWindow inherits Window {
         || OverlayState.palette-visible
         || OverlayState.folder-popup-visible
         || OverlayState.site-info-visible
+        || OverlayState.downloads-visible
         || OverlayState.bookmark-editor-visible
         || OverlayState.bookmark-manager-visible
         || SettingsState.visible
@@ -133,6 +135,11 @@ export component AppWindow inherits Window {
         height: root.height;
         anchor-x: toolbar.address-x;
         anchor-y: toolbar.address-y;
+    }
+
+    if OverlayState.downloads-visible : DownloadsPanel {
+        width: root.width;
+        height: root.height;
     }
 
     if OverlayState.palette-visible : CommandPalette {

@@ -1,6 +1,7 @@
 mod archive;
 mod bookmarks;
 mod clipboard;
+mod downloads;
 mod events;
 mod favicons;
 mod layout;
@@ -24,7 +25,6 @@ mod views;
 mod web_input;
 
 use std::cell::{Cell, RefCell};
-use std::collections::HashSet;
 use std::rc::{Rc, Weak};
 
 use anyhow::Result;
@@ -42,6 +42,7 @@ use crate::ui::AppWindow;
 
 use bookmarks::BookmarkState;
 use clipboard::ClipboardSync;
+use downloads::Downloads;
 use favicons::FaviconCache;
 use overlays::DialogQueue;
 use page::PageState;
@@ -83,7 +84,7 @@ pub struct Browser {
     clipboard_sync: RefCell<ClipboardSync>,
     find_text: RefCell<String>,
     address_focus_requested: Cell<bool>,
-    downloads: RefCell<HashSet<u32>>,
+    downloads: RefCell<Downloads>,
     suggestions: RefCell<SuggestionState>,
     palette: RefCell<PaletteState>,
     bookmarks: RefCell<BookmarkState>,

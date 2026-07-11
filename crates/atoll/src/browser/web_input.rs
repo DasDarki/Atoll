@@ -180,6 +180,7 @@ impl Browser {
             Shortcut::Commands => self.open_palette(true),
             Shortcut::Settings => self.open_settings(),
             Shortcut::Home => self.go_home(),
+            Shortcut::Downloads => self.open_downloads(),
         }
     }
 }

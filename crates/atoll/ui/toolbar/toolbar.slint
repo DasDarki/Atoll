@@ -1,5 +1,5 @@
 import { Theme } from "../theme.slint";
-import { BrowserState, SidebarState } from "../state.slint";
+import { BrowserState, OverlayState, SidebarState } from "../state.slint";
 import { IconButton } from "../widgets/icon-button.slint";
 import { AddressBar } from "address-bar.slint";
 
@@ -69,6 +69,34 @@ export component Toolbar inherits Rectangle {
         }
 
         Rectangle { width: 6px; }
+
+        if BrowserState.downloads-button-visible : Rectangle {
+            width: 30px;
+            height: 30px;
+            y: (parent.height - self.height) / 2;
+
+            IconButton {
+                icon: @image-url("../icons/download.svg");
+                active: OverlayState.downloads-visible;
+                tint: BrowserState.downloads-running ? Theme.accent-cyan : Theme.text-muted;
+                clicked => { BrowserState.open-downloads(); }
+            }
+
+            if BrowserState.downloads-running : Rectangle {
+                x: 7px;
+                y: parent.height - 4px;
+                width: 16px;
+                height: 2px;
+                border-radius: 1px;
+                background: Theme.border-strong;
+                Rectangle {
+                    x: 0;
+                    width: BrowserState.downloads-progress < 0 ? parent.width : parent.width * BrowserState.downloads-progress;
+                    border-radius: 1px;
+                    background: Theme.accent-cyan;
+                }
+            }
+        }
 
         menu-button := IconButton {
             y: (parent.height - self.height) / 2;
@@ -152,6 +180,10 @@ export component Toolbar inherits Rectangle {
                 activated => { BrowserState.menu-action("archive"); }
             }
             MenuSeparator { }
+            MenuItem {
+                title: "Downloads";
+                activated => { BrowserState.menu-action("downloads"); }
+            }
             MenuItem {
                 title: "Einstellungen";
                 activated => { BrowserState.menu-action("settings"); }

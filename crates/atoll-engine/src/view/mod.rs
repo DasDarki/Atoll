@@ -363,6 +363,13 @@ impl BrowserView {
         ) != 0
     }
 
+    /// Downloads `url` without navigating.
+    pub fn start_download(&self, url: &str) {
+        if let Some(host) = self.state.host() {
+            host.start_download(Some(&url.into()));
+        }
+    }
+
     pub fn show_dev_tools(&self, inspect_at: Option<(i32, i32)>) {
         if let Some(host) = self.state.host() {
             open_dev_tools(&host, inspect_at);

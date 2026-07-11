@@ -203,13 +203,21 @@ pub struct JsDialogRequest {
 
 #[derive(Debug, Clone)]
 pub struct DownloadState {
+    /// Identifies the download for [`crate::Engine::cancel_download`] and friends.
     pub id: u32,
     pub view: Option<ViewId>,
+    pub url: String,
     pub file_name: String,
     pub path: Option<PathBuf>,
     pub received_bytes: i64,
+    /// The expected size, zero if unknown.
     pub total_bytes: i64,
+    /// Bytes per second.
+    pub speed: i64,
     pub in_progress: bool,
+    pub paused: bool,
     pub complete: bool,
     pub canceled: bool,
+    /// The download failed, for example because the connection was lost.
+    pub interrupted: bool,
 }

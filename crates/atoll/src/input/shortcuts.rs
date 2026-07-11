@@ -29,6 +29,7 @@ pub enum Shortcut {
     Commands,
     Settings,
     Home,
+    Downloads,
 }
 
 pub fn detect(event: &KeyEvent, modifiers: ModifiersState) -> Option<Shortcut> {
@@ -69,6 +70,7 @@ pub fn detect(event: &KeyEvent, modifiers: ModifiersState) -> Option<Shortcut> {
             ("k", false) => Shortcut::QuickSearch,
             ("p", true) => Shortcut::Commands,
             (",", false) => Shortcut::Settings,
+            ("j", false) => Shortcut::Downloads,
             ("+" | "=", _) => Shortcut::ZoomIn,
             ("-", _) => Shortcut::ZoomOut,
             ("0", false) => Shortcut::ZoomReset,

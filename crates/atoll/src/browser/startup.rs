@@ -9,6 +9,7 @@ impl Browser {
     /// Shows the stored session. Only the database is read, no engine instance is created yet.
     pub fn show_session(&self) {
         self.restore_layout();
+        self.restore_downloads();
         self.refresh_bookmarks();
         self.show_remembered_tab();
     }
@@ -22,7 +23,8 @@ impl Browser {
         let config = EngineConfig {
             root_cache_path: self.paths.engine_root.clone(),
             cache_path: self.paths.engine_profile.clone(),
-            download_directory: self.paths.downloads.clone(),
+            download_directory: self.download_directory(),
+            ask_download_location: self.preferences.borrow().download_ask,
             locale: None,
             frame_rate,
             accelerated_paint: std::env::var_os("ATOLL_SOFTWARE_RENDERING").is_none(),
