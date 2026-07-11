@@ -10,6 +10,8 @@ const SUPPORTED_SCHEMES: &[&str] = &[
     "about",
     "data",
     "view-source",
+    "chrome",
+    "devtools",
 ];
 
 /// Why a line of a URL list could not be imported.
