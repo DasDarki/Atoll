@@ -22,6 +22,15 @@ saved tabs therefore cost nothing at startup.
   how recently they were visited.
 - **Bookmarks**: a bookmarks bar with folders, `Ctrl+D` to bookmark the current page, whole
   islands saved as folders, a bookmark manager and import from the HTML export of other browsers.
+  Entries of the bar are rearranged and moved into folders by drag and drop.
+- **Downloads**: a download list with progress, pause, resume and cancel that is kept in the
+  database. The download folder, asking for a location each time and opening the list when a
+  download starts are configurable.
+- **Site information**: the symbol in the address bar shows whether the connection is secure,
+  the certificate and the zoom level, and deletes cookies and stored data of the site.
+- **Developer tools** docked below or next to the page, see *Architecture*.
+- **Settings** (`Ctrl+,`): start page and home button, search engine, sidebar and bookmarks bar
+  (optionally hidden while empty), the number of frozen tabs, downloads and privacy.
 - **Collapsible sidebar** (`Ctrl+B`). Hovering a tab shows its full title and address.
 - **URL list import and export** in a plain text format, see below.
 - **Fast startup**: the window shows the stored session in roughly 100 ms, the engine starts once
@@ -54,7 +63,8 @@ The build copies the CEF runtime files next to the binary in `target/<profile>/`
 | `RUST_LOG` | Log filter, e.g. `info,atoll=debug` |
 
 Data lives in `~/.local/share/atoll/`: `atoll.db` holds workspaces, islands, tabs, bookmarks,
-history, favicons and settings, `engine/` the Chromium profile (cookies, cache, local storage).
+history, downloads, favicons and settings, `engine/` the Chromium profile (cookies, cache, local
+storage).
 
 ## Keyboard shortcuts
 
@@ -74,9 +84,12 @@ history, favicons and settings, `engine/` the Chromium profile (cookies, cache, 
 | `Ctrl+D` | Bookmark the current page |
 | `Ctrl+Shift+B` | Show or hide the bookmarks bar |
 | `Ctrl+Shift+O` | Manage bookmarks |
+| `Ctrl+J` | Downloads |
+| `Ctrl+,` | Settings |
+| `Alt+Home` | Open the start page |
 | `Ctrl+Plus`, `Ctrl+Minus`, `Ctrl+0` | Zoom |
 | `F11` | Full screen |
-| `F12`, `Ctrl+Shift+I` | Developer tools |
+| `F12`, `Ctrl+Shift+I` | Show or hide the developer tools |
 
 ## URL list format
 
@@ -117,6 +130,11 @@ crates/
 - **Clipboard**: off-screen browsers never own keyboard focus on Wayland, so Chromium's clipboard
   is separate from the system clipboard. A hidden helper page moves text between both, using real
   `copy` and `paste` events so web applications keep working.
+- **Developer tools**: Chromium only opens DevTools in native windows, which does not work for
+  off-screen browsers under Wayland. Atoll loads the bundled DevTools frontend into an ordinary
+  off-screen view instead and connects it through a WebSocket on the loopback interface, served
+  in-process under a random path and only accepted from the frontend's origin. Every message is
+  relayed to the protocol session of the inspected browser.
 - **Storage**: structural changes are written to the database first and the in-memory session is
   reloaded from it. The database stays the single source of truth.
 
@@ -124,8 +142,9 @@ crates/
 
 Phase 1 of the concept (shell, tab model, workspaces and islands, database, fast startup, URL list
 import and export) is implemented, together with the global quick search, a command palette,
-address bar autocomplete and bookmarks. Next up are adblocking and archive suggestions, then
-uploads from the clipboard and the memory limit, then 1Password.
+address bar autocomplete, bookmarks, downloads, settings and docked developer tools. Next up are
+adblocking and archive suggestions, then uploads from the clipboard and the memory limit, then
+1Password.
 
 Known limitations:
 
