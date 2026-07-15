@@ -32,6 +32,30 @@ pub enum Shortcut {
     Downloads,
 }
 
+impl Shortcut {
+    /// Whether the shortcut stays with Atoll while the developer tools have focus. The others
+    /// belong to the developer tools, for example Ctrl+F for searching or Ctrl+L for clearing
+    /// the console.
+    pub fn applies_in_dev_tools(self) -> bool {
+        matches!(
+            self,
+            Shortcut::NewTab
+                | Shortcut::CloseTab
+                | Shortcut::ReopenClosedTab
+                | Shortcut::NextTab
+                | Shortcut::PreviousTab
+                | Shortcut::DevTools
+                | Shortcut::ToggleFullscreen
+                | Shortcut::ToggleSidebar
+                | Shortcut::ToggleBookmarksBar
+                | Shortcut::QuickSearch
+                | Shortcut::Settings
+                | Shortcut::Home
+                | Shortcut::Downloads
+        )
+    }
+}
+
 pub fn detect(event: &KeyEvent, modifiers: ModifiersState) -> Option<Shortcut> {
     if event.state != ElementState::Pressed {
         return None;

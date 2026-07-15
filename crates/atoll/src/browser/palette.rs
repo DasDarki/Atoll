@@ -621,7 +621,7 @@ impl Browser {
             Command::ZoomIn => self.zoom(ZoomCommand::In),
             Command::ZoomOut => self.zoom(ZoomCommand::Out),
             Command::ZoomReset => self.zoom(ZoomCommand::Reset),
-            Command::DevTools => self.show_dev_tools(),
+            Command::DevTools => self.toggle_dev_tools(),
             Command::ClearHistory => self.clear_history(),
             Command::ClearCookies => self.clear_cookies(),
             Command::OpenSettings => self.open_settings(),

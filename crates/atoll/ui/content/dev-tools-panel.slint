@@ -1,0 +1,81 @@
+import { Theme } from "../theme.slint";
+import { DevToolsState } from "../state.slint";
+import { IconButton } from "../widgets/icon-button.slint";
+import { WebSurface } from "web-surface.slint";
+
+export component DevToolsPanel inherits Rectangle {
+    out property <bool> focused: surface.focused;
+    out property <length> surface-x: surface.absolute-position.x;
+    out property <length> surface-y: surface.absolute-position.y;
+
+    public function focus-dev-tools() {
+        surface.focus-surface();
+    }
+
+    background: Theme.chrome;
+
+    VerticalLayout {
+        Rectangle {
+            height: 30px;
+
+            HorizontalLayout {
+                padding-left: 10px;
+                padding-right: 4px;
+                spacing: 4px;
+
+                Image {
+                    width: 13px;
+                    height: 13px;
+                    y: (parent.height - self.height) / 2;
+                    source: @image-url("../icons/code.svg");
+                    colorize: Theme.text-faint;
+                }
+                Text {
+                    text: "Entwicklertools";
+                    color: Theme.text-muted;
+                    font-size: Theme.font-small + 1px;
+                    font-weight: 600;
+                    vertical-alignment: center;
+                    horizontal-stretch: 1;
+                }
+                IconButton {
+                    width: 24px;
+                    height: 24px;
+                    y: (parent.height - self.height) / 2;
+                    icon-size: 14px;
+                    icon: DevToolsState.docked-right ? @image-url("../icons/dock-bottom.svg") : @image-url("../icons/dock-right.svg");
+                    clicked => { DevToolsState.toggle-dock(); }
+                }
+                IconButton {
+                    width: 24px;
+                    height: 24px;
+                    y: (parent.height - self.height) / 2;
+                    icon-size: 14px;
+                    icon: @image-url("../icons/close.svg");
+                    clicked => { DevToolsState.close(); }
+                }
+            }
+
+            Rectangle {
+                y: parent.height - 1px;
+                height: 1px;
+                background: Theme.border;
+            }
+        }
+
+        surface := WebSurface {
+            vertical-stretch: 1;
+            frame: DevToolsState.frame;
+            popup-frame: DevToolsState.popup-frame;
+            popup-visible: DevToolsState.popup-visible;
+            popup-x: DevToolsState.popup-x;
+            popup-y: DevToolsState.popup-y;
+            cursor: DevToolsState.cursor;
+            pointer(pointer) => { DevToolsState.pointer(pointer); }
+            scroll(scroll) => { return DevToolsState.scroll(scroll); }
+            hover(inside, x, y) => { DevToolsState.hover(inside, x, y); }
+            resized(width, height) => { DevToolsState.resized(width, height); }
+            focus-changed(focused) => { DevToolsState.focus-changed(focused); }
+        }
+    }
+}

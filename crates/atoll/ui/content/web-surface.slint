@@ -1,0 +1,133 @@
+import { PointerAction, PointerButton, WebCursor, WebPointer, WebScroll } from "../structs.slint";
+
+export component WebSurface inherits Rectangle {
+    in property <image> frame;
+    in property <image> popup-frame;
+    in property <bool> popup-visible;
+    in property <length> popup-x;
+    in property <length> popup-y;
+    in property <WebCursor> cursor;
+    out property <bool> focused: keys.has-focus;
+    out property <bool> hovered: touch.has-hover;
+    out property <length> pointer-x: touch.mouse-x;
+    out property <length> pointer-y: touch.mouse-y;
+
+    callback pointer(WebPointer);
+    callback scroll(WebScroll) -> bool;
+    callback hover(bool, length, length);
+    callback resized(length, length);
+    callback focus-changed(bool);
+
+    public function focus-surface() {
+        keys.focus();
+    }
+
+    pure function cursor-for(kind: WebCursor) -> MouseCursor {
+        if (kind == WebCursor.pointer) { return MouseCursor.pointer; }
+        if (kind == WebCursor.text) { return MouseCursor.text; }
+        if (kind == WebCursor.wait) { return MouseCursor.wait; }
+        if (kind == WebCursor.progress) { return MouseCursor.progress; }
+        if (kind == WebCursor.help) { return MouseCursor.help; }
+        if (kind == WebCursor.crosshair) { return MouseCursor.crosshair; }
+        if (kind == WebCursor.move) { return MouseCursor.move; }
+        if (kind == WebCursor.not-allowed) { return MouseCursor.not-allowed; }
+        if (kind == WebCursor.no-drop) { return MouseCursor.no-drop; }
+        if (kind == WebCursor.grab) { return MouseCursor.grab; }
+        if (kind == WebCursor.grabbing) { return MouseCursor.grabbing; }
+        if (kind == WebCursor.copy) { return MouseCursor.copy; }
+        if (kind == WebCursor.alias) { return MouseCursor.alias; }
+        if (kind == WebCursor.resize-ew) { return MouseCursor.ew-resize; }
+        if (kind == WebCursor.resize-ns) { return MouseCursor.ns-resize; }
+        if (kind == WebCursor.resize-nesw) { return MouseCursor.nesw-resize; }
+        if (kind == WebCursor.resize-nwse) { return MouseCursor.nwse-resize; }
+        if (kind == WebCursor.resize-column) { return MouseCursor.col-resize; }
+        if (kind == WebCursor.resize-row) { return MouseCursor.row-resize; }
+        if (kind == WebCursor.none) { return MouseCursor.none; }
+        return MouseCursor.default;
+    }
+
+    pure function action-of(kind: PointerEventKind) -> PointerAction {
+        if (kind == PointerEventKind.down) { return PointerAction.down; }
+        if (kind == PointerEventKind.up) { return PointerAction.up; }
+        if (kind == PointerEventKind.move) { return PointerAction.move; }
+        return PointerAction.cancel;
+    }
+
+    pure function button-of(button: PointerEventButton) -> PointerButton {
+        if (button == PointerEventButton.left) { return PointerButton.left; }
+        if (button == PointerEventButton.right) { return PointerButton.right; }
+        if (button == PointerEventButton.middle) { return PointerButton.middle; }
+        if (button == PointerEventButton.back) { return PointerButton.back; }
+        if (button == PointerEventButton.forward) { return PointerButton.forward; }
+        return PointerButton.none;
+    }
+
+    background: white;
+    clip: true;
+
+    changed width => { root.resized(self.width, self.height); }
+    changed height => { root.resized(self.width, self.height); }
+    init => { root.resized(self.width, self.height); }
+
+    Image {
+        x: 0;
+        y: 0;
+        width: root.frame.width * 1phx;
+        height: root.frame.height * 1phx;
+        source: root.frame;
+        image-fit: fill;
+    }
+
+    if root.popup-visible : Image {
+        x: root.popup-x;
+        y: root.popup-y;
+        width: root.popup-frame.width * 1phx;
+        height: root.popup-frame.height * 1phx;
+        source: root.popup-frame;
+        image-fit: fill;
+    }
+
+    keys := FocusScope {
+        focus-on-click: false;
+        changed has-focus => { root.focus-changed(self.has-focus); }
+        key-pressed(event) => { return accept; }
+        key-released(event) => { return accept; }
+
+        touch := TouchArea {
+            mouse-cursor: root.cursor-for(root.cursor);
+            pointer-event(event) => {
+                if (event.kind == PointerEventKind.down) {
+                    keys.focus();
+                }
+                root.pointer({
+                    action: root.action-of(event.kind),
+                    button: root.button-of(event.button),
+                    x: self.mouse-x,
+                    y: self.mouse-y,
+                    shift: event.modifiers.shift,
+                    control: event.modifiers.control,
+                    alt: event.modifiers.alt,
+                    meta: event.modifiers.meta,
+                });
+            }
+            scroll-event(event) => {
+                if (root.scroll({
+                    delta-x: event.delta-x,
+                    delta-y: event.delta-y,
+                    x: self.mouse-x,
+                    y: self.mouse-y,
+                    shift: event.modifiers.shift,
+                    control: event.modifiers.control,
+                    alt: event.modifiers.alt,
+                    meta: event.modifiers.meta,
+                })) {
+                    return accept;
+                }
+                return reject;
+            }
+            changed has-hover => {
+                root.hover(self.has-hover, self.mouse-x, self.mouse-y);
+            }
+        }
+    }
+}

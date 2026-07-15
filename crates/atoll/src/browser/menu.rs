@@ -15,7 +15,7 @@ impl Browser {
             "import" => self.open_import(),
             "export" => self.open_export(None),
             "archive" => self.open_archive(),
-            "devtools" => self.show_dev_tools(),
+            "devtools" => self.toggle_dev_tools(),
             "palette" => self.open_palette(false),
             "commands" => self.open_palette(true),
             "bookmark" => self.bookmark_page(),

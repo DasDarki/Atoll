@@ -3,6 +3,7 @@ use std::collections::{HashMap, VecDeque};
 use std::path::PathBuf;
 use std::rc::Rc;
 
+use crate::dev_tools::DevToolsBridge;
 use crate::events::{EngineEvent, RequestId};
 use crate::render::GpuContext;
 use crate::view::{ViewGeometry, ViewId, ViewState};
@@ -30,6 +31,7 @@ pub(crate) struct Runtime {
     views: RefCell<HashMap<ViewId, Rc<ViewState>>>,
     pending: RefCell<HashMap<RequestId, PendingCallback>>,
     popups: RefCell<HashMap<i32, ViewId>>,
+    dev_tools: RefCell<HashMap<ViewId, Rc<DevToolsBridge>>>,
     next_view: Cell<u64>,
     next_request: Cell<u64>,
 }
@@ -57,6 +59,7 @@ impl Runtime {
             views: RefCell::default(),
             pending: RefCell::default(),
             popups: RefCell::default(),
+            dev_tools: RefCell::default(),
             next_view: Cell::new(0),
             next_request: Cell::new(0),
         }
@@ -126,6 +129,23 @@ impl Runtime {
     pub(crate) fn clear_pending(&self) {
         self.pending.borrow_mut().clear();
         self.downloads.borrow_mut().clear();
+        self.dev_tools.borrow_mut().clear();
+    }
+
+    pub(crate) fn add_dev_tools_bridge(&self, frontend: ViewId, bridge: Rc<DevToolsBridge>) {
+        self.dev_tools.borrow_mut().insert(frontend, bridge);
+    }
+
+    pub(crate) fn remove_dev_tools_bridge(&self, frontend: ViewId) {
+        self.dev_tools.borrow_mut().remove(&frontend);
+    }
+
+    /// Passes messages of every DevTools frontend on to the inspected pages.
+    pub(crate) fn flush_dev_tools(&self) {
+        let bridges: Vec<Rc<DevToolsBridge>> = self.dev_tools.borrow().values().cloned().collect();
+        for bridge in bridges {
+            bridge.flush();
+        }
     }
 }
 

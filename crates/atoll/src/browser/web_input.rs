@@ -13,18 +13,31 @@ use crate::ui::{BrowserState, PointerAction, PointerButton, WebPointer, WebScrol
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct KeyboardFocus {
     pub page: bool,
+    pub dev_tools: bool,
     pub modal: bool,
+}
+
+/// The engine view that receives keys, input method text and clipboard shortcuts.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub(super) enum InputTarget {
+    #[default]
+    Page,
+    DevTools,
+}
+
+pub(super) fn modifiers_of(shift: bool, control: bool, alt: bool, meta: bool) -> Modifiers {
+    Modifiers {
+        shift,
+        control,
+        alt,
+        meta,
+        ..Modifiers::default()
+    }
 }
 
 impl Browser {
     pub fn web_pointer(&self, pointer: WebPointer) {
-        let modifiers = Modifiers {
-            shift: pointer.shift,
-            control: pointer.control,
-            alt: pointer.alt,
-            meta: pointer.meta,
-            ..Modifiers::default()
-        };
+        let modifiers = modifiers_of(pointer.shift, pointer.control, pointer.alt, pointer.meta);
         let (x, y) = (pointer.x.round() as i32, pointer.y.round() as i32);
 
         if pointer.action == PointerAction::Down {
@@ -60,20 +73,22 @@ impl Browser {
         }
     }
 
-    fn has_live_view(&self) -> bool {
+    /// Runs `action` with the view that currently receives keyboard input.
+    pub(super) fn with_input_view(&self, action: impl FnOnce(&atoll_engine::BrowserView)) {
+        match self.input_target.get() {
+            InputTarget::Page => self.with_live_view(action),
+            InputTarget::DevTools => self.with_live_dev_tools(action),
+        }
+    }
+
+    fn has_input_view(&self) -> bool {
         let mut present = false;
-        self.with_live_view(|_| present = true);
+        self.with_input_view(|_| present = true);
         present
     }
 
     pub fn web_scroll(&self, scroll: WebScroll) -> bool {
-        let modifiers = Modifiers {
-            shift: scroll.shift,
-            control: scroll.control,
-            alt: scroll.alt,
-            meta: scroll.meta,
-            ..Modifiers::default()
-        };
+        let modifiers = modifiers_of(scroll.shift, scroll.control, scroll.alt, scroll.meta);
         let mut handled = false;
         self.with_live_view(|view| {
             view.mouse_wheel(
@@ -100,7 +115,9 @@ impl Browser {
     /// while a context menu is open, because the engine cancels the menu when its browser loses
     /// focus, and the menu takes the focus as soon as it opens.
     pub fn web_focus_changed(&self, focused: bool) {
-        if !focused && self.context_menu.get().is_some() {
+        if focused {
+            self.input_target.set(InputTarget::Page);
+        } else if self.context_menu.get().is_some() {
             return;
         }
         self.with_live_view(|view| view.set_focus(focused));
@@ -116,14 +133,22 @@ impl Browser {
         if focus.modal {
             return EventResult::Propagate;
         }
-        if let Some(shortcut) = shortcuts::detect(event, modifiers) {
+        if let Some(shortcut) = shortcuts::detect(event, modifiers)
+            && (!focus.dev_tools || shortcut.applies_in_dev_tools())
+        {
             self.run_shortcut(shortcut);
             return EventResult::PreventDefault;
         }
-        if !focus.page {
+        if !focus.page && !focus.dev_tools {
             return EventResult::Propagate;
         }
-        if event.state == ElementState::Pressed
+        self.input_target.set(if focus.dev_tools {
+            InputTarget::DevTools
+        } else {
+            InputTarget::Page
+        });
+        if focus.page
+            && event.state == ElementState::Pressed
             && event.logical_key == Key::Named(NamedKey::Escape)
             && self
                 .window()
@@ -131,30 +156,30 @@ impl Browser {
         {
             self.toggle_fullscreen();
         }
-        if !self.has_live_view() {
+        if !self.has_input_view() {
             return EventResult::Propagate;
         }
         let translation = keyboard::translate(event, modifiers);
         self.deliver_keys(translation.events);
         if let Some(text) = &translation.commit {
-            self.with_live_view(|view| view.commit_text(text));
+            self.with_input_view(|view| view.commit_text(text));
         }
         EventResult::PreventDefault
     }
 
     pub fn handle_ime(&self, ime: &Ime, focus: KeyboardFocus) -> EventResult {
-        if !focus.page || focus.modal {
+        if (!focus.page && !focus.dev_tools) || focus.modal {
             return EventResult::Propagate;
         }
         match ime {
-            Ime::Preedit(text, _) => self.with_live_view(|view| {
+            Ime::Preedit(text, _) => self.with_input_view(|view| {
                 if text.is_empty() {
                     view.cancel_composition();
                 } else {
                     view.set_composition(text);
                 }
             }),
-            Ime::Commit(text) => self.with_live_view(|view| view.commit_text(text)),
+            Ime::Commit(text) => self.with_input_view(|view| view.commit_text(text)),
             Ime::Enabled | Ime::Disabled => {}
         }
         EventResult::PreventDefault
@@ -176,7 +201,7 @@ impl Browser {
             Shortcut::ZoomIn => self.zoom(ZoomCommand::In),
             Shortcut::ZoomOut => self.zoom(ZoomCommand::Out),
             Shortcut::ZoomReset => self.zoom(ZoomCommand::Reset),
-            Shortcut::DevTools => self.show_dev_tools(),
+            Shortcut::DevTools => self.toggle_dev_tools(),
             Shortcut::ToggleFullscreen => self.toggle_fullscreen(),
             Shortcut::ToggleSidebar => self.toggle_sidebar(),
             Shortcut::BookmarkPage => self.bookmark_page(),

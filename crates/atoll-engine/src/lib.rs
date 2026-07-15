@@ -7,6 +7,7 @@
 mod app;
 mod clipboard;
 mod config;
+mod dev_tools;
 mod engine;
 mod error;
 mod events;
@@ -19,6 +20,7 @@ mod view;
 
 pub use clipboard::ClipboardHelper;
 pub use config::EngineConfig;
+pub use dev_tools::DevToolsSession;
 pub use engine::Engine;
 pub use error::EngineError;
 pub use events::{

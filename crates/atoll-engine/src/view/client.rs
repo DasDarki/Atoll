@@ -1,14 +1,14 @@
 use cef::{
     Client, ContextMenuHandler, DialogHandler, DisplayHandler, DownloadHandler, FindHandler,
-    ImplClient, JsdialogHandler, LifeSpanHandler, LoadHandler, RenderHandler, RequestHandler,
-    WrapClient, rc::Rc as _, wrap_client,
+    ImplClient, JsdialogHandler, LifeSpanHandler, LoadHandler, PermissionHandler, RenderHandler,
+    RequestHandler, WrapClient, rc::Rc as _, wrap_client,
 };
 
 use super::ViewId;
 use super::handlers::{
     ViewContextMenuHandler, ViewDialogHandler, ViewDisplayHandler, ViewDownloadHandler,
-    ViewFindHandler, ViewJsDialogHandler, ViewLifeSpanHandler, ViewLoadHandler, ViewRenderHandler,
-    ViewRequestHandler,
+    ViewFindHandler, ViewJsDialogHandler, ViewLifeSpanHandler, ViewLoadHandler,
+    ViewPermissionHandler, ViewRenderHandler, ViewRequestHandler,
 };
 
 #[derive(Clone)]
@@ -23,6 +23,7 @@ struct ViewHandlers {
     jsdialog: JsdialogHandler,
     download: DownloadHandler,
     find: FindHandler,
+    permission: PermissionHandler,
 }
 
 wrap_client! {
@@ -70,6 +71,10 @@ wrap_client! {
         fn find_handler(&self) -> Option<FindHandler> {
             Some(self.handlers.find.clone())
         }
+
+        fn permission_handler(&self) -> Option<PermissionHandler> {
+            Some(self.handlers.permission.clone())
+        }
     }
 }
 
@@ -86,5 +91,6 @@ pub(crate) fn build_client(view: ViewId) -> Client {
         jsdialog: ViewJsDialogHandler::new(view),
         download: ViewDownloadHandler::new(view),
         find: ViewFindHandler::new(view),
+        permission: ViewPermissionHandler::new(),
     })
 }

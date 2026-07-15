@@ -199,14 +199,21 @@ impl Browser {
     }
 
     pub(super) fn show_context_menu(&self, view: ViewId, request: ContextMenuRequest) {
-        if !self.is_live_view(view) {
+        let Some(window) = self.window() else { return };
+        let origin = if self.is_live_view(view) {
+            Some((window.get_content_x(), window.get_content_y()))
+        } else if self.is_live_dev_tools(view) {
+            Some((window.get_dev_tools_x(), window.get_dev_tools_y()))
+        } else {
+            None
+        };
+        let Some((origin_x, origin_y)) = origin else {
             if let Some(engine) = self.engine.borrow().as_ref() {
                 engine.resolve_context_menu(request.id, None);
             }
             return;
-        }
+        };
         self.cancel_context_menu();
-        let Some(window) = self.window() else { return };
         let mut items = Vec::new();
         flatten_menu(&request.entries, false, &mut items);
         tidy_separators(&mut items);
@@ -218,8 +225,8 @@ impl Browser {
         }
         let state = window.global::<OverlayState>();
         state.set_menu_items(ModelRc::from(Rc::new(VecModel::from(items))));
-        state.set_menu_x(window.get_content_x() + request.x as f32);
-        state.set_menu_y(window.get_content_y() + request.y as f32);
+        state.set_menu_x(origin_x + request.x as f32);
+        state.set_menu_y(origin_y + request.y as f32);
         state.set_menu_visible(true);
         self.context_menu.set(Some((view, request.id)));
     }

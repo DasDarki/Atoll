@@ -110,10 +110,6 @@ impl Browser {
         self.with_live_view(|view| view.zoom(command));
     }
 
-    pub fn show_dev_tools(&self) {
-        self.with_live_view(|view| view.show_dev_tools(None));
-    }
-
     pub fn toggle_fullscreen(&self) {
         let Some(window) = self.window() else { return };
         let state = window.global::<BrowserState>();

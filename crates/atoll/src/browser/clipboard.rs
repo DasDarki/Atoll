@@ -110,7 +110,7 @@ impl Browser {
             }
             return;
         }
-        self.with_live_view(|view| {
+        self.with_input_view(|view| {
             for key in &keys {
                 view.key(*key);
             }
@@ -208,7 +208,7 @@ impl Browser {
             pending
         };
         let Some(pending) = pending else { return };
-        self.with_live_view(|view| {
+        self.with_input_view(|view| {
             view.set_focus(true);
             for key in &pending.keys {
                 view.key(*key);
@@ -222,7 +222,7 @@ impl Browser {
     }
 
     pub(super) fn clipboard_text_read(&self, text: String) {
-        self.with_live_view(|view| view.set_focus(true));
+        self.with_input_view(|view| view.set_focus(true));
         if text.is_empty() {
             return;
         }

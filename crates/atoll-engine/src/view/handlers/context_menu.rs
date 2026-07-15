@@ -2,14 +2,14 @@ use std::os::raw::c_int;
 
 use cef::sys::{cef_context_menu_media_type_t, cef_menu_id_t, cef_menu_item_type_t};
 use cef::{
-    Browser, CefString, ContextMenuHandler, ContextMenuParams, EventFlags, Frame, ImplBrowser,
+    Browser, CefString, ContextMenuHandler, ContextMenuParams, EventFlags, Frame,
     ImplContextMenuHandler, ImplContextMenuParams, ImplMenuModel, MenuModel,
     RunContextMenuCallback, WrapContextMenuHandler, rc::Rc as _, wrap_context_menu_handler,
 };
 
 use crate::events::{ContextMenuRequest, EngineEvent, MenuEntry, MenuEntryKind, OpenDisposition};
 use crate::registry::{self, PendingCallback};
-use crate::view::{ViewId, open_dev_tools};
+use crate::view::ViewId;
 
 const FIRST_COMMAND: i32 = cef_menu_id_t::MENU_ID_USER_FIRST as i32;
 const OPEN_LINK_IN_TAB: i32 = FIRST_COMMAND;
@@ -48,8 +48,11 @@ wrap_context_menu_handler! {
             if index > 0 && model.count() > index {
                 model.insert_separator_at(index);
             }
-            model.add_separator();
-            model.add_item(INSPECT, Some(&"Untersuchen".into()));
+            let frontend = registry::with_view(self.view, |_, view| view.dev_tools_frontend.get());
+            if frontend != Some(true) {
+                model.add_separator();
+                model.add_item(INSPECT, Some(&"Untersuchen".into()));
+            }
         }
 
         fn run_context_menu(
@@ -79,7 +82,7 @@ wrap_context_menu_handler! {
 
         fn on_context_menu_command(
             &self,
-            browser: Option<&mut Browser>,
+            _browser: Option<&mut Browser>,
             _frame: Option<&mut Frame>,
             params: Option<&mut ContextMenuParams>,
             command_id: c_int,
@@ -91,12 +94,11 @@ wrap_context_menu_handler! {
                 COPY_LINK => EngineEvent::CopyText(link_url(params)),
                 OPEN_IMAGE_IN_TAB => open_in_tab(self.view, source_url(params)),
                 COPY_IMAGE_ADDRESS => EngineEvent::CopyText(source_url(params)),
-                INSPECT => {
-                    if let Some(host) = browser.and_then(|browser| browser.host()) {
-                        open_dev_tools(&host, Some((params.xcoord(), params.ycoord())));
-                    }
-                    return 1;
-                }
+                INSPECT => EngineEvent::InspectElement {
+                    view: self.view,
+                    x: params.xcoord(),
+                    y: params.ycoord(),
+                },
                 _ => return 0,
             };
             registry::emit(event);

@@ -1,6 +1,7 @@
 mod archive;
 mod bookmarks;
 mod clipboard;
+mod dev_tools;
 mod downloads;
 mod events;
 mod favicons;
@@ -42,6 +43,7 @@ use crate::ui::AppWindow;
 
 use bookmarks::BookmarkState;
 use clipboard::ClipboardSync;
+use dev_tools::DevToolsPresentation;
 use downloads::Downloads;
 use favicons::FaviconCache;
 use overlays::DialogQueue;
@@ -54,6 +56,7 @@ use suggestions::SuggestionState;
 use tabs::ClosedTab;
 use transfer::TransferState;
 use views::ViewRegistry;
+use web_input::InputTarget;
 
 pub use web_input::KeyboardFocus;
 
@@ -73,6 +76,9 @@ pub struct Browser {
     views: RefCell<ViewRegistry>,
     sidebar: SidebarModels,
     geometry: Cell<ViewGeometry>,
+    dev_tools_geometry: Cell<ViewGeometry>,
+    dev_tools_presentation: RefCell<DevToolsPresentation>,
+    input_target: Cell<InputTarget>,
     favicons: RefCell<FaviconCache>,
     page: RefCell<PageState>,
     dialogs: RefCell<DialogQueue>,
@@ -120,6 +126,9 @@ impl Browser {
             views: RefCell::default(),
             sidebar: SidebarModels::attach(window),
             geometry: Cell::new(geometry),
+            dev_tools_geometry: Cell::new(geometry),
+            dev_tools_presentation: RefCell::default(),
+            input_target: Cell::default(),
             favicons: RefCell::default(),
             page: RefCell::default(),
             dialogs: RefCell::default(),

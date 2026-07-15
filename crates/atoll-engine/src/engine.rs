@@ -11,6 +11,7 @@ use cef::{
 use crate::app;
 use crate::clipboard::ClipboardHelper;
 use crate::config::EngineConfig;
+use crate::dev_tools::DevToolsSession;
 use crate::error::EngineError;
 use crate::events::{EngineEvent, RequestId};
 use crate::pump;
@@ -69,6 +70,7 @@ impl Engine {
     /// Performs pending engine work. Call on the main thread whenever the scheduler asks for it.
     pub fn do_message_loop_work(&self) {
         cef::do_message_loop_work();
+        self.runtime.flush_dev_tools();
     }
 
     /// Takes every event produced since the last call.
@@ -117,6 +119,15 @@ impl Engine {
         }
         *state.browser.borrow_mut() = Some(browser);
         Ok(BrowserView::new(state))
+    }
+
+    /// Opens the developer tools of `inspected` in a new view with `geometry`.
+    pub fn open_dev_tools(
+        &self,
+        inspected: &BrowserView,
+        geometry: ViewGeometry,
+    ) -> Result<DevToolsSession, EngineError> {
+        DevToolsSession::open(inspected, |url| self.create_view(url, geometry, false))
     }
 
     /// Creates the hidden page that moves text between Chromium's and the system clipboard.

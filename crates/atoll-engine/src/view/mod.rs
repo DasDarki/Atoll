@@ -6,8 +6,7 @@ mod state;
 use std::rc::Rc;
 
 use cef::{
-    BrowserSettings, CefString, ImplBrowser, ImplBrowserHost, ImplDictionaryValue, ImplFrame,
-    MouseEvent, Point, Range, WindowInfo,
+    CefString, ImplBrowser, ImplBrowserHost, ImplDictionaryValue, ImplFrame, MouseEvent, Range,
 };
 
 /// Chromium's "no range", used when input method text does not replace existing text.
@@ -72,6 +71,10 @@ impl BrowserView {
 
     pub fn id(&self) -> ViewId {
         self.state.id
+    }
+
+    pub(crate) fn host(&self) -> Option<cef::BrowserHost> {
+        self.state.host()
     }
 
     pub fn is_closed(&self) -> bool {
@@ -370,12 +373,6 @@ impl BrowserView {
         }
     }
 
-    pub fn show_dev_tools(&self, inspect_at: Option<(i32, i32)>) {
-        if let Some(host) = self.state.host() {
-            open_dev_tools(&host, inspect_at);
-        }
-    }
-
     pub fn exit_fullscreen(&self) {
         if let Some(host) = self.state.host() {
             host.exit_fullscreen(1);
@@ -428,11 +425,4 @@ impl Drop for BrowserView {
     fn drop(&mut self) {
         self.close();
     }
-}
-
-pub(crate) fn open_dev_tools(host: &cef::BrowserHost, inspect_at: Option<(i32, i32)>) {
-    let window_info = WindowInfo::default();
-    let settings = BrowserSettings::default();
-    let point = inspect_at.map(|(x, y)| Point { x, y });
-    host.show_dev_tools(Some(&window_info), None, Some(&settings), point.as_ref());
 }

@@ -8,4 +8,6 @@ pub enum EngineError {
     NotRunning,
     #[error("the browser could not be created")]
     BrowserCreation,
+    #[error("the developer tools could not be started: {0}")]
+    DevTools(std::io::Error),
 }

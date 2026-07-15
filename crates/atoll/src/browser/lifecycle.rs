@@ -15,6 +15,9 @@ impl Browser {
                     if let Some(entry) = self.views.borrow().get(tab) {
                         entry.view.set_hidden(false);
                         entry.view.set_focus(true);
+                        if let Some(dev_tools) = &entry.dev_tools {
+                            dev_tools.view().set_hidden(false);
+                        }
                     }
                 }
                 LifecycleCommand::Hide(tab) => {
@@ -22,6 +25,11 @@ impl Browser {
                         entry.view.capture_lost();
                         entry.view.set_focus(false);
                         entry.view.set_hidden(true);
+                        if let Some(dev_tools) = &entry.dev_tools {
+                            dev_tools.view().capture_lost();
+                            dev_tools.view().set_focus(false);
+                            dev_tools.view().set_hidden(true);
+                        }
                     }
                 }
                 LifecycleCommand::Unload(tab) => self.unload(tab),
@@ -67,6 +75,9 @@ impl Browser {
         if let Err(error) = self.storage.set_tab_scroll(tab, offset) {
             tracing::warn!(%error, "scroll position could not be stored");
         }
+        if let Some(dev_tools) = &entry.dev_tools {
+            dev_tools.view().close();
+        }
         entry.view.close();
     }
 
@@ -86,6 +97,10 @@ impl Browser {
             ..self.geometry.get()
         };
         self.set_geometry(geometry);
+        self.set_dev_tools_geometry(ViewGeometry {
+            scale,
+            ..self.dev_tools_geometry.get()
+        });
     }
 
     fn set_geometry(&self, geometry: ViewGeometry) {

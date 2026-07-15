@@ -33,6 +33,8 @@ pub(crate) struct ViewState {
     pub(crate) closing: Cell<bool>,
     pub(crate) paint_failed: Cell<bool>,
     pub(crate) clipboard_helper: Cell<bool>,
+    /// The view shows a DevTools frontend, see [`crate::DevToolsSession`].
+    pub(crate) dev_tools_frontend: Cell<bool>,
 }
 
 impl ViewState {
@@ -51,6 +53,7 @@ impl ViewState {
             closing: Cell::new(false),
             paint_failed: Cell::new(false),
             clipboard_helper: Cell::new(false),
+            dev_tools_frontend: Cell::new(false),
         }
     }
 

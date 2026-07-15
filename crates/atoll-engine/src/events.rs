@@ -92,6 +92,13 @@ pub enum EngineEvent {
         active_match: i32,
         final_update: bool,
     },
+    /// The user chose "inspect" in the context menu of the page at a position in view
+    /// coordinates.
+    InspectElement {
+        view: ViewId,
+        x: i32,
+        y: i32,
+    },
     /// Text the user wants to copy through a context menu entry of Atoll.
     CopyText(String),
     /// The content of Chromium's clipboard, read by the [`crate::ClipboardHelper`].

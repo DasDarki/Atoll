@@ -7,9 +7,12 @@ publish.workspace = true
 
 [dependencies]
 cef.workspace = true
+getrandom.workspace = true
 pollster.workspace = true
+serde_json.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
+tungstenite.workspace = true
 wgpu.workspace = true
 
 [target.'cfg(target_os = "linux")'.dependencies]

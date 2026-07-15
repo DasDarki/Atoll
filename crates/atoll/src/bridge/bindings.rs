@@ -4,7 +4,9 @@ use atoll_core::{BookmarkId, DownloadId, IslandId, TabId, WorkspaceId};
 use slint::ComponentHandle;
 
 use crate::browser::Browser;
-use crate::ui::{AppWindow, BrowserState, OverlayState, SettingsState, SidebarState};
+use crate::ui::{
+    AppWindow, BrowserState, DevToolsState, OverlayState, SettingsState, SidebarState,
+};
 
 /// Connects every callback of the user interface to the browser controller.
 pub fn connect(window: &AppWindow, browser: &Rc<Browser>) {
@@ -12,6 +14,7 @@ pub fn connect(window: &AppWindow, browser: &Rc<Browser>) {
     connect_browser(window, browser);
     connect_overlays(window, browser);
     connect_settings(window, browser);
+    connect_dev_tools(window, browser);
 }
 
 macro_rules! on {
@@ -295,4 +298,23 @@ fn connect_settings(window: &AppWindow, browser: &Rc<Browser>) {
     on!(state, on_reset_download_directory, browser, |target| target
         .reset_download_directory());
     on!(state, on_close, browser, |target| target.close_settings());
+}
+
+fn connect_dev_tools(window: &AppWindow, browser: &Rc<Browser>) {
+    let state = window.global::<DevToolsState>();
+    on!(state, on_pointer, browser, |target, pointer| target
+        .dev_tools_pointer(pointer));
+    on!(state, on_scroll, browser, |target, scroll| -> false, target.dev_tools_scroll(scroll));
+    on!(state, on_hover, browser, |target, inside, x, y| target
+        .dev_tools_hover(inside, x, y));
+    on!(state, on_resized, browser, |target, width, height| target
+        .dev_tools_resized(width, height));
+    on!(state, on_focus_changed, browser, |target, focused| target
+        .dev_tools_focus_changed(focused));
+    on!(state, on_close, browser, |target| target
+        .close_active_dev_tools());
+    on!(state, on_toggle_dock, browser, |target| target
+        .toggle_dev_tools_dock());
+    on!(state, on_size_committed, browser, |target, size| target
+        .dev_tools_size_committed(size));
 }

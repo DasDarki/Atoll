@@ -40,12 +40,16 @@ impl Browser {
             EngineEvent::FrameReady(view) => {
                 if self.is_live_view(view) {
                     self.present_frame();
+                } else if self.is_live_dev_tools(view) {
+                    self.present_dev_tools_frame();
                 }
                 Effect::NONE
             }
             EngineEvent::PopupWidgetChanged(view) => {
                 if self.is_live_view(view) {
                     self.present_popup();
+                } else if self.is_live_dev_tools(view) {
+                    self.present_dev_tools_popup();
                 }
                 Effect::NONE
             }
@@ -89,6 +93,10 @@ impl Browser {
                 Effect::NONE
             }
             EngineEvent::CursorChanged { view, cursor } => {
+                if let Some(owner) = self.dev_tools_owner(view) {
+                    self.set_dev_tools_cursor(owner, view, cursor);
+                    return Effect::NONE;
+                }
                 if let Some(tab) = self.tab_of(view)
                     && let Some(entry) = self.views.borrow_mut().get_mut(tab)
                 {
@@ -194,13 +202,27 @@ impl Browser {
                 self.clipboard_written();
                 Effect::NONE
             }
+            EngineEvent::InspectElement { view, x, y } => {
+                self.inspect_element(view, x, y);
+                Effect::NONE
+            }
             EngineEvent::CloseRequested(view) => {
+                if let Some(owner) = self.dev_tools_owner(view) {
+                    self.close_dev_tools(owner);
+                    return Effect::NONE;
+                }
                 if let Some(tab) = self.tab_of(view) {
                     self.close_tab(tab);
                 }
                 Effect::NONE
             }
-            EngineEvent::Closed(view) => self.view_closed(view),
+            EngineEvent::Closed(view) => {
+                if let Some(owner) = self.dev_tools_owner(view) {
+                    self.dev_tools_closed(owner);
+                    return Effect::NONE;
+                }
+                self.view_closed(view)
+            }
             EngineEvent::RenderProcessGone(view) => {
                 if let Some(tab) = self.tab_of(view)
                     && let Some(entry) = self.views.borrow_mut().get_mut(tab)
@@ -213,6 +235,10 @@ impl Browser {
                 }
             }
             EngineEvent::AcceleratedPaintFailed(view) => {
+                if let Some(owner) = self.dev_tools_owner(view) {
+                    self.reopen_dev_tools(owner);
+                    return Effect::NONE;
+                }
                 self.recreate_view(view);
                 Effect::NONE
             }
@@ -221,6 +247,10 @@ impl Browser {
 
     fn tab_of(&self, view: ViewId) -> Option<TabId> {
         self.views.borrow().tab_of(view)
+    }
+
+    fn dev_tools_owner(&self, view: ViewId) -> Option<TabId> {
+        self.views.borrow().dev_tools_owner(view)
     }
 
     fn address_changed(&self, view: ViewId, url: String) -> Effect {

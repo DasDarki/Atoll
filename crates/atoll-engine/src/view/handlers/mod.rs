@@ -6,6 +6,7 @@ mod find;
 mod jsdialog;
 mod life_span;
 mod load;
+mod permission;
 mod render;
 mod request;
 
@@ -17,6 +18,7 @@ pub(crate) use find::ViewFindHandler;
 pub(crate) use jsdialog::ViewJsDialogHandler;
 pub(crate) use life_span::ViewLifeSpanHandler;
 pub(crate) use load::ViewLoadHandler;
+pub(crate) use permission::ViewPermissionHandler;
 pub(crate) use render::ViewRenderHandler;
 pub(crate) use request::ViewRequestHandler;
 

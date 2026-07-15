@@ -4,6 +4,7 @@ use atoll_storage::Storage;
 use atoll_storage::prelude::*;
 
 const DEFAULT_FROZEN_LIMIT: usize = 6;
+const DEFAULT_DEV_TOOLS_SIZE: u32 = 320;
 pub const MAX_FROZEN_LIMIT: usize = 20;
 
 /// A search provider offered in the settings.
@@ -61,6 +62,10 @@ pub struct Preferences {
     pub download_ask: bool,
     /// Opens the download list when a download starts.
     pub download_panel: bool,
+    /// Docks the developer tools to the right of the page instead of below it.
+    pub dev_tools_docked_right: bool,
+    /// Height, or width when docked right, of the developer tools in logical pixels.
+    pub dev_tools_size: u32,
 }
 
 /// A single preference, used to store exactly what changed.
@@ -77,6 +82,8 @@ pub enum PreferenceKey {
     DownloadDirectory,
     DownloadAsk,
     DownloadPanel,
+    DevToolsDockedRight,
+    DevToolsSize,
 }
 
 impl PreferenceKey {
@@ -93,6 +100,8 @@ impl PreferenceKey {
             PreferenceKey::DownloadDirectory => "download_directory",
             PreferenceKey::DownloadAsk => "download_ask",
             PreferenceKey::DownloadPanel => "download_panel",
+            PreferenceKey::DevToolsDockedRight => "dev_tools_docked_right",
+            PreferenceKey::DevToolsSize => "dev_tools_size",
         }
     }
 }
@@ -111,6 +120,8 @@ impl Default for Preferences {
             download_directory: None,
             download_ask: false,
             download_panel: true,
+            dev_tools_docked_right: false,
+            dev_tools_size: DEFAULT_DEV_TOOLS_SIZE,
         }
     }
 }
@@ -145,6 +156,13 @@ impl Preferences {
                 .map(PathBuf::from),
             download_ask: flag(PreferenceKey::DownloadAsk, defaults.download_ask),
             download_panel: flag(PreferenceKey::DownloadPanel, defaults.download_panel),
+            dev_tools_docked_right: flag(
+                PreferenceKey::DevToolsDockedRight,
+                defaults.dev_tools_docked_right,
+            ),
+            dev_tools_size: text(PreferenceKey::DevToolsSize)
+                .and_then(|size| size.parse().ok())
+                .unwrap_or(defaults.dev_tools_size),
         }
     }
 
@@ -167,6 +185,8 @@ impl Preferences {
                 .unwrap_or_default(),
             PreferenceKey::DownloadAsk => flag(self.download_ask),
             PreferenceKey::DownloadPanel => flag(self.download_panel),
+            PreferenceKey::DevToolsDockedRight => flag(self.dev_tools_docked_right),
+            PreferenceKey::DevToolsSize => self.dev_tools_size.to_string(),
         };
         if let Err(error) = storage.set_setting(key.storage_key(), &value) {
             tracing::warn!(%error, key = key.storage_key(), "preference could not be stored");
@@ -206,6 +226,8 @@ mod tests {
             download_directory: Some(PathBuf::from("/tmp/downloads")),
             download_ask: true,
             download_panel: false,
+            dev_tools_docked_right: true,
+            dev_tools_size: 480,
         };
         for key in [
             PreferenceKey::SearchUrl,
@@ -219,6 +241,8 @@ mod tests {
             PreferenceKey::DownloadDirectory,
             PreferenceKey::DownloadAsk,
             PreferenceKey::DownloadPanel,
+            PreferenceKey::DevToolsDockedRight,
+            PreferenceKey::DevToolsSize,
         ] {
             preferences.store(&storage, key);
         }

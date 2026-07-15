@@ -20,6 +20,7 @@ pub fn install(window: &AppWindow, browser: &Rc<Browser>) {
         };
         let focus = KeyboardFocus {
             page: window.get_web_focused(),
+            dev_tools: window.get_dev_tools_focused(),
             modal: window.get_modal_open(),
         };
         match event {

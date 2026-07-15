@@ -1,126 +1,33 @@
 import { Theme } from "../theme.slint";
 import { BrowserState } from "../state.slint";
-import { PointerAction, PointerButton, WebCursor } from "../structs.slint";
+import { WebSurface } from "web-surface.slint";
 
 export component WebView inherits Rectangle {
-    out property <bool> focused: keys.has-focus;
+    out property <bool> focused: surface.focused;
 
     public function focus-page() {
-        keys.focus();
+        surface.focus-surface();
     }
 
-    pure function cursor-for(kind: WebCursor) -> MouseCursor {
-        if (kind == WebCursor.pointer) { return MouseCursor.pointer; }
-        if (kind == WebCursor.text) { return MouseCursor.text; }
-        if (kind == WebCursor.wait) { return MouseCursor.wait; }
-        if (kind == WebCursor.progress) { return MouseCursor.progress; }
-        if (kind == WebCursor.help) { return MouseCursor.help; }
-        if (kind == WebCursor.crosshair) { return MouseCursor.crosshair; }
-        if (kind == WebCursor.move) { return MouseCursor.move; }
-        if (kind == WebCursor.not-allowed) { return MouseCursor.not-allowed; }
-        if (kind == WebCursor.no-drop) { return MouseCursor.no-drop; }
-        if (kind == WebCursor.grab) { return MouseCursor.grab; }
-        if (kind == WebCursor.grabbing) { return MouseCursor.grabbing; }
-        if (kind == WebCursor.copy) { return MouseCursor.copy; }
-        if (kind == WebCursor.alias) { return MouseCursor.alias; }
-        if (kind == WebCursor.resize-ew) { return MouseCursor.ew-resize; }
-        if (kind == WebCursor.resize-ns) { return MouseCursor.ns-resize; }
-        if (kind == WebCursor.resize-nesw) { return MouseCursor.nesw-resize; }
-        if (kind == WebCursor.resize-nwse) { return MouseCursor.nwse-resize; }
-        if (kind == WebCursor.resize-column) { return MouseCursor.col-resize; }
-        if (kind == WebCursor.resize-row) { return MouseCursor.row-resize; }
-        if (kind == WebCursor.none) { return MouseCursor.none; }
-        return MouseCursor.default;
+    surface := WebSurface {
+        width: root.width;
+        height: root.height;
+        frame: BrowserState.page-frame;
+        popup-frame: BrowserState.popup-frame;
+        popup-visible: BrowserState.popup-visible;
+        popup-x: BrowserState.popup-x;
+        popup-y: BrowserState.popup-y;
+        cursor: BrowserState.cursor;
+        pointer(pointer) => { BrowserState.web-pointer(pointer); }
+        scroll(scroll) => { return BrowserState.web-scroll(scroll); }
+        hover(inside, x, y) => { BrowserState.web-hover(inside, x, y); }
+        resized(width, height) => { BrowserState.web-resized(width, height); }
+        focus-changed(focused) => { BrowserState.web-focus-changed(focused); }
     }
 
-    pure function action-of(kind: PointerEventKind) -> PointerAction {
-        if (kind == PointerEventKind.down) { return PointerAction.down; }
-        if (kind == PointerEventKind.up) { return PointerAction.up; }
-        if (kind == PointerEventKind.move) { return PointerAction.move; }
-        return PointerAction.cancel;
-    }
-
-    pure function button-of(button: PointerEventButton) -> PointerButton {
-        if (button == PointerEventButton.left) { return PointerButton.left; }
-        if (button == PointerEventButton.right) { return PointerButton.right; }
-        if (button == PointerEventButton.middle) { return PointerButton.middle; }
-        if (button == PointerEventButton.back) { return PointerButton.back; }
-        if (button == PointerEventButton.forward) { return PointerButton.forward; }
-        return PointerButton.none;
-    }
-
-    background: white;
-    clip: true;
-
-    changed width => { BrowserState.web-resized(self.width, self.height); }
-    changed height => { BrowserState.web-resized(self.width, self.height); }
-    init => { BrowserState.web-resized(self.width, self.height); }
-
-    Image {
-        x: 0;
-        y: 0;
-        width: BrowserState.page-frame.width * 1phx;
-        height: BrowserState.page-frame.height * 1phx;
-        source: BrowserState.page-frame;
-        image-fit: fill;
-    }
-
-    if BrowserState.popup-visible : Image {
-        x: BrowserState.popup-x;
-        y: BrowserState.popup-y;
-        width: BrowserState.popup-frame.width * 1phx;
-        height: BrowserState.popup-frame.height * 1phx;
-        source: BrowserState.popup-frame;
-        image-fit: fill;
-    }
-
-    keys := FocusScope {
-        focus-on-click: false;
-        changed has-focus => { BrowserState.web-focus-changed(self.has-focus); }
-        key-pressed(event) => { return accept; }
-        key-released(event) => { return accept; }
-
-        touch := TouchArea {
-            mouse-cursor: root.cursor-for(BrowserState.cursor);
-            pointer-event(event) => {
-                if (event.kind == PointerEventKind.down) {
-                    keys.focus();
-                }
-                BrowserState.web-pointer({
-                    action: root.action-of(event.kind),
-                    button: root.button-of(event.button),
-                    x: self.mouse-x,
-                    y: self.mouse-y,
-                    shift: event.modifiers.shift,
-                    control: event.modifiers.control,
-                    alt: event.modifiers.alt,
-                    meta: event.modifiers.meta,
-                });
-            }
-            scroll-event(event) => {
-                if (BrowserState.web-scroll({
-                    delta-x: event.delta-x,
-                    delta-y: event.delta-y,
-                    x: self.mouse-x,
-                    y: self.mouse-y,
-                    shift: event.modifiers.shift,
-                    control: event.modifiers.control,
-                    alt: event.modifiers.alt,
-                    meta: event.modifiers.meta,
-                })) {
-                    return accept;
-                }
-                return reject;
-            }
-            changed has-hover => {
-                BrowserState.web-hover(self.has-hover, self.mouse-x, self.mouse-y);
-            }
-        }
-    }
-
-    if BrowserState.tooltip != "" && touch.has-hover : Rectangle {
-        x: min(touch.mouse-x + 12px, parent.width - self.width - 4px);
-        y: min(touch.mouse-y + 20px, parent.height - self.height - 4px);
+    if BrowserState.tooltip != "" && surface.hovered : Rectangle {
+        x: min(surface.pointer-x + 12px, parent.width - self.width - 4px);
+        y: min(surface.pointer-y + 20px, parent.height - self.height - 4px);
         width: min(tip.preferred-width + 18px, 420px);
         height: tip.preferred-height + 12px;
         border-radius: Theme.radius-small;

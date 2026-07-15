@@ -36,6 +36,7 @@ impl Browser {
             state.set_page_frame(Image::default());
             state.set_popup_visible(false);
             *self.page.borrow_mut() = PageState::default();
+            self.sync_dev_tools();
             return;
         };
 
@@ -85,6 +86,7 @@ impl Browser {
         }
         self.present_frame();
         self.present_popup();
+        self.sync_dev_tools();
         self.update_bookmark_star();
     }
 
