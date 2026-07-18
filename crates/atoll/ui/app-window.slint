@@ -24,6 +24,7 @@ import { SettingsPage } from "overlays/settings-page.slint";
 import { SiteInfoPopup } from "overlays/site-info-popup.slint";
 import { DownloadsPanel } from "overlays/downloads-panel.slint";
 import { BookmarksBar } from "toolbar/bookmarks-bar.slint";
+import { ResizeFrame } from "window/resize-frame.slint";
 
 export { SidebarState, BrowserState, OverlayState, SettingsState, DevToolsState }
 export { WorkspaceItem, SidebarRow, IslandTarget, MenuItemData, ArchiveItem, ExportIslandItem, DialogData, DialogKind, RowKind, TabLoadState, PointerAction, PointerButton, WebCursor, WebPointer, WebScroll, SuggestionKind, SuggestionItem, Completion, PaletteKind, PaletteItem, BookmarkItem, PageSecurity, SiteInfoDetail, DownloadItem, DownloadItemStatus } from "structs.slint";
@@ -38,6 +39,7 @@ export component AppWindow inherits Window {
     background: Theme.background;
     default-font-size: Theme.font-normal;
     full-screen: BrowserState.fullscreen;
+    no-frame: true;
 
     out property <bool> web-focused: web.focused;
     out property <bool> dev-tools-focused: dev-tools.focused;
@@ -240,5 +242,10 @@ export component AppWindow inherits Window {
     if OverlayState.toast-visible : Toast {
         x: (root.width - self.width) / 2;
         y: root.height - self.height - 28px;
+    }
+
+    if !BrowserState.maximized && !BrowserState.fullscreen : ResizeFrame {
+        width: root.width;
+        height: root.height;
     }
 }

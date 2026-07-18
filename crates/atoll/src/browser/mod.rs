@@ -1,5 +1,6 @@
 mod archive;
 mod bookmarks;
+mod chrome;
 mod clipboard;
 mod dev_tools;
 mod downloads;
@@ -90,6 +91,7 @@ pub struct Browser {
     clipboard_sync: RefCell<ClipboardSync>,
     find_text: RefCell<String>,
     address_focus_requested: Cell<bool>,
+    last_title_press: Cell<Option<std::time::Instant>>,
     downloads: RefCell<Downloads>,
     suggestions: RefCell<SuggestionState>,
     palette: RefCell<PaletteState>,
@@ -140,6 +142,7 @@ impl Browser {
             clipboard_sync: RefCell::default(),
             find_text: RefCell::default(),
             address_focus_requested: Cell::new(false),
+            last_title_press: Cell::new(None),
             downloads: RefCell::default(),
             suggestions: RefCell::default(),
             palette: RefCell::default(),

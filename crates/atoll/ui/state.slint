@@ -57,6 +57,11 @@ export global BrowserState {
 
     callback navigate(string);
     callback show-site-info();
+
+    in property <bool> maximized;
+    callback window-drag();
+    callback window-control(string);
+    callback window-resize(string);
     callback toggle-sidebar();
 
     in property <[SuggestionItem]> suggestions;

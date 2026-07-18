@@ -127,6 +127,12 @@ fn connect_browser(window: &AppWindow, browser: &Rc<Browser>) {
         .open_downloads());
     on!(state, on_show_site_info, browser, |target| target
         .show_site_info());
+    on!(state, on_window_drag, browser, |target| target
+        .window_drag());
+    on!(state, on_window_control, browser, |target, action| target
+        .window_control(&action));
+    on!(state, on_window_resize, browser, |target, edge| target
+        .window_resize(&edge));
     on!(state, on_address_edited, browser, |target, source, text| -> Default::default(), target.address_edited(source, &text));
     on!(
         state,

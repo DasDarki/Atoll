@@ -34,6 +34,10 @@ pub fn install(window: &AppWindow, browser: &Rc<Browser>) {
                 ..
             } => browser.handle_key(event, modifiers.get(), focus),
             WindowEvent::Ime(ime) => browser.handle_ime(ime, focus),
+            WindowEvent::Resized(_) => {
+                browser.window_state_changed();
+                EventResult::Propagate
+            }
             WindowEvent::ScaleFactorChanged { scale_factor, .. } => {
                 browser.set_scale_factor(*scale_factor as f32);
                 EventResult::Propagate

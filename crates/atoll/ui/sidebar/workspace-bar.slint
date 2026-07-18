@@ -1,5 +1,5 @@
 import { Theme } from "../theme.slint";
-import { SidebarState } from "../state.slint";
+import { BrowserState, SidebarState } from "../state.slint";
 import { WorkspaceItem } from "../structs.slint";
 import { IconButton } from "../widgets/icon-button.slint";
 
@@ -74,6 +74,14 @@ component WorkspaceChip inherits Rectangle {
 export component WorkspaceBar inherits Rectangle {
     height: 44px;
 
+    TouchArea {
+        pointer-event(event) => {
+            if (event.kind == PointerEventKind.down && event.button == PointerEventButton.left) {
+                BrowserState.window-drag();
+            }
+        }
+    }
+
     HorizontalLayout {
         padding-left: 12px;
         padding-right: 8px;
@@ -93,6 +101,11 @@ export component WorkspaceBar inherits Rectangle {
             property <length> offset: 0px;
 
             TouchArea {
+                pointer-event(event) => {
+                    if (event.kind == PointerEventKind.down && event.button == PointerEventButton.left) {
+                        BrowserState.window-drag();
+                    }
+                }
                 scroll-event(event) => {
                     strip.offset = clamp(strip.offset + event.delta-y + event.delta-x, min(0px, strip.width - chips.preferred-width), 0px);
                     return accept;

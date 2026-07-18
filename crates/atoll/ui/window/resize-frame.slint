@@ -1,0 +1,84 @@
+import { BrowserState } from "../state.slint";
+
+component ResizeHandle inherits TouchArea {
+    in property <string> edge;
+
+    pointer-event(event) => {
+        if (event.kind == PointerEventKind.down && event.button == PointerEventButton.left) {
+            BrowserState.window-resize(root.edge);
+        }
+    }
+}
+
+export component ResizeFrame inherits Rectangle {
+    property <length> thickness: 4px;
+    property <length> corner: 10px;
+
+    border-width: 1px;
+    border-color: #ffffff1c;
+
+    ResizeHandle {
+        edge: "n";
+        x: root.corner;
+        y: 0;
+        width: root.width - 2 * root.corner;
+        height: root.thickness;
+        mouse-cursor: MouseCursor.ns-resize;
+    }
+    ResizeHandle {
+        edge: "s";
+        x: root.corner;
+        y: root.height - root.thickness;
+        width: root.width - 2 * root.corner;
+        height: root.thickness;
+        mouse-cursor: MouseCursor.ns-resize;
+    }
+    ResizeHandle {
+        edge: "w";
+        x: 0;
+        y: root.corner;
+        width: root.thickness;
+        height: root.height - 2 * root.corner;
+        mouse-cursor: MouseCursor.ew-resize;
+    }
+    ResizeHandle {
+        edge: "e";
+        x: root.width - root.thickness;
+        y: root.corner;
+        width: root.thickness;
+        height: root.height - 2 * root.corner;
+        mouse-cursor: MouseCursor.ew-resize;
+    }
+    ResizeHandle {
+        edge: "nw";
+        x: 0;
+        y: 0;
+        width: root.corner;
+        height: root.corner;
+        mouse-cursor: MouseCursor.nwse-resize;
+    }
+    ResizeHandle {
+        edge: "ne";
+        x: root.width - root.corner;
+        y: 0;
+        width: root.corner;
+        height: root.corner;
+        mouse-cursor: MouseCursor.nesw-resize;
+    }
+    ResizeHandle {
+        edge: "sw";
+        x: 0;
+        y: root.height - root.corner;
+        width: root.corner;
+        height: root.corner;
+        mouse-cursor: MouseCursor.nesw-resize;
+    }
+    ResizeHandle {
+        edge: "se";
+        x: root.width - root.corner;
+        y: root.height - root.corner;
+        width: root.corner;
+        height: root.corner;
+        mouse-cursor: MouseCursor.nwse-resize;
+    }
+}

@@ -1,0 +1,23 @@
+import { Theme } from "../theme.slint";
+
+export component WindowButton inherits Rectangle {
+    in property <image> icon;
+    in property <bool> destructive;
+    callback clicked();
+
+    width: 44px;
+    background: touch.pressed ? (root.destructive ? #be123c : Theme.pressed)
+        : touch.has-hover ? (root.destructive ? #e11d48 : Theme.hover) : transparent;
+    animate background { duration: 90ms; }
+
+    Image {
+        source: root.icon;
+        width: 16px;
+        height: 16px;
+        colorize: touch.has-hover && root.destructive ? #ffffff : touch.has-hover ? Theme.text : Theme.text-muted;
+    }
+
+    touch := TouchArea {
+        clicked => { root.clicked(); }
+    }
+}
