@@ -60,6 +60,7 @@ The build copies the CEF runtime files next to the binary in `target/<profile>/`
 | `ATOLL_SOFTWARE_RENDERING` | Receive page frames as CPU buffers instead of shared GPU textures |
 | `ATOLL_NO_SANDBOX` | Disable the Chromium sandbox |
 | `ATOLL_CHROMIUM_FLAGS` | Additional Chromium switches, e.g. `remote-debugging-port=9222` |
+| `ATOLL_SYSTEM_KEYRING` | Keep the key for cookies in the system keyring (KWallet, GNOME Keyring or the Secret portal) instead of Chromium's own store. Chromium waits for the keyring before loading anything, so an unresponsive keyring service stops all pages from loading |
 | `RUST_LOG` | Log filter, e.g. `info,atoll=debug` |
 
 Data lives in `~/.local/share/atoll/`: `atoll.db` holds workspaces, islands, tabs, bookmarks,

@@ -30,9 +30,7 @@ impl Browser {
             frame_rate,
             accelerated_paint: std::env::var_os("ATOLL_SOFTWARE_RENDERING").is_none(),
             sandbox: std::env::var_os("ATOLL_NO_SANDBOX").is_none(),
-            extra_switches: std::env::var("ATOLL_CHROMIUM_FLAGS")
-                .map(|flags| flags.split_whitespace().map(str::to_owned).collect())
-                .unwrap_or_default(),
+            extra_switches: chromium_switches(),
             schedule_work: MessagePump::scheduler(),
         };
         match Engine::initialize(config, self.gpu.clone()) {
@@ -86,4 +84,21 @@ impl Browser {
             engine.shutdown();
         }
     }
+}
+
+/// Additional Chromium switches: Atoll's defaults, then those from `ATOLL_CHROMIUM_FLAGS`.
+///
+/// Chromium keeps the key for cookies and saved passwords in the system keyring and waits for
+/// it without a time limit before the first request. An unresponsive keyring service therefore
+/// stops every page from loading, so Chromium's own store is used unless `ATOLL_SYSTEM_KEYRING`
+/// is set.
+fn chromium_switches() -> Vec<String> {
+    let mut switches = Vec::new();
+    if std::env::var_os("ATOLL_SYSTEM_KEYRING").is_none() {
+        switches.push("password-store=basic".to_owned());
+    }
+    if let Ok(flags) = std::env::var("ATOLL_CHROMIUM_FLAGS") {
+        switches.extend(flags.split_whitespace().map(str::to_owned));
+    }
+    switches
 }
