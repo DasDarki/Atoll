@@ -85,7 +85,7 @@ export component WebView inherits Rectangle {
         }
         TouchArea {
             mouse-cursor: pointer;
-            clicked => { BrowserState.reload(); }
+            clicked => { BrowserState.reload(false); }
         }
     }
 }

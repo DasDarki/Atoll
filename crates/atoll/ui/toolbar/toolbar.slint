@@ -50,7 +50,12 @@ export component Toolbar inherits Rectangle {
                 if (BrowserState.loading) {
                     BrowserState.stop();
                 } else {
-                    BrowserState.reload();
+                    BrowserState.reload(self.shift-held);
+                }
+            }
+            context-requested(x, y) => {
+                if (BrowserState.has-page) {
+                    reload-menu.show({ x: self.x + x, y: self.y + y });
                 }
             }
         }
@@ -102,6 +107,20 @@ export component Toolbar inherits Rectangle {
             y: (parent.height - self.height) / 2;
             icon: @image-url("../icons/more.svg");
             clicked => { menu.show({ x: self.x + self.width - 220px, y: self.y + self.height + 4px }); }
+        }
+    }
+
+    reload-menu := ContextMenuArea {
+        enabled: false;
+        Menu {
+            MenuItem {
+                title: "Neu laden (F5)";
+                activated => { BrowserState.reload(false); }
+            }
+            MenuItem {
+                title: "Vollständig neu laden, ohne Cache (Strg+F5)";
+                activated => { BrowserState.reload(true); }
+            }
         }
     }
 

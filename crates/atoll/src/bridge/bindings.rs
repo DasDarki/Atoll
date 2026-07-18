@@ -166,7 +166,8 @@ fn connect_browser(window: &AppWindow, browser: &Rc<Browser>) {
     );
     on!(state, on_go_back, browser, |target| target.go_back());
     on!(state, on_go_forward, browser, |target| target.go_forward());
-    on!(state, on_reload, browser, |target| target.reload(false));
+    on!(state, on_reload, browser, |target, ignore_cache| target
+        .reload(ignore_cache));
     on!(state, on_stop, browser, |target| target.stop());
     on!(state, on_menu_action, browser, |target, action| target
         .menu_action(&action));

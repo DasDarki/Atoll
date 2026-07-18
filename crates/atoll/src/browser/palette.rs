@@ -42,6 +42,7 @@ enum Command {
     SleepIsland,
     Find,
     Reload,
+    HardReload,
     DevTools,
     Fullscreen,
     ZoomIn,
@@ -473,6 +474,12 @@ impl Browser {
                 "aktualisieren",
             ),
             (
+                Command::HardReload,
+                "Vollständig neu laden, ohne Cache".to_owned(),
+                "Strg+F5",
+                "aktualisieren cache hard reload",
+            ),
+            (
                 Command::Fullscreen,
                 "Vollbild".to_owned(),
                 "F11",
@@ -617,6 +624,7 @@ impl Browser {
             }
             Command::Find => self.open_find(),
             Command::Reload => self.reload(false),
+            Command::HardReload => self.reload(true),
             Command::Fullscreen => self.toggle_fullscreen(),
             Command::ZoomIn => self.zoom(ZoomCommand::In),
             Command::ZoomOut => self.zoom(ZoomCommand::Out),

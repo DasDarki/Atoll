@@ -44,6 +44,8 @@ impl Shortcut {
                 | Shortcut::ReopenClosedTab
                 | Shortcut::NextTab
                 | Shortcut::PreviousTab
+                | Shortcut::Reload
+                | Shortcut::ReloadIgnoringCache
                 | Shortcut::DevTools
                 | Shortcut::ToggleFullscreen
                 | Shortcut::ToggleSidebar

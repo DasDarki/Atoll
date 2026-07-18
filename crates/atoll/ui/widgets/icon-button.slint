@@ -7,7 +7,9 @@ export component IconButton inherits Rectangle {
     in property <length> icon-size: 16px;
     in property <color> tint: Theme.text-muted;
     out property <bool> hovered: touch.has-hover;
+    out property <bool> shift-held;
     callback clicked();
+    callback context-requested(length, length);
 
     width: 30px;
     height: 30px;
@@ -25,6 +27,13 @@ export component IconButton inherits Rectangle {
     touch := TouchArea {
         enabled: root.enabled;
         mouse-cursor: root.enabled ? pointer : default;
+        pointer-event(event) => {
+            if (event.kind == PointerEventKind.down) {
+                root.shift-held = event.modifiers.shift;
+            } else if (event.kind == PointerEventKind.up && event.button == PointerEventButton.right) {
+                root.context-requested(self.mouse-x, self.mouse-y);
+            }
+        }
         clicked => { root.clicked(); }
     }
 }
