@@ -1,3 +1,6 @@
+use std::cell::RefCell;
+use std::collections::HashMap;
+
 use ash::vk;
 use cef::AcceleratedPaintInfo;
 use cef::sys::cef_color_type_t;
@@ -84,6 +87,87 @@ pub(crate) fn import(
     Ok(texture)
 }
 
+/// What the device supports for one format and DRM format modifier.
+#[derive(Clone, Copy)]
+struct ModifierSupport {
+    plane_count: u32,
+    sampled: bool,
+}
+
+thread_local! {
+    static MODIFIERS: RefCell<HashMap<(vk::Format, u64), Option<ModifierSupport>>> =
+        RefCell::default();
+}
+
+/// Looks up how the device handles `modifier` for `format`, `None` if it does not support it.
+///
+/// # Safety
+///
+/// `instance` and `physical_device` must be valid.
+unsafe fn modifier_support(
+    instance: &ash::Instance,
+    physical_device: vk::PhysicalDevice,
+    format: vk::Format,
+    modifier: u64,
+) -> Option<ModifierSupport> {
+    MODIFIERS.with_borrow_mut(|cache| {
+        *cache.entry((format, modifier)).or_insert_with(|| {
+            // SAFETY: two plain queries on a valid physical device, the second one with an array
+            // of exactly the size the first one reported.
+            let properties = unsafe {
+                let mut list = vk::DrmFormatModifierPropertiesListEXT::default();
+                let mut query = vk::FormatProperties2::default().push_next(&mut list);
+                instance.get_physical_device_format_properties2(
+                    physical_device,
+                    format,
+                    &mut query,
+                );
+                let mut properties = vec![
+                    vk::DrmFormatModifierPropertiesEXT::default();
+                    list.drm_format_modifier_count as usize
+                ];
+                let mut list = vk::DrmFormatModifierPropertiesListEXT::default()
+                    .drm_format_modifier_properties(&mut properties);
+                let mut query = vk::FormatProperties2::default().push_next(&mut list);
+                instance.get_physical_device_format_properties2(
+                    physical_device,
+                    format,
+                    &mut query,
+                );
+                properties
+            };
+            let support = properties
+                .iter()
+                .find(|entry| entry.drm_format_modifier == modifier)
+                .map(|entry| ModifierSupport {
+                    plane_count: entry.drm_format_modifier_plane_count,
+                    sampled: entry
+                        .drm_format_modifier_tiling_features
+                        .contains(vk::FormatFeatureFlags::SAMPLED_IMAGE),
+                });
+            tracing::debug!(
+                format = ?format,
+                modifier = format_args!("{modifier:#x}"),
+                planes = support.map(|support| support.plane_count),
+                sampled = support.map(|support| support.sampled),
+                "DRM format modifier"
+            );
+            support
+        })
+    })
+}
+
+/// The size of the buffer behind a DMA-BUF descriptor.
+fn buffer_size(descriptor: i32) -> Option<u64> {
+    // SAFETY: seeking a valid descriptor, dma-buf reports its size as the end offset. The
+    // position is reset because duplicated descriptors share it.
+    unsafe {
+        let end = libc::lseek(descriptor, 0, libc::SEEK_END);
+        libc::lseek(descriptor, 0, libc::SEEK_SET);
+        u64::try_from(end).ok().filter(|size| *size > 0)
+    }
+}
+
 unsafe fn create_image(
     hal_device: &<Vulkan as wgpu::hal::Api>::Device,
     info: &AcceleratedPaintInfo,
@@ -93,6 +177,45 @@ unsafe fn create_image(
     let device = hal_device.raw_device();
     let instance = hal_device.shared_instance().raw_instance();
     let plane = &info.planes[0];
+
+    // A modifier may need more memory planes than CEF hands out, for example for compression
+    // metadata. The driver would then read past the buffer and fault the GPU, so such frames are
+    // refused and the engine falls back to CPU rendering.
+    // SAFETY: the instance and physical device belong to wgpu's valid device.
+    let support = unsafe {
+        modifier_support(
+            instance,
+            hal_device.raw_physical_device(),
+            format,
+            info.modifier,
+        )
+    };
+    match support {
+        Some(support) if support.plane_count == 1 && support.sampled => {}
+        Some(support) => {
+            return Err(SharedTextureError::Unsupported(format!(
+                "modifier {:#x} needs {} planes",
+                info.modifier, support.plane_count
+            )));
+        }
+        None => {
+            return Err(SharedTextureError::Unsupported(format!(
+                "modifier {:#x} is not supported",
+                info.modifier
+            )));
+        }
+    }
+    let Some(available) = buffer_size(plane.fd) else {
+        return Err(SharedTextureError::Unsupported(
+            "buffer size unknown".into(),
+        ));
+    };
+    let needed = plane.offset + u64::from(plane.stride) * u64::from(size.height);
+    if needed > available {
+        return Err(SharedTextureError::Unsupported(format!(
+            "buffer holds {available} bytes, the frame needs {needed}"
+        )));
+    }
 
     let plane_layouts = [vk::SubresourceLayout {
         offset: plane.offset,
@@ -153,6 +276,12 @@ unsafe fn create_image(
         }
 
         let requirements = device.get_image_memory_requirements(image);
+        if requirements.size > available {
+            return Err(release(format!(
+                "buffer holds {available} bytes, the image needs {}",
+                requirements.size
+            )));
+        }
         let memory_types = requirements.memory_type_bits & fd_properties.memory_type_bits;
         let memory_properties =
             instance.get_physical_device_memory_properties(hal_device.raw_physical_device());
