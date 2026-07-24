@@ -1,8 +1,9 @@
 use std::time::{Duration, Instant};
 
-use slint::ComponentHandle;
+use slint::platform::{PointerEventButton, WindowEvent};
 use slint::winit_030::WinitWindowAccessor;
 use slint::winit_030::winit::window::ResizeDirection;
+use slint::{ComponentHandle, LogicalPosition};
 
 use super::Browser;
 use crate::ui::BrowserState;
@@ -24,11 +25,18 @@ impl Browser {
             self.toggle_maximized();
             return;
         }
-        window.window().with_winit_window(|winit| {
-            if let Err(error) = winit.drag_window() {
-                tracing::debug!(%error, "window could not be moved");
-            }
-        });
+        let started = window
+            .window()
+            .with_winit_window(|winit| match winit.drag_window() {
+                Ok(()) => true,
+                Err(error) => {
+                    tracing::debug!(%error, "window could not be moved");
+                    false
+                }
+            });
+        if started == Some(true) {
+            self.release_pointer_after_handover();
+        }
     }
 
     /// A press on one of the invisible borders: resizes the window from that edge.
@@ -37,9 +45,36 @@ impl Browser {
             return;
         };
         let Some(window) = self.window() else { return };
-        window.window().with_winit_window(|winit| {
-            if let Err(error) = winit.drag_resize_window(direction) {
-                tracing::debug!(%error, "window could not be resized");
+        let started =
+            window
+                .window()
+                .with_winit_window(|winit| match winit.drag_resize_window(direction) {
+                    Ok(()) => true,
+                    Err(error) => {
+                        tracing::debug!(%error, "window could not be resized");
+                        false
+                    }
+                });
+        if started == Some(true) {
+            self.release_pointer_after_handover();
+        }
+    }
+
+    /// Moving and resizing is handed over to the compositor together with the pointer, and under
+    /// Wayland the release of the button never reaches the window. The user interface would keep
+    /// the pressed element as the target of every later click, so the release is sent to it
+    /// once the current event is handled.
+    fn release_pointer_after_handover(&self) {
+        let window = self.window.clone();
+        slint::Timer::single_shot(Duration::ZERO, move || {
+            if let Some(window) = window.upgrade() {
+                window
+                    .window()
+                    .dispatch_event(WindowEvent::PointerReleased {
+                        position: LogicalPosition::new(-1.0, -1.0),
+                        button: PointerEventButton::Left,
+                    });
+                window.window().dispatch_event(WindowEvent::PointerExited);
             }
         });
     }
