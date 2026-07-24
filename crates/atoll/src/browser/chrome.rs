@@ -70,11 +70,36 @@ impl Browser {
         }
     }
 
+    /// Closes this window. Closing the last one quits Atoll.
     pub fn close_window(&self) {
-        if let Some(window) = self.window()
-            && let Err(error) = window.hide()
-        {
-            tracing::warn!(%error, "window could not be closed");
+        if let Some(manager) = self.manager() {
+            manager.close_window(self.id);
+        }
+    }
+
+    /// Ctrl+Shift+Q: quits Atoll, every open window comes back on the next start.
+    pub fn quit(&self) {
+        if let Err(error) = slint::quit_event_loop() {
+            tracing::warn!(%error, "event loop could not be stopped");
+        }
+    }
+
+    /// Ctrl+N: opens a new window with a new workspace.
+    pub fn open_new_window(&self) {
+        if let Some(manager) = self.manager() {
+            manager.open_new_window();
+        }
+    }
+
+    pub fn pointer_seen(&self) {
+        if let Some(manager) = self.manager() {
+            manager.pointer_seen(self.id);
+        }
+    }
+
+    pub fn window_focused(&self) {
+        if let Some(manager) = self.manager() {
+            manager.window_focused(self.id);
         }
     }
 }

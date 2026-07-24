@@ -2,12 +2,19 @@ use atoll_core::{IslandColor, IslandId, TabId, WorkspaceId};
 use atoll_storage::NewIsland;
 use atoll_storage::prelude::*;
 
+use super::Browser;
 use super::session::Session;
-use super::{ACTIVE_WORKSPACE_KEY, Browser};
 
 impl Browser {
+    /// Shows `workspace` in this window, or brings the window to the front that already shows it.
     pub fn select_workspace(&self, workspace: WorkspaceId) {
         if self.session.borrow().workspace == workspace {
+            return;
+        }
+        if let Some(manager) = self.manager()
+            && let Some(other) = manager.window_for_workspace(workspace)
+        {
+            manager.focus_window(other.id);
             return;
         }
         let session = match Session::load(&self.storage, workspace) {
@@ -18,17 +25,15 @@ impl Browser {
             }
         };
         if self.is_engine_running() {
-            let commands = self.lifecycle.borrow_mut().deactivate();
+            let commands = self.lifecycle.borrow_mut().deactivate(self.id);
             self.apply(commands);
         }
-        if let Err(error) = self
-            .storage
-            .set_setting(ACTIVE_WORKSPACE_KEY, &workspace.0.to_string())
-        {
-            tracing::warn!(%error, "active workspace could not be stored");
+        if let Err(error) = self.storage.set_window_workspace(self.id, workspace) {
+            tracing::warn!(%error, "workspace of the window could not be stored");
         }
         *self.session.borrow_mut() = session;
         self.show_remembered_tab();
+        self.for_other_windows(Browser::follow_changes);
     }
 
     /// Activates the tab that was last used in the current workspace.
@@ -70,6 +75,7 @@ impl Browser {
 
     pub fn workspace_action(&self, workspace: WorkspaceId, action: &str) {
         match action {
+            "open-window" => self.open_workspace_in_window(workspace),
             "rename" => self.rename_workspace(workspace),
             "delete" => self.delete_workspace(workspace),
             "move-left" => self.shift_workspace(workspace, -1),
@@ -138,33 +144,64 @@ impl Browser {
                     .all_tabs_in_workspace(workspace)
                     .map(|tabs| tabs.into_iter().map(|tab| tab.id).collect::<Vec<_>>())
                     .unwrap_or_default();
+                let manager = browser.manager();
+                let shown_elsewhere = manager
+                    .as_ref()
+                    .and_then(|manager| manager.window_for_workspace(workspace))
+                    .filter(|other| other.id != browser.id);
+                let shown_here = browser.session.borrow().workspace == workspace;
+                let next = shown_here
+                    .then(|| browser.free_workspace(workspace))
+                    .flatten();
+                if let Some(next) = next
+                    && let Err(error) = browser.storage.set_window_workspace(browser.id, next)
+                {
+                    tracing::warn!(%error, "workspace of the window could not be stored");
+                }
                 browser.forget_tabs(tabs);
                 if let Err(error) = browser.storage.delete_workspace(workspace) {
                     browser.report("Workspace löschen", Err::<(), _>(error));
                     return;
                 }
-                let was_active = browser.session.borrow().workspace == workspace;
-                if was_active {
-                    let next = browser
-                        .storage
-                        .workspaces()
-                        .ok()
-                        .and_then(|workspaces| workspaces.first().map(|first| first.id));
-                    if let Some(next) = next {
-                        browser.session.borrow_mut().workspace = next;
-                        browser.session.borrow_mut().active_tab = None;
-                        let _ = browser
-                            .storage
-                            .set_setting(ACTIVE_WORKSPACE_KEY, &next.0.to_string());
+                if let (Some(manager), Some(other)) = (&manager, shown_elsewhere) {
+                    manager.close_window(other.id);
+                }
+                if !shown_here {
+                    browser.reload_session();
+                    browser.refresh_sidebar();
+                    return;
+                }
+                match (next, manager) {
+                    (Some(next), _) => {
+                        {
+                            let mut session = browser.session.borrow_mut();
+                            session.workspace = next;
+                            session.active_tab = None;
+                        }
                         browser.reload_session();
                         browser.show_remembered_tab();
-                        return;
                     }
+                    (None, Some(manager)) => manager.close_window(browser.id),
+                    (None, None) => {}
                 }
-                browser.reload_session();
-                browser.refresh_sidebar();
             },
         );
+    }
+
+    /// A workspace other than `except` that no other window shows.
+    fn free_workspace(&self, except: WorkspaceId) -> Option<WorkspaceId> {
+        let manager = self.manager();
+        self.storage
+            .workspaces()
+            .ok()?
+            .into_iter()
+            .map(|workspace| workspace.id)
+            .find(|workspace| {
+                *workspace != except
+                    && manager
+                        .as_ref()
+                        .is_none_or(|manager| !manager.is_open_elsewhere(*workspace, self.id))
+            })
     }
 
     fn shift_workspace(&self, workspace: WorkspaceId, offset: isize) {

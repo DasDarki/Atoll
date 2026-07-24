@@ -5,6 +5,9 @@ use slint::winit_030::winit::platform::modifier_supplement::KeyEventExtModifierS
 /// Application wide keyboard shortcuts, handled before input reaches the page.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Shortcut {
+    NewWindow,
+    CloseWindow,
+    Quit,
     NewTab,
     CloseTab,
     ReopenClosedTab,
@@ -39,7 +42,10 @@ impl Shortcut {
     pub fn applies_in_dev_tools(self) -> bool {
         matches!(
             self,
-            Shortcut::NewTab
+            Shortcut::NewWindow
+                | Shortcut::CloseWindow
+                | Shortcut::Quit
+                | Shortcut::NewTab
                 | Shortcut::CloseTab
                 | Shortcut::ReopenClosedTab
                 | Shortcut::NextTab
@@ -54,6 +60,15 @@ impl Shortcut {
                 | Shortcut::Settings
                 | Shortcut::Home
                 | Shortcut::Downloads
+        )
+    }
+
+    /// Whether holding the keys repeats the shortcut. Opening or closing windows does not, a key
+    /// held a little too long would otherwise close the next window as well.
+    pub fn repeats(self) -> bool {
+        !matches!(
+            self,
+            Shortcut::NewWindow | Shortcut::CloseWindow | Shortcut::Quit
         )
     }
 }
@@ -81,6 +96,9 @@ pub fn detect(event: &KeyEvent, modifiers: ModifiersState) -> Option<Shortcut> {
 
     if control && !alt {
         let shortcut = match (base.as_str(), shift) {
+            ("n", false) => Shortcut::NewWindow,
+            ("w", true) => Shortcut::CloseWindow,
+            ("q", true) => Shortcut::Quit,
             ("t", false) => Shortcut::NewTab,
             ("t", true) => Shortcut::ReopenClosedTab,
             ("w", false) => Shortcut::CloseTab,

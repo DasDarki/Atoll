@@ -19,6 +19,12 @@ impl Browser {
         self.update_bookmarks_bar_visibility();
     }
 
+    /// Follows preferences another window changed.
+    pub(super) fn apply_shared_preferences(&self) {
+        self.restore_layout();
+        self.restore_dev_tools_layout();
+    }
+
     pub fn toggle_sidebar(&self) {
         let visible = !self.preferences.borrow().sidebar_visible;
         self.set_sidebar_visible(visible);

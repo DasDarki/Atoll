@@ -29,8 +29,13 @@ pub struct BookmarkState {
 }
 
 impl Browser {
-    /// Reloads bookmarks and updates the bar, the star and an open bookmark manager.
+    /// Reloads bookmarks in every window after they changed.
     pub(super) fn refresh_bookmarks(&self) {
+        self.for_all_windows(Browser::show_bookmarks);
+    }
+
+    /// Reloads bookmarks and updates the bar, the star and an open bookmark manager.
+    pub(super) fn show_bookmarks(&self) {
         let all = self.storage.bookmarks().unwrap_or_default();
         self.bookmarks.borrow_mut().all = all;
         let Some(window) = self.window() else { return };

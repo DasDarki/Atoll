@@ -153,8 +153,11 @@ impl Browser {
         if self.dev_tools_geometry.replace(geometry) == geometry {
             return;
         }
-        for (_, entry) in self.views.borrow().iter() {
-            if let Some(dev_tools) = &entry.dev_tools {
+        let session = self.session.borrow();
+        for (tab, entry) in self.views.borrow().iter() {
+            if let Some(dev_tools) = &entry.dev_tools
+                && session.contains_tab(*tab)
+            {
                 dev_tools.view().resize(geometry);
             }
         }

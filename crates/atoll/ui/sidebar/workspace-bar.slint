@@ -8,6 +8,12 @@ component WorkspaceChip inherits Rectangle {
     in property <int> index;
     in property <int> total;
 
+    callback reveal(length, length);
+
+    changed x => { if (root.item.active) { root.reveal(root.x, root.width); } }
+    changed width => { if (root.item.active) { root.reveal(root.x, root.width); } }
+    changed item => { if (root.item.active) { root.reveal(root.x, root.width); } }
+
     height: 28px;
     border-radius: Theme.radius-small;
     background: root.item.active ? Theme.selected : touch.has-hover ? Theme.hover : transparent;
@@ -16,12 +22,21 @@ component WorkspaceChip inherits Rectangle {
     HorizontalLayout {
         padding-left: 10px;
         padding-right: 10px;
+        spacing: 6px;
         label := Text {
             text: root.item.name;
             color: root.item.active ? Theme.text : Theme.text-muted;
             font-size: Theme.font-normal;
             font-weight: root.item.active ? 600 : 400;
             vertical-alignment: center;
+        }
+        if root.item.open-elsewhere : Rectangle {
+            width: 9px;
+            height: 7px;
+            y: (parent.height - self.height) / 2;
+            border-width: 1px;
+            border-radius: 1.5px;
+            border-color: Theme.text-faint;
         }
     }
 
@@ -36,6 +51,12 @@ component WorkspaceChip inherits Rectangle {
 
     menu := ContextMenuArea {
         Menu {
+            MenuItem {
+                title: root.item.open-elsewhere ? "Zum Fenster wechseln" : "In neuem Fenster öffnen";
+                enabled: !root.item.active;
+                activated => { SidebarState.workspace-action(root.item.id, "open-window"); }
+            }
+            MenuSeparator { }
             MenuItem {
                 title: "Umbenennen";
                 activated => { SidebarState.workspace-action(root.item.id, "rename"); }
@@ -122,6 +143,13 @@ export component WorkspaceBar inherits Rectangle {
                     item: item;
                     index: index;
                     total: SidebarState.workspaces.length;
+                    reveal(x, width) => {
+                        if (x + strip.offset < 0) {
+                            strip.offset = -x;
+                        } else if (x + width + strip.offset > strip.width) {
+                            strip.offset = min(0px, strip.width - x - width);
+                        }
+                    }
                 }
             }
         }

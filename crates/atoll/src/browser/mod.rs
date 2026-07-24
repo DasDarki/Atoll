@@ -2,6 +2,7 @@ mod archive;
 mod bookmarks;
 mod chrome;
 mod clipboard;
+mod detach;
 mod dev_tools;
 mod downloads;
 mod events;
@@ -25,21 +26,20 @@ mod tabs;
 mod transfer;
 mod views;
 mod web_input;
+mod windows;
 
 use std::cell::{Cell, RefCell};
 use std::rc::{Rc, Weak};
 
 use anyhow::Result;
-use atoll_core::{TabLifecycle, Timestamp, WorkspaceId};
+use atoll_core::{TabLifecycle, Timestamp, WindowId, WorkspaceId};
 use atoll_engine::{Engine, GpuContext, RequestId, ViewGeometry, ViewId};
 use atoll_storage::Storage;
-use atoll_storage::prelude::*;
 use slint::ComponentHandle;
 
 use crate::input::pointer::ClickTracker;
 use crate::platform::clipboard::Clipboard;
 use crate::platform::paths::Paths;
-use crate::pump::MessagePump;
 use crate::ui::AppWindow;
 
 use bookmarks::BookmarkState;
@@ -60,39 +60,77 @@ use views::ViewRegistry;
 use web_input::InputTarget;
 
 pub use web_input::KeyboardFocus;
+pub use windows::WindowManager;
 
-const ACTIVE_WORKSPACE_KEY: &str = "active_workspace";
-
-/// The controller that connects the user interface, the database and the engine.
-pub struct Browser {
-    window: slint::Weak<AppWindow>,
-    storage: Storage,
+/// Everything the windows share: the database, the engine and the engine instances of all tabs.
+#[derive(Clone)]
+struct Shared {
+    storage: Rc<Storage>,
     gpu: Rc<GpuContext>,
     paths: Paths,
-    preferences: RefCell<Preferences>,
-    engine: RefCell<Option<Engine>>,
-    pump: RefCell<Option<Rc<MessagePump>>>,
+    preferences: Rc<RefCell<Preferences>>,
+    engine: Rc<RefCell<Option<Engine>>>,
+    lifecycle: Rc<RefCell<TabLifecycle>>,
+    views: Rc<RefCell<ViewRegistry>>,
+    favicons: Rc<RefCell<FaviconCache>>,
+    closed_tabs: Rc<RefCell<Vec<ClosedTab>>>,
+    clipboard: Rc<Clipboard>,
+    clipboard_sync: Rc<RefCell<ClipboardSync>>,
+    downloads: Rc<RefCell<Downloads>>,
+}
+
+impl Shared {
+    fn new(storage: Storage, gpu: Rc<GpuContext>, paths: Paths) -> Self {
+        let preferences = Preferences::load(&storage);
+        let lifecycle = TabLifecycle::new(preferences.frozen_limit);
+        Self {
+            storage: Rc::new(storage),
+            gpu,
+            paths,
+            preferences: Rc::new(RefCell::new(preferences)),
+            engine: Rc::default(),
+            lifecycle: Rc::new(RefCell::new(lifecycle)),
+            views: Rc::default(),
+            favicons: Rc::default(),
+            closed_tabs: Rc::default(),
+            clipboard: Rc::default(),
+            clipboard_sync: Rc::default(),
+            downloads: Rc::default(),
+        }
+    }
+}
+
+/// The controller of one window: connects its user interface to the database and the engine.
+/// Everything that is not about this window lives in [`Shared`].
+pub struct Browser {
+    id: WindowId,
+    window: slint::Weak<AppWindow>,
+    manager: Weak<WindowManager>,
+    storage: Rc<Storage>,
+    paths: Paths,
+    preferences: Rc<RefCell<Preferences>>,
+    engine: Rc<RefCell<Option<Engine>>>,
     session: RefCell<Session>,
-    lifecycle: RefCell<TabLifecycle>,
-    views: RefCell<ViewRegistry>,
+    lifecycle: Rc<RefCell<TabLifecycle>>,
+    views: Rc<RefCell<ViewRegistry>>,
     sidebar: SidebarModels,
     geometry: Cell<ViewGeometry>,
     dev_tools_geometry: Cell<ViewGeometry>,
     dev_tools_presentation: RefCell<DevToolsPresentation>,
     input_target: Cell<InputTarget>,
-    favicons: RefCell<FaviconCache>,
+    favicons: Rc<RefCell<FaviconCache>>,
     page: RefCell<PageState>,
     dialogs: RefCell<DialogQueue>,
     context_menu: Cell<Option<(ViewId, RequestId)>>,
     transfer: RefCell<TransferState>,
-    closed_tabs: RefCell<Vec<ClosedTab>>,
+    closed_tabs: Rc<RefCell<Vec<ClosedTab>>>,
     clicks: RefCell<ClickTracker>,
-    clipboard: Clipboard,
-    clipboard_sync: RefCell<ClipboardSync>,
+    clipboard: Rc<Clipboard>,
+    clipboard_sync: Rc<RefCell<ClipboardSync>>,
     find_text: RefCell<String>,
     address_focus_requested: Cell<bool>,
     last_title_press: Cell<Option<std::time::Instant>>,
-    downloads: RefCell<Downloads>,
+    downloads: Rc<RefCell<Downloads>>,
     suggestions: RefCell<SuggestionState>,
     palette: RefCell<PaletteState>,
     bookmarks: RefCell<BookmarkState>,
@@ -100,55 +138,74 @@ pub struct Browser {
 }
 
 impl Browser {
-    pub fn new(
+    fn new(
         window: &AppWindow,
-        storage: Storage,
-        gpu: Rc<GpuContext>,
-        paths: Paths,
+        id: WindowId,
+        workspace: WorkspaceId,
+        shared: &Shared,
+        manager: Weak<WindowManager>,
     ) -> Result<Rc<Self>> {
-        let workspace = initial_workspace(&storage)?;
-        let session = Session::load(&storage, workspace)?;
-        let preferences = Preferences::load(&storage);
-        let lifecycle = TabLifecycle::new(preferences.frozen_limit);
+        let session = Session::load(&shared.storage, workspace)?;
         let geometry = ViewGeometry {
             width: 1024,
             height: 768,
             scale: window.window().scale_factor(),
         };
         Ok(Rc::new_cyclic(|this| Self {
+            id,
             window: window.as_weak(),
-            storage,
-            gpu,
-            paths,
-            preferences: RefCell::new(preferences),
-            engine: RefCell::new(None),
-            pump: RefCell::new(None),
+            manager,
+            storage: shared.storage.clone(),
+            paths: shared.paths.clone(),
+            preferences: shared.preferences.clone(),
+            engine: shared.engine.clone(),
             session: RefCell::new(session),
-            lifecycle: RefCell::new(lifecycle),
-            views: RefCell::default(),
+            lifecycle: shared.lifecycle.clone(),
+            views: shared.views.clone(),
             sidebar: SidebarModels::attach(window),
             geometry: Cell::new(geometry),
             dev_tools_geometry: Cell::new(geometry),
             dev_tools_presentation: RefCell::default(),
             input_target: Cell::default(),
-            favicons: RefCell::default(),
+            favicons: shared.favicons.clone(),
             page: RefCell::default(),
             dialogs: RefCell::default(),
             context_menu: Cell::new(None),
             transfer: RefCell::default(),
-            closed_tabs: RefCell::default(),
+            closed_tabs: shared.closed_tabs.clone(),
             clicks: RefCell::default(),
-            clipboard: Clipboard::default(),
-            clipboard_sync: RefCell::default(),
+            clipboard: shared.clipboard.clone(),
+            clipboard_sync: shared.clipboard_sync.clone(),
             find_text: RefCell::default(),
             address_focus_requested: Cell::new(false),
             last_title_press: Cell::new(None),
-            downloads: RefCell::default(),
+            downloads: shared.downloads.clone(),
             suggestions: RefCell::default(),
             palette: RefCell::default(),
             bookmarks: RefCell::default(),
             this: this.clone(),
         }))
+    }
+
+    fn manager(&self) -> Option<Rc<WindowManager>> {
+        self.manager.upgrade()
+    }
+
+    /// Runs `action` for every other open window.
+    fn for_other_windows(&self, mut action: impl FnMut(&Browser)) {
+        if let Some(manager) = self.manager() {
+            for browser in manager.browsers() {
+                if browser.id != self.id {
+                    action(&browser);
+                }
+            }
+        }
+    }
+
+    /// Runs `action` for every open window, this one included.
+    fn for_all_windows(&self, mut action: impl FnMut(&Browser)) {
+        action(self);
+        self.for_other_windows(action);
     }
 
     fn window(&self) -> Option<AppWindow> {
@@ -177,18 +234,4 @@ impl Browser {
     fn active_workspace_key(workspace: WorkspaceId) -> String {
         format!("workspace.{}.active_tab", workspace.0)
     }
-}
-
-fn initial_workspace(storage: &Storage) -> Result<WorkspaceId> {
-    let workspaces = storage.workspaces()?;
-    if workspaces.is_empty() {
-        let workspace = storage.create_workspace("Allgemein")?;
-        storage.set_setting(ACTIVE_WORKSPACE_KEY, &workspace.id.0.to_string())?;
-        return Ok(workspace.id);
-    }
-    let stored = storage
-        .setting_i64(ACTIVE_WORKSPACE_KEY)?
-        .map(WorkspaceId)
-        .filter(|id| workspaces.iter().any(|workspace| workspace.id == *id));
-    Ok(stored.unwrap_or(workspaces[0].id))
 }

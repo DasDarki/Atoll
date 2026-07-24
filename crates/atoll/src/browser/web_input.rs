@@ -136,7 +136,9 @@ impl Browser {
         if let Some(shortcut) = shortcuts::detect(event, modifiers)
             && (!focus.dev_tools || shortcut.applies_in_dev_tools())
         {
-            self.run_shortcut(shortcut);
+            if !event.repeat || shortcut.repeats() {
+                self.run_shortcut(shortcut);
+            }
             return EventResult::PreventDefault;
         }
         if !focus.page && !focus.dev_tools {
@@ -187,6 +189,9 @@ impl Browser {
 
     fn run_shortcut(&self, shortcut: Shortcut) {
         match shortcut {
+            Shortcut::NewWindow => self.open_new_window(),
+            Shortcut::CloseWindow => self.close_window(),
+            Shortcut::Quit => self.quit(),
             Shortcut::NewTab => self.new_tab(),
             Shortcut::CloseTab => self.close_active_tab(),
             Shortcut::ReopenClosedTab => self.reopen_closed_tab(),

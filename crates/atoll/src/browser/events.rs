@@ -10,16 +10,8 @@ use super::views::TabView;
 use crate::ui::BrowserState;
 
 impl Browser {
-    /// Runs one engine message loop iteration and handles everything it produced.
-    pub(super) fn pump(&self) {
-        let events = {
-            let engine = self.engine.borrow();
-            let Some(engine) = engine.as_ref() else {
-                return;
-            };
-            engine.do_message_loop_work();
-            engine.drain_events()
-        };
+    /// Handles the engine events that concern this window.
+    pub(super) fn process_events(&self, events: Vec<EngineEvent>) {
         let mut sidebar_dirty = false;
         let mut page_dirty = false;
         for event in events {

@@ -46,6 +46,10 @@ export component IslandHeader inherits Rectangle {
                 title: "Nach unten";
                 activated => { SidebarState.island-action(root.entry.island-id, "move-down"); }
             }
+            MenuItem {
+                title: "In neues Fenster verschieben";
+                activated => { SidebarState.island-action(root.entry.island-id, "new-window"); }
+            }
             Menu {
                 title: "In Workspace verschieben";
                 for workspace in SidebarState.workspaces : MenuItem {

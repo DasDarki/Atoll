@@ -33,13 +33,6 @@ pub struct Downloads {
 }
 
 impl Browser {
-    /// Marks downloads that were running when Atoll last closed as interrupted.
-    pub(super) fn restore_downloads(&self) {
-        if let Err(error) = self.storage.interrupt_running_downloads(Self::now()) {
-            tracing::warn!(%error, "download list could not be updated");
-        }
-    }
-
     /// The folder downloads are saved to unless the user picks another one.
     pub(super) fn download_directory(&self) -> PathBuf {
         self.preferences
@@ -221,8 +214,13 @@ impl Browser {
         self.focus_content();
     }
 
-    /// Updates the toolbar button and, if it is open, the download list.
+    /// Updates the download state of every window.
     fn refresh_downloads(&self) {
+        self.for_all_windows(Browser::show_download_state);
+    }
+
+    /// Updates the toolbar button and, if it is open, the download list.
+    pub(super) fn show_download_state(&self) {
         let Some(window) = self.window() else { return };
         let downloads = self.downloads.borrow();
         let running: Vec<&Download> = downloads

@@ -83,6 +83,7 @@ fn connect_sidebar(window: &AppWindow, browser: &Rc<Browser>) {
             "copy-url" => target.copy_tab_address(tab(id)),
             "new-island" => target.move_tab_to_new_island(tab(id)),
             "bookmark" => target.bookmark_tab(tab(id)),
+            "new-window" => target.move_tab_to_new_window(tab(id), None),
             other => tracing::warn!(action = other, "unknown tab action"),
         }
     );
@@ -92,6 +93,15 @@ fn connect_sidebar(window: &AppWindow, browser: &Rc<Browser>) {
         browser,
         |target, id, destination| target.move_tab_to_island(tab(id), island(destination))
     );
+    on!(
+        state,
+        on_move_tab_to_workspace,
+        browser,
+        |target, id, destination| target.move_tab_to_workspace(tab(id), workspace(destination))
+    );
+    on!(state, on_tab_drag_released, browser, |target, id, x, y| {
+        target.tab_drag_released(tab(id), x, y)
+    });
     on!(state, on_toggle_island, browser, |target, id| target
         .toggle_island(island(id)));
     on!(
@@ -100,6 +110,7 @@ fn connect_sidebar(window: &AppWindow, browser: &Rc<Browser>) {
         browser,
         |target, id, action| match action.as_str() {
             "bookmark" => target.bookmark_island(island(id)),
+            "new-window" => target.move_island_to_new_window(island(id)),
             other => target.island_action(island(id), other),
         }
     );

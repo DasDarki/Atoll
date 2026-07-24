@@ -22,6 +22,11 @@ const HISTORY_SOURCE: usize = 2000;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Command {
+    NewWindow,
+    CloseWindow,
+    Quit,
+    MoveTabToNewWindow,
+    OpenWorkspaceWindow(WorkspaceId),
     NewTab,
     CloseTab,
     ReopenTab,
@@ -355,6 +360,24 @@ impl Browser {
         let bar_visible = preferences.bookmarks_bar_visible;
         let mut commands = vec![
             (
+                Command::NewWindow,
+                "Neues Fenster".to_owned(),
+                "Strg+N",
+                "window workspace",
+            ),
+            (
+                Command::CloseWindow,
+                "Fenster schließen".to_owned(),
+                "Strg+Umschalt+W",
+                "window",
+            ),
+            (
+                Command::Quit,
+                "Atoll beenden".to_owned(),
+                "Strg+Umschalt+Q",
+                "exit schließen alle fenster",
+            ),
+            (
                 Command::NewTab,
                 "Neuer Tab".to_owned(),
                 "Strg+T",
@@ -546,6 +569,14 @@ impl Browser {
                 "bookmarks leer ausblenden einstellung",
             ),
         ];
+        if self.session.borrow().active_tab.is_some() {
+            commands.push((
+                Command::MoveTabToNewWindow,
+                "Tab in neues Fenster verschieben".to_owned(),
+                "",
+                "window abtrennen",
+            ));
+        }
         if self.current_page_url().is_some() {
             commands.push((
                 Command::UseCurrentPageAsStartPage,
@@ -578,17 +609,33 @@ impl Browser {
                 ));
             }
         }
+        let shown_elsewhere = self.workspaces_shown_elsewhere();
         let session = self.session.borrow();
         for workspace in session
             .workspaces
             .iter()
             .filter(|workspace| workspace.id != session.workspace)
         {
+            if shown_elsewhere.contains(&workspace.id) {
+                commands.push((
+                    Command::SwitchWorkspace(workspace.id),
+                    format!("Zum Fenster wechseln: {}", workspace.name),
+                    "",
+                    "workspace window",
+                ));
+                continue;
+            }
             commands.push((
                 Command::SwitchWorkspace(workspace.id),
                 format!("Zu Workspace wechseln: {}", workspace.name),
                 "",
                 "workspace",
+            ));
+            commands.push((
+                Command::OpenWorkspaceWindow(workspace.id),
+                format!("In neuem Fenster öffnen: {}", workspace.name),
+                "",
+                "workspace window",
             ));
         }
         commands
@@ -596,6 +643,16 @@ impl Browser {
 
     fn run_command(&self, command: Command) {
         match command {
+            Command::NewWindow => self.open_new_window(),
+            Command::CloseWindow => self.close_window(),
+            Command::Quit => self.quit(),
+            Command::MoveTabToNewWindow => {
+                let active = self.session.borrow().active_tab;
+                if let Some(tab) = active {
+                    self.move_tab_to_new_window(tab, None);
+                }
+            }
+            Command::OpenWorkspaceWindow(workspace) => self.open_workspace_in_window(workspace),
             Command::NewTab => self.new_tab(),
             Command::CloseTab => self.close_active_tab(),
             Command::ReopenTab => self.reopen_closed_tab(),

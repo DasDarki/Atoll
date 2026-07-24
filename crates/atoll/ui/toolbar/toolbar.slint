@@ -166,6 +166,10 @@ export component Toolbar inherits Rectangle {
                 title: "Geschlossenen Tab wiederherstellen";
                 activated => { BrowserState.menu-action("reopen-tab"); }
             }
+            MenuItem {
+                title: "Neues Fenster";
+                activated => { BrowserState.menu-action("new-window"); }
+            }
             MenuSeparator { }
             MenuItem {
                 title: "Alle Tabs durchsuchen";
@@ -242,6 +246,11 @@ export component Toolbar inherits Rectangle {
                 title: "Entwicklertools";
                 enabled: BrowserState.has-page;
                 activated => { BrowserState.menu-action("devtools"); }
+            }
+            MenuSeparator { }
+            MenuItem {
+                title: "Beenden";
+                activated => { BrowserState.menu-action("quit"); }
             }
         }
     }

@@ -11,6 +11,13 @@ saved tabs therefore cost nothing at startup.
 
 - **Workspaces, islands, tabs**: a workspace is a complete context, islands are named, colored,
   collapsible tab groups inside it.
+- **Windows**: every window shows one workspace, and a workspace is shown in at most one window.
+  Dragging a tab out of the sidebar and releasing it outside the window moves it into a new window
+  with a workspace of its own, dropping it on another Atoll window moves it there. The page keeps
+  running either way. Tabs and islands can also be moved through their context menus, and a
+  workspace can be opened in a window of its own. Open windows are restored at the next start.
+- **Own window frame**: the toolbar doubles as the title bar with the window buttons, a double
+  click maximizes the window, and the edges resize it.
 - **Four tab states**: *Live* (visible), *Frozen* (recently used, paused in the background),
   *Sleeping* (plain record, the normal state) and *Archived* (part of an archived island).
   Frozen tabs beyond the limit and tabs put to sleep release their engine instance.
@@ -71,6 +78,9 @@ storage).
 
 | Keys | Action |
 |---|---|
+| `Ctrl+N` | New window with a new workspace |
+| `Ctrl+Shift+W` | Close window |
+| `Ctrl+Shift+Q` | Quit, every open window is restored at the next start |
 | `Ctrl+T` | New tab next to the active one |
 | `Ctrl+W`, `Ctrl+F4` | Close tab |
 | `Ctrl+Shift+T` | Reopen closed tab |
@@ -128,6 +138,12 @@ crates/
   imported into Vulkan, converted to RGBA on the GPU and shown by Slint as a texture of the very
   same `wgpu` device, without a CPU copy. The CPU path is used as a fallback.
 - **Event loop**: CEF runs with an external message pump driven by Slint timers.
+- **Windows**: the engine, the database and the engine instances of all tabs are shared, each
+  window has its own controller. The tab lifecycle keeps one live tab per window, so moving a tab
+  hands its engine instance over without reloading. Engine events are routed to the window whose
+  workspace holds the tab. Wayland does not tell applications where the pointer is outside their
+  windows, so a tab dropped outside its window moves to the Atoll window that reports the pointer
+  entering it right after the drop.
 - **Clipboard**: off-screen browsers never own keyboard focus on Wayland, so Chromium's clipboard
   is separate from the system clipboard. A hidden helper page moves text between both, using real
   `copy` and `paste` events so web applications keep working.
@@ -143,7 +159,8 @@ crates/
 
 Phase 1 of the concept (shell, tab model, workspaces and islands, database, fast startup, URL list
 import and export) is implemented, together with the global quick search, a command palette,
-address bar autocomplete, bookmarks, downloads, settings and docked developer tools. Next up are
+address bar autocomplete, bookmarks, downloads, settings, docked developer tools and multiple
+windows. Next up are
 adblocking and archive suggestions, then uploads from the clipboard and the memory limit, then
 1Password.
 
@@ -154,3 +171,5 @@ Known limitations:
   are denied.
 - Dragging files from other applications into a page is not supported yet.
 - Input method composition (for example for CJK input) is forwarded but not positioned.
+- Under Wayland, new windows are placed by the compositor, not at the point where a tab was
+  dropped.

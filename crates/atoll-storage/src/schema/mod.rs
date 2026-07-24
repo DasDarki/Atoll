@@ -6,6 +6,7 @@ const MIGRATIONS: &[&str] = &[
     include_str!("v1_initial.sql"),
     include_str!("v2_bookmarks_and_history.sql"),
     include_str!("v3_downloads.sql"),
+    include_str!("v4_windows.sql"),
 ];
 
 pub(crate) fn migrate(connection: &Connection) -> StorageResult<()> {

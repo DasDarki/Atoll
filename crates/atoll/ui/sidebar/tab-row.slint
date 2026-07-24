@@ -6,7 +6,12 @@ import { IconButton } from "../widgets/icon-button.slint";
 export component TabRow inherits Rectangle {
     in property <SidebarRow> entry;
 
+    property <length> press-x;
+    property <length> press-y;
+    property <bool> dragging;
+
     height: 32px;
+    opacity: root.dragging ? 0.5 : 1.0;
 
     menu := ContextMenuArea {
         Menu {
@@ -48,6 +53,18 @@ export component TabRow inherits Rectangle {
                     activated => { SidebarState.move-tab-to-island(root.entry.tab-id, target.id); }
                 }
             }
+            MenuItem {
+                title: "In neues Fenster verschieben";
+                activated => { SidebarState.tab-action(root.entry.tab-id, "new-window"); }
+            }
+            Menu {
+                title: "In Fenster verschieben";
+                enabled: SidebarState.window-targets.length > 0;
+                for target in SidebarState.window-targets : MenuItem {
+                    title: target.name;
+                    activated => { SidebarState.move-tab-to-workspace(root.entry.tab-id, target.id); }
+                }
+            }
             MenuSeparator { }
             MenuItem {
                 title: "Tab schließen";
@@ -56,13 +73,28 @@ export component TabRow inherits Rectangle {
         }
 
         touch := TouchArea {
-            mouse-cursor: pointer;
+            mouse-cursor: root.dragging ? MouseCursor.grabbing : MouseCursor.pointer;
             pointer-event(event) => {
+                if (event.kind == PointerEventKind.down && event.button == PointerEventButton.left) {
+                    root.press-x = self.mouse-x;
+                    root.press-y = self.mouse-y;
+                    root.dragging = false;
+                }
+                if (event.kind == PointerEventKind.up && event.button == PointerEventButton.left && root.dragging) {
+                    root.dragging = false;
+                    SidebarState.tab-drag-released(root.entry.tab-id, root.absolute-position.x + self.mouse-x, root.absolute-position.y + self.mouse-y);
+                }
                 if (event.kind == PointerEventKind.up && event.button == PointerEventButton.middle) {
                     SidebarState.close-tab(root.entry.tab-id);
                 }
                 if (event.kind == PointerEventKind.up && event.button == PointerEventButton.right) {
                     menu.show({ x: self.mouse-x, y: self.mouse-y });
+                }
+            }
+            moved => {
+                if (self.pressed && !root.dragging && (abs(self.mouse-x - root.press-x) > 8px || abs(self.mouse-y - root.press-y) > 8px)) {
+                    root.dragging = true;
+                    SidebarState.hovering = false;
                 }
             }
             clicked => {

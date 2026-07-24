@@ -8,14 +8,13 @@ use slint::wgpu_30::WGPUConfiguration;
 use slint::winit_030::WinitWindowAccessor;
 use slint::{ComponentHandle, RenderingState};
 
-use crate::bridge::{bindings, window_events};
-use crate::browser::Browser;
+use crate::browser::WindowManager;
 use crate::platform::paths::Paths;
 use crate::ui::AppWindow;
 
 const DEFAULT_FRAME_RATE: u32 = 60;
 
-/// Starts Atoll and runs until the window is closed.
+/// Starts Atoll and runs until the last window is closed.
 pub fn run() -> Result<()> {
     let launched = Instant::now();
     let paths = Paths::resolve()?;
@@ -41,17 +40,13 @@ pub fn run() -> Result<()> {
         .select()
         .context("die Oberfläche kann nicht initialisiert werden")?;
 
-    let window = AppWindow::new()?;
-    tracing::debug!(elapsed = ?launched.elapsed(), "window created");
-    let browser = Browser::new(&window, storage, gpu, paths)?;
-    bindings::connect(&window, &browser);
-    window_events::install(&window, &browser);
-    browser.show_session();
-    tracing::debug!(elapsed = ?launched.elapsed(), "session shown");
-    start_engine_after_first_frame(&window, &browser, launched);
+    let manager = WindowManager::new(storage, gpu, paths);
+    let first = manager.restore_windows()?;
+    tracing::debug!(elapsed = ?launched.elapsed(), "windows shown");
+    start_engine_after_first_frame(&first, &manager, launched);
 
-    window.run()?;
-    browser.shutdown();
+    slint::run_event_loop()?;
+    manager.shutdown();
 
     // Slint releases its graphics device only while thread locals are destroyed, and dropping the
     // last queue reference at that point panics inside wgpu. Keeping one reference until the
@@ -61,8 +56,12 @@ pub fn run() -> Result<()> {
 }
 
 /// The engine starts only after the first frame is visible, so the window never waits for it.
-fn start_engine_after_first_frame(window: &AppWindow, browser: &Rc<Browser>, launched: Instant) {
-    let browser = Rc::downgrade(browser);
+fn start_engine_after_first_frame(
+    window: &AppWindow,
+    manager: &Rc<WindowManager>,
+    launched: Instant,
+) {
+    let manager = Rc::downgrade(manager);
     let handle = window.as_weak();
     let mut pending = true;
     let registered = window.window().set_rendering_notifier(move |state, _| {
@@ -71,15 +70,15 @@ fn start_engine_after_first_frame(window: &AppWindow, browser: &Rc<Browser>, lau
         }
         pending = false;
         tracing::info!(elapsed = ?launched.elapsed(), "first frame on screen");
-        let browser = browser.clone();
+        let manager = manager.clone();
         let handle = handle.clone();
         slint::Timer::single_shot(Duration::ZERO, move || {
             let frame_rate = handle
                 .upgrade()
                 .and_then(|window| monitor_frame_rate(&window))
                 .unwrap_or(DEFAULT_FRAME_RATE);
-            if let Some(browser) = browser.upgrade() {
-                browser.start_engine(frame_rate);
+            if let Some(manager) = manager.upgrade() {
+                manager.start_engine(frame_rate);
             }
         });
     });

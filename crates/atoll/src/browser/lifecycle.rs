@@ -8,14 +8,17 @@ use super::views::TabView;
 impl Browser {
     /// Carries out the commands of a lifecycle transition on the engine.
     pub(super) fn apply(&self, commands: Vec<LifecycleCommand>) {
+        let mut unloaded_elsewhere = Vec::new();
         for command in commands {
             match command {
                 LifecycleCommand::Wake(tab) => self.wake(tab),
                 LifecycleCommand::Show(tab) => {
                     if let Some(entry) = self.views.borrow().get(tab) {
+                        entry.view.resize(self.geometry.get());
                         entry.view.set_hidden(false);
                         entry.view.set_focus(true);
                         if let Some(dev_tools) = &entry.dev_tools {
+                            dev_tools.view().resize(self.dev_tools_geometry.get());
                             dev_tools.view().set_hidden(false);
                         }
                     }
@@ -32,9 +35,28 @@ impl Browser {
                         }
                     }
                 }
-                LifecycleCommand::Unload(tab) => self.unload(tab),
+                LifecycleCommand::Unload(tab) => {
+                    self.unload(tab);
+                    if !self.session.borrow().contains_tab(tab) {
+                        unloaded_elsewhere.push(tab);
+                    }
+                }
             }
         }
+        if unloaded_elsewhere.is_empty() {
+            return;
+        }
+        self.for_other_windows(|other| {
+            let affected = {
+                let session = other.session.borrow();
+                unloaded_elsewhere
+                    .iter()
+                    .any(|tab| session.contains_tab(*tab))
+            };
+            if affected {
+                other.refresh_sidebar();
+            }
+        });
     }
 
     fn wake(&self, tab: TabId) {
@@ -107,8 +129,11 @@ impl Browser {
         if self.geometry.replace(geometry) == geometry {
             return;
         }
-        for (_, entry) in self.views.borrow().iter() {
-            entry.view.resize(geometry);
+        let session = self.session.borrow();
+        for (tab, entry) in self.views.borrow().iter() {
+            if session.contains_tab(*tab) {
+                entry.view.resize(geometry);
+            }
         }
     }
 

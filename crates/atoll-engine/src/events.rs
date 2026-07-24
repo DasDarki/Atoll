@@ -113,6 +113,43 @@ pub enum EngineEvent {
     AcceleratedPaintFailed(ViewId),
 }
 
+impl EngineEvent {
+    /// The view whose tab the event concerns: the opener for popups, `None` for events of the
+    /// whole engine.
+    pub fn view(&self) -> Option<ViewId> {
+        match self {
+            EngineEvent::FrameReady(view)
+            | EngineEvent::PopupWidgetChanged(view)
+            | EngineEvent::CloseRequested(view)
+            | EngineEvent::Closed(view)
+            | EngineEvent::RenderProcessGone(view)
+            | EngineEvent::AcceleratedPaintFailed(view) => Some(*view),
+            EngineEvent::AddressChanged { view, .. }
+            | EngineEvent::TitleChanged { view, .. }
+            | EngineEvent::FaviconReady { view, .. }
+            | EngineEvent::LoadingStateChanged { view, .. }
+            | EngineEvent::LoadProgress { view, .. }
+            | EngineEvent::MainFrameLoaded { view, .. }
+            | EngineEvent::CursorChanged { view, .. }
+            | EngineEvent::StatusMessage { view, .. }
+            | EngineEvent::Tooltip { view, .. }
+            | EngineEvent::FullscreenChanged { view, .. }
+            | EngineEvent::OpenUrl { view, .. }
+            | EngineEvent::ContextMenu { view, .. }
+            | EngineEvent::FileDialog { view, .. }
+            | EngineEvent::JsDialog { view, .. }
+            | EngineEvent::JsDialogDismissed { view }
+            | EngineEvent::FindResult { view, .. }
+            | EngineEvent::InspectElement { view, .. } => Some(*view),
+            EngineEvent::PopupOpened { opener, .. } => Some(*opener),
+            EngineEvent::Download(_)
+            | EngineEvent::CopyText(_)
+            | EngineEvent::ClipboardText(_)
+            | EngineEvent::ClipboardWritten => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OpenDisposition {
     ForegroundTab,

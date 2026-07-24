@@ -42,6 +42,14 @@ pub fn install(window: &AppWindow, browser: &Rc<Browser>) {
                 browser.set_scale_factor(*scale_factor as f32);
                 EventResult::Propagate
             }
+            WindowEvent::CursorEntered { .. } | WindowEvent::CursorMoved { .. } => {
+                browser.pointer_seen();
+                EventResult::Propagate
+            }
+            WindowEvent::Focused(true) => {
+                browser.window_focused();
+                EventResult::Propagate
+            }
             WindowEvent::Focused(false) => {
                 modifiers.set(ModifiersState::empty());
                 EventResult::Propagate

@@ -159,9 +159,12 @@ impl Browser {
         key: PreferenceKey,
         change: impl FnOnce(&mut Preferences),
     ) {
-        let mut preferences = self.preferences.borrow_mut();
-        change(&mut preferences);
-        preferences.store(&self.storage, key);
+        {
+            let mut preferences = self.preferences.borrow_mut();
+            change(&mut preferences);
+            preferences.store(&self.storage, key);
+        }
+        self.for_other_windows(Browser::apply_shared_preferences);
     }
 
     pub(super) fn set_start_page(&self, start_page: &str) {

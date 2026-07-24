@@ -1,6 +1,6 @@
-use std::collections::HashSet;
+use std::collections::{BTreeMap, HashSet};
 
-use crate::ids::TabId;
+use crate::ids::{TabId, WindowId};
 
 /// The runtime state of a tab.
 ///
@@ -35,12 +35,13 @@ pub enum LifecycleCommand {
 
 /// The state machine deciding which tabs own an engine instance.
 ///
-/// At most one tab is `Live`. Tabs that were live before become `Frozen` and are kept in
-/// most-recently-used order until the frozen limit or the memory budget pushes the least recently
-/// used ones back to `Sleeping`. Protected tabs are never unloaded automatically.
+/// Every window has at most one `Live` tab. Tabs that were live before become `Frozen` and are
+/// kept in most-recently-used order, shared by all windows, until the frozen limit or the memory
+/// budget pushes the least recently used ones back to `Sleeping`. Protected tabs are never
+/// unloaded automatically.
 #[derive(Debug, Clone)]
 pub struct TabLifecycle {
-    live: Option<TabId>,
+    live: BTreeMap<WindowId, TabId>,
     frozen: Vec<TabId>,
     frozen_limit: usize,
     protected: HashSet<TabId>,
@@ -49,15 +50,16 @@ pub struct TabLifecycle {
 impl TabLifecycle {
     pub fn new(frozen_limit: usize) -> Self {
         Self {
-            live: None,
+            live: BTreeMap::new(),
             frozen: Vec::new(),
             frozen_limit,
             protected: HashSet::new(),
         }
     }
 
-    pub fn live(&self) -> Option<TabId> {
-        self.live
+    /// The live tab of `window`.
+    pub fn live_in(&self, window: WindowId) -> Option<TabId> {
+        self.live.get(&window).copied()
     }
 
     /// Frozen tabs, most recently used first.
@@ -70,7 +72,7 @@ impl TabLifecycle {
     }
 
     pub fn state_of(&self, tab: TabId, archived: bool) -> TabState {
-        if self.live == Some(tab) {
+        if self.is_live(tab) {
             TabState::Live
         } else if self.frozen.contains(&tab) {
             TabState::Frozen
@@ -82,38 +84,56 @@ impl TabLifecycle {
     }
 
     pub fn has_engine_instance(&self, tab: TabId) -> bool {
-        self.live == Some(tab) || self.frozen.contains(&tab)
+        self.is_live(tab) || self.frozen.contains(&tab)
     }
 
-    /// Makes `tab` the live tab. The previous live tab is frozen.
-    pub fn activate(&mut self, tab: TabId) -> Vec<LifecycleCommand> {
-        if self.live == Some(tab) {
+    fn is_live(&self, tab: TabId) -> bool {
+        self.live.values().any(|live| *live == tab)
+    }
+
+    /// Makes `tab` the live tab of `window`. The previous live tab of that window is frozen. A tab
+    /// that is live in another window moves over without being reloaded.
+    pub fn activate(&mut self, window: WindowId, tab: TabId) -> Vec<LifecycleCommand> {
+        if self.live_in(window) == Some(tab) {
             return Vec::new();
         }
 
-        let mut commands = self.freeze_live();
-        if let Some(index) = self.frozen.iter().position(|frozen| *frozen == tab) {
+        let mut commands = self.freeze_live(window);
+        let elsewhere = self
+            .live
+            .iter()
+            .find(|(_, live)| **live == tab)
+            .map(|(other, _)| *other);
+        if let Some(other) = elsewhere {
+            self.live.remove(&other);
+        } else if let Some(index) = self.frozen.iter().position(|frozen| *frozen == tab) {
             self.frozen.remove(index);
         } else {
             commands.push(LifecycleCommand::Wake(tab));
         }
         commands.push(LifecycleCommand::Show(tab));
-        self.live = Some(tab);
+        self.live.insert(window, tab);
         commands.extend(self.enforce_frozen_limit());
         commands
     }
 
-    /// Freezes the live tab without activating another one, for example while a blank tab is shown.
-    pub fn deactivate(&mut self) -> Vec<LifecycleCommand> {
-        let mut commands = self.freeze_live();
+    /// Freezes the live tab of `window` without activating another one, for example while a blank
+    /// tab is shown.
+    pub fn deactivate(&mut self, window: WindowId) -> Vec<LifecycleCommand> {
+        let mut commands = self.freeze_live(window);
         commands.extend(self.enforce_frozen_limit());
         commands
     }
 
     /// Puts `tab` to sleep, destroying its engine instance if it has one.
     pub fn sleep(&mut self, tab: TabId) -> Vec<LifecycleCommand> {
-        if self.live == Some(tab) {
-            self.live = None;
+        let live_in = self
+            .live
+            .iter()
+            .find(|(_, live)| **live == tab)
+            .map(|(window, _)| *window);
+        if let Some(window) = live_in {
+            self.live.remove(&window);
             return vec![LifecycleCommand::Unload(tab)];
         }
         if let Some(index) = self.frozen.iter().position(|frozen| *frozen == tab) {
@@ -160,8 +180,8 @@ impl TabLifecycle {
         Some(LifecycleCommand::Unload(tab))
     }
 
-    fn freeze_live(&mut self) -> Vec<LifecycleCommand> {
-        match self.live.take() {
+    fn freeze_live(&mut self, window: WindowId) -> Vec<LifecycleCommand> {
+        match self.live.remove(&window) {
             Some(previous) => {
                 self.frozen.insert(0, previous);
                 vec![LifecycleCommand::Hide(previous)]

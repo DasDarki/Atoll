@@ -38,3 +38,7 @@ define_id!(
     /// Identifies an entry of the download list.
     DownloadId
 );
+define_id!(
+    /// Identifies a browser window, each showing one workspace.
+    WindowId
+);

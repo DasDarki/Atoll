@@ -37,9 +37,9 @@ impl Browser {
 
         if self.is_engine_running() {
             let commands = if blank {
-                self.lifecycle.borrow_mut().deactivate()
+                self.lifecycle.borrow_mut().deactivate(self.id)
             } else {
-                self.lifecycle.borrow_mut().activate(tab)
+                self.lifecycle.borrow_mut().activate(self.id, tab)
             };
             self.apply(commands);
         }
@@ -332,7 +332,7 @@ impl Browser {
     /// Shows the new tab page when the workspace has no tab to show.
     pub(super) fn show_empty_workspace(&self) {
         if self.is_engine_running() {
-            let commands = self.lifecycle.borrow_mut().deactivate();
+            let commands = self.lifecycle.borrow_mut().deactivate(self.id);
             self.apply(commands);
         }
         self.session.borrow_mut().active_tab = None;
@@ -371,7 +371,7 @@ impl Browser {
         }
     }
 
-    fn insertion_point_after_active(&self) -> Option<(IslandId, usize)> {
+    pub(super) fn insertion_point_after_active(&self) -> Option<(IslandId, usize)> {
         let active = self.session.borrow().active_tab?;
         self.insertion_point_after(active)
     }
@@ -388,7 +388,8 @@ impl Browser {
     }
 
     /// Shows `tab` wherever it lives: its island comes back from the archive and is expanded, and
-    /// the workspace is switched if necessary.
+    /// the workspace is switched if necessary. A tab of a workspace that another window shows is
+    /// revealed there.
     pub(super) fn reveal_tab(&self, tab: TabId) {
         let Ok(record) = self.storage.tab(tab) else {
             return;
@@ -396,6 +397,14 @@ impl Browser {
         let Ok(island) = self.storage.island(record.island_id) else {
             return;
         };
+        if island.workspace_id != self.session.borrow().workspace
+            && let Some(manager) = self.manager()
+            && let Some(other) = manager.window_for_workspace(island.workspace_id)
+        {
+            manager.focus_window(other.id);
+            other.reveal_tab(tab);
+            return;
+        }
         if island.is_archived() {
             let result = self.storage.restore_island(island.id);
             self.report("Wiederherstellen", result);
@@ -417,8 +426,14 @@ impl Browser {
         }
     }
 
-    /// Reloads the active workspace from the database, keeping the active tab if it still exists.
+    /// Reloads the workspace from the database, keeping the active tab if it still exists. The
+    /// other windows follow, a change here may have moved tabs or islands into their workspaces.
     pub(super) fn reload_session(&self) {
+        self.reload_session_here();
+        self.for_other_windows(Browser::follow_changes);
+    }
+
+    pub(super) fn reload_session_here(&self) {
         let (workspace, active) = {
             let session = self.session.borrow();
             (session.workspace, session.active_tab)
@@ -429,6 +444,18 @@ impl Browser {
                 *self.session.borrow_mut() = session;
             }
             Err(error) => tracing::error!(%error, "session could not be reloaded"),
+        }
+    }
+
+    /// Picks up changes another window made: shows another tab if the active one moved away.
+    pub(super) fn follow_changes(&self) {
+        let active_before = self.session.borrow().active_tab;
+        self.reload_session_here();
+        let active_now = self.session.borrow().active_tab;
+        if active_before.is_some() && active_now.is_none() {
+            self.show_remembered_tab();
+        } else {
+            self.refresh_sidebar();
         }
     }
 }

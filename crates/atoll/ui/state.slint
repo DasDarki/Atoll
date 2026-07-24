@@ -11,6 +11,7 @@ export global SidebarState {
     in property <[WorkspaceItem]> workspaces;
     in property <[SidebarRow]> rows;
     in property <[IslandTarget]> island-targets;
+    in property <[WorkspaceItem]> window-targets;
     in property <bool> archive-suggestion;
 
     callback select-workspace(int);
@@ -22,6 +23,8 @@ export global SidebarState {
     callback close-tab(int);
     callback tab-action(int, string);
     callback move-tab-to-island(int, int);
+    callback move-tab-to-workspace(int, int);
+    callback tab-drag-released(int, length, length);
 
     callback toggle-island(int);
     callback island-action(int, string);

@@ -1,3 +1,4 @@
+use std::rc::Rc;
 use std::time::Duration;
 
 use atoll_engine::{ClipboardHelper, KeyInput, KeyInputKind, RequestId};
@@ -183,11 +184,17 @@ impl Browser {
             menu,
         });
         let this = self.this();
+        let shared = Rc::downgrade(&self.clipboard_sync);
         sync.timeout
             .start(TimerMode::SingleShot, WRITE_TIMEOUT, move || {
-                if let Some(browser) = this.upgrade() {
-                    tracing::warn!("clipboard write timed out");
-                    browser.finish_clipboard_write(false);
+                tracing::warn!("clipboard write timed out");
+                match this.upgrade() {
+                    Some(browser) => browser.finish_clipboard_write(false),
+                    None => {
+                        if let Some(sync) = shared.upgrade() {
+                            sync.borrow_mut().pending = None;
+                        }
+                    }
                 }
             });
         true

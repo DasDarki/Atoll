@@ -1,59 +1,28 @@
-use std::time::Instant;
-
-use atoll_engine::{Engine, EngineConfig};
+use atoll_storage::prelude::*;
 
 use super::Browser;
-use crate::pump::MessagePump;
 
 impl Browser {
     /// Shows the stored session. Only the database is read, no engine instance is created yet.
-    pub fn show_session(&self) {
+    pub(super) fn show_session(&self) {
         self.restore_layout();
         self.restore_dev_tools_layout();
-        self.restore_downloads();
-        self.refresh_bookmarks();
+        self.show_bookmarks();
+        self.show_download_state();
         self.show_remembered_tab();
     }
 
-    /// Starts the engine and wakes the active tab. Called once the first frame is on screen.
-    pub fn start_engine(&self, frame_rate: u32) {
-        if self.is_engine_running() {
-            return;
+    /// Wakes the active tab once the engine runs.
+    pub(super) fn engine_started(&self) {
+        self.protect_pinned_tabs();
+        let active = self.session.borrow().active_tab;
+        if let Some(tab) = active {
+            self.activate_tab(tab);
         }
-        let started = Instant::now();
-        let config = EngineConfig {
-            root_cache_path: self.paths.engine_root.clone(),
-            cache_path: self.paths.engine_profile.clone(),
-            download_directory: self.download_directory(),
-            ask_download_location: self.preferences.borrow().download_ask,
-            locale: None,
-            frame_rate,
-            accelerated_paint: std::env::var_os("ATOLL_SOFTWARE_RENDERING").is_none(),
-            sandbox: std::env::var_os("ATOLL_NO_SANDBOX").is_none(),
-            extra_switches: chromium_switches(),
-            schedule_work: MessagePump::scheduler(),
-        };
-        match Engine::initialize(config, self.gpu.clone()) {
-            Ok(engine) => {
-                *self.engine.borrow_mut() = Some(engine);
-                tracing::info!(elapsed = ?started.elapsed(), "engine started");
-            }
-            Err(error) => {
-                tracing::error!(%error, "engine could not be started");
-                self.show_toast("Die Browser-Engine konnte nicht gestartet werden.");
-                return;
-            }
-        }
+    }
 
-        self.start_clipboard_bridge();
-
-        let this = self.this();
-        *self.pump.borrow_mut() = Some(MessagePump::start(move || {
-            if let Some(browser) = this.upgrade() {
-                browser.pump();
-            }
-        }));
-
+    /// Pinned tabs keep their engine instance once they have one.
+    pub(super) fn protect_pinned_tabs(&self) {
         let pinned: Vec<_> = self
             .session
             .borrow()
@@ -61,44 +30,42 @@ impl Browser {
             .filter(|tab| tab.pinned)
             .map(|tab| tab.id)
             .collect();
+        let mut lifecycle = self.lifecycle.borrow_mut();
         for tab in pinned {
-            self.lifecycle.borrow_mut().set_protected(tab, true);
-        }
-
-        let active = self.session.borrow().active_tab;
-        if let Some(tab) = active {
-            self.activate_tab(tab);
+            lifecycle.set_protected(tab, true);
         }
     }
 
-    /// Stores what is only known at runtime and shuts the engine down.
-    pub fn shutdown(&self) {
-        self.pump.borrow_mut().take();
+    /// Unloads every tab of the window before it closes, nobody sees them any more.
+    pub(super) fn release_tabs(&self) {
         self.cancel_context_menu();
-        self.stop_clipboard_bridge();
-        self.store_scroll_positions();
-        for (_, entry) in self.views.borrow_mut().drain() {
-            entry.view.close();
+        let tabs: Vec<_> = self.session.borrow().tabs().map(|tab| tab.id).collect();
+        let mut commands = Vec::new();
+        {
+            let mut lifecycle = self.lifecycle.borrow_mut();
+            for tab in tabs {
+                commands.extend(lifecycle.sleep(tab));
+            }
         }
-        if let Some(engine) = self.engine.borrow_mut().take() {
-            engine.shutdown();
-        }
+        self.apply(commands);
     }
-}
 
-/// Additional Chromium switches: Atoll's defaults, then those from `ATOLL_CHROMIUM_FLAGS`.
-///
-/// Chromium keeps the key for cookies and saved passwords in the system keyring and waits for
-/// it without a time limit before the first request. An unresponsive keyring service therefore
-/// stops every page from loading, so Chromium's own store is used unless `ATOLL_SYSTEM_KEYRING`
-/// is set.
-fn chromium_switches() -> Vec<String> {
-    let mut switches = Vec::new();
-    if std::env::var_os("ATOLL_SYSTEM_KEYRING").is_none() {
-        switches.push("password-store=basic".to_owned());
+    /// Deletes the workspace of a closing window if it holds nothing worth keeping and is not the
+    /// last one.
+    pub(super) fn remove_workspace_if_empty(&self) {
+        let workspace = self.session.borrow().workspace;
+        let Ok(workspaces) = self.storage.workspaces() else {
+            return;
+        };
+        if workspaces.len() <= 1 || !workspaces.iter().any(|entry| entry.id == workspace) {
+            return;
+        }
+        let empty = self
+            .storage
+            .all_tabs_in_workspace(workspace)
+            .is_ok_and(|tabs| tabs.iter().all(|tab| tab.is_blank()));
+        if empty && let Err(error) = self.storage.delete_workspace(workspace) {
+            tracing::warn!(%error, "empty workspace could not be deleted");
+        }
     }
-    if let Ok(flags) = std::env::var("ATOLL_CHROMIUM_FLAGS") {
-        switches.extend(flags.split_whitespace().map(str::to_owned));
-    }
-    switches
 }

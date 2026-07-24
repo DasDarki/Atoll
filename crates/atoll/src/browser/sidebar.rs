@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use atoll_core::{IslandColor, TabState};
+use atoll_core::{IslandColor, TabState, WorkspaceId};
 use slint::{ComponentHandle, ModelRc, VecModel};
 
 use super::Browser;
@@ -15,6 +15,7 @@ pub(super) struct SidebarModels {
     workspaces: Rc<VecModel<WorkspaceItem>>,
     rows: Rc<VecModel<SidebarRow>>,
     targets: Rc<VecModel<IslandTarget>>,
+    windows: Rc<VecModel<WorkspaceItem>>,
 }
 
 impl SidebarModels {
@@ -23,11 +24,13 @@ impl SidebarModels {
             workspaces: Rc::new(VecModel::default()),
             rows: Rc::new(VecModel::default()),
             targets: Rc::new(VecModel::default()),
+            windows: Rc::new(VecModel::default()),
         };
         let state = window.global::<SidebarState>();
         state.set_workspaces(ModelRc::from(models.workspaces.clone()));
         state.set_rows(ModelRc::from(models.rows.clone()));
         state.set_island_targets(ModelRc::from(models.targets.clone()));
+        state.set_window_targets(ModelRc::from(models.windows.clone()));
         models
     }
 }
@@ -35,6 +38,7 @@ impl SidebarModels {
 impl Browser {
     /// Rebuilds the workspace chips, the island and tab rows and the move targets.
     pub(super) fn refresh_sidebar(&self) {
+        let shown_elsewhere = self.workspaces_shown_elsewhere();
         let session = self.session.borrow();
         let lifecycle = self.lifecycle.borrow();
         let views = self.views.borrow();
@@ -48,7 +52,13 @@ impl Browser {
                 id: workspace.id.0 as i32,
                 name: workspace.name.as_str().into(),
                 active: workspace.id == session.workspace,
+                open_elsewhere: shown_elsewhere.contains(&workspace.id),
             })
+            .collect();
+        let windows: Vec<WorkspaceItem> = workspaces
+            .iter()
+            .filter(|workspace| workspace.open_elsewhere)
+            .cloned()
             .collect();
 
         let mut rows = Vec::with_capacity(session.islands.len() + session.tabs().count());
@@ -99,6 +109,14 @@ impl Browser {
         self.sidebar.workspaces.set_vec(workspaces);
         self.sidebar.rows.set_vec(rows);
         self.sidebar.targets.set_vec(targets);
+        self.sidebar.windows.set_vec(windows);
+    }
+
+    /// The workspaces other windows show.
+    pub(super) fn workspaces_shown_elsewhere(&self) -> Vec<WorkspaceId> {
+        let mut shown = Vec::new();
+        self.for_other_windows(|other| shown.push(other.session.borrow().workspace));
+        shown
     }
 
     pub(super) fn next_island_color(&self) -> IslandColor {
