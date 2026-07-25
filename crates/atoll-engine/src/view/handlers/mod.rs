@@ -9,6 +9,7 @@ mod load;
 mod permission;
 mod render;
 mod request;
+mod resource;
 
 pub(crate) use context_menu::ViewContextMenuHandler;
 pub(crate) use dialog::ViewDialogHandler;
@@ -21,6 +22,7 @@ pub(crate) use load::ViewLoadHandler;
 pub(crate) use permission::ViewPermissionHandler;
 pub(crate) use render::ViewRenderHandler;
 pub(crate) use request::ViewRequestHandler;
+pub(crate) use resource::FilteringResourceHandler;
 
 use cef::{CefString, CefStringList};
 

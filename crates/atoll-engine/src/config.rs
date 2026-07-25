@@ -1,5 +1,8 @@
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::time::Duration;
+
+use crate::filter::ContentFilter;
 
 /// Everything needed to start the engine.
 pub struct EngineConfig {
@@ -24,4 +27,6 @@ pub struct EngineConfig {
     /// Invoked from any thread when the engine wants [`crate::Engine::do_message_loop_work`] to
     /// run on the main thread after the given delay.
     pub schedule_work: Box<dyn Fn(Duration) + Send + Sync>,
+    /// Blocks requests and hides elements of every page.
+    pub content_filter: Option<Arc<dyn ContentFilter>>,
 }

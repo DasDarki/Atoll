@@ -2,9 +2,11 @@ use std::cell::{Cell, RefCell};
 use std::collections::{HashMap, VecDeque};
 use std::path::PathBuf;
 use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::dev_tools::DevToolsBridge;
 use crate::events::{EngineEvent, RequestId};
+use crate::filter::ContentFilter;
 use crate::render::GpuContext;
 use crate::view::{ViewGeometry, ViewId, ViewState};
 
@@ -27,6 +29,7 @@ pub(crate) struct Runtime {
     pub(crate) downloads: RefCell<HashMap<u32, cef::DownloadItemCallback>>,
     pub(crate) frame_rate: i32,
     pub(crate) accelerated: Cell<bool>,
+    pub(crate) content_filter: Option<Arc<dyn ContentFilter>>,
     events: RefCell<VecDeque<EngineEvent>>,
     views: RefCell<HashMap<ViewId, Rc<ViewState>>>,
     pending: RefCell<HashMap<RequestId, PendingCallback>>,
@@ -47,6 +50,7 @@ impl Runtime {
         ask_download_location: bool,
         frame_rate: i32,
         accelerated: bool,
+        content_filter: Option<Arc<dyn ContentFilter>>,
     ) -> Self {
         Self {
             gpu,
@@ -55,6 +59,7 @@ impl Runtime {
             downloads: RefCell::default(),
             frame_rate,
             accelerated: Cell::new(accelerated),
+            content_filter,
             events: RefCell::default(),
             views: RefCell::default(),
             pending: RefCell::default(),

@@ -1,11 +1,14 @@
 use std::os::raw::c_int;
 
+use std::sync::atomic::Ordering;
+
 use cef::{
-    Browser, Frame, ImplFrame, ImplLoadHandler, LoadHandler, WrapLoadHandler, rc::Rc as _,
-    wrap_load_handler,
+    Browser, CefString, Frame, ImplFrame, ImplLoadHandler, LoadHandler, TransitionType,
+    WrapLoadHandler, rc::Rc as _, wrap_load_handler,
 };
 
 use crate::events::EngineEvent;
+use crate::filter;
 use crate::registry;
 use crate::view::ViewId;
 use crate::view::state::NavigationState;
@@ -36,6 +39,31 @@ wrap_load_handler! {
                     can_go_back: state.can_go_back,
                     can_go_forward: state.can_go_forward,
                 });
+            });
+        }
+
+        fn on_load_start(&self, _browser: Option<&mut Browser>, frame: Option<&mut Frame>, _transition_type: TransitionType) {
+            let Some(frame) = frame else { return };
+            let main = frame.is_main() != 0;
+            registry::with_view(self.view, |runtime, view| {
+                if main {
+                    view.blocked_requests.store(0, Ordering::Relaxed);
+                }
+                let Some(content_filter) = runtime.content_filter.as_ref() else {
+                    return;
+                };
+                if view.dev_tools_frontend.get() || view.clipboard_helper.get() {
+                    return;
+                }
+                let url = CefString::from(&frame.url()).to_string();
+                if !(url.starts_with("http://") || url.starts_with("https://")) {
+                    return;
+                }
+                let mut rules = content_filter.document_rules(&url);
+                rules.observe_elements &= main;
+                if let Some(script) = filter::document_script(&rules) {
+                    frame.execute_java_script(Some(&script.as_str().into()), Some(&url.as_str().into()), 0);
+                }
             });
         }
 

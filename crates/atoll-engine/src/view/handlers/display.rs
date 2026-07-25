@@ -12,8 +12,9 @@ use cef::{
 use super::{list, text};
 use crate::clipboard;
 use crate::events::{CursorKind, EngineEvent};
-use crate::registry;
-use crate::view::ViewId;
+use crate::filter;
+use crate::registry::{self, Runtime};
+use crate::view::{ViewId, ViewState};
 
 const FAVICON_SIZE: f32 = 16.0;
 
@@ -98,6 +99,12 @@ wrap_display_handler! {
             _line: c_int,
         ) -> c_int {
             let message = text(message);
+            if let Some((classes, ids)) = filter::parse_element_report(&message) {
+                registry::with_view(self.view, |runtime, view| {
+                    apply_element_rules(runtime, view, &classes, &ids);
+                });
+                return 1;
+            }
             let handled = registry::with_view(self.view, |runtime, view| {
                 view.clipboard_helper.get() && clipboard::handle_message(runtime, view, &message)
             });
@@ -117,6 +124,22 @@ wrap_display_handler! {
             });
             1
         }
+    }
+}
+
+/// Hides the reported elements of the top level document that the content filter wants hidden.
+fn apply_element_rules(runtime: &Runtime, view: &ViewState, classes: &[String], ids: &[String]) {
+    let Some(content_filter) = runtime.content_filter.as_ref() else {
+        return;
+    };
+    let Some(frame) = view.browser().and_then(|browser| browser.main_frame()) else {
+        return;
+    };
+    let url = CefString::from(&frame.url()).to_string();
+    let css = content_filter.element_rules(&url, classes, ids);
+    if !css.is_empty() {
+        let script = filter::stylesheet_script(&css);
+        frame.execute_java_script(Some(&script.as_str().into()), Some(&url.as_str().into()), 0);
     }
 }
 

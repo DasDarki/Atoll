@@ -11,6 +11,7 @@ mod dev_tools;
 mod engine;
 mod error;
 mod events;
+mod filter;
 mod input;
 mod process;
 mod pump;
@@ -27,6 +28,7 @@ pub use events::{
     ContextMenuRequest, CursorKind, DownloadState, EngineEvent, FileDialogMode, FileDialogRequest,
     JsDialogKind, JsDialogRequest, MenuEntry, MenuEntryKind, OpenDisposition, RequestId,
 };
+pub use filter::{ContentFilter, DocumentRules, ResourceKind, ResourceRequest};
 pub use input::{EditCommand, KeyInput, KeyInputKind, Modifiers, MouseButton, ZoomCommand};
 pub use process::run_subprocess;
 pub use render::{GpuContext, GpuError, SurfaceFrame, prune_unusable_vulkan_drivers};

@@ -91,6 +91,13 @@ impl BrowserView {
         }
     }
 
+    /// Requests the content filter blocked since the current page started loading.
+    pub fn blocked_requests(&self) -> u32 {
+        self.state
+            .blocked_requests
+            .load(std::sync::atomic::Ordering::Relaxed)
+    }
+
     /// The address of the main frame.
     pub fn url(&self) -> Option<String> {
         let frame = self.state.browser()?.main_frame()?;

@@ -61,6 +61,7 @@ impl Engine {
             config.ask_download_location,
             config.frame_rate.clamp(1, 240) as i32,
             accelerated,
+            config.content_filter,
         ));
         registry::install(runtime.clone());
         tracing::info!(accelerated, "browser engine ready");

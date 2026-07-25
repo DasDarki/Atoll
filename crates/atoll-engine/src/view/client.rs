@@ -6,10 +6,11 @@ use cef::{
 
 use super::ViewId;
 use super::handlers::{
-    ViewContextMenuHandler, ViewDialogHandler, ViewDisplayHandler, ViewDownloadHandler,
-    ViewFindHandler, ViewJsDialogHandler, ViewLifeSpanHandler, ViewLoadHandler,
-    ViewPermissionHandler, ViewRenderHandler, ViewRequestHandler,
+    FilteringResourceHandler, ViewContextMenuHandler, ViewDialogHandler, ViewDisplayHandler,
+    ViewDownloadHandler, ViewFindHandler, ViewJsDialogHandler, ViewLifeSpanHandler,
+    ViewLoadHandler, ViewPermissionHandler, ViewRenderHandler, ViewRequestHandler,
 };
+use crate::registry;
 
 #[derive(Clone)]
 struct ViewHandlers {
@@ -80,12 +81,19 @@ wrap_client! {
 
 /// Creates the client object that routes every callback of one browser to its view.
 pub(crate) fn build_client(view: ViewId) -> Client {
+    let resources = registry::with_view(view, |runtime, state| {
+        runtime
+            .content_filter
+            .clone()
+            .map(|filter| FilteringResourceHandler::new(filter, state.blocked_requests.clone()))
+    })
+    .flatten();
     ViewClient::new(ViewHandlers {
         render: ViewRenderHandler::new(view),
         display: ViewDisplayHandler::new(view),
         life_span: ViewLifeSpanHandler::new(view),
         load: ViewLoadHandler::new(view),
-        request: ViewRequestHandler::new(view),
+        request: ViewRequestHandler::new(view, resources),
         context_menu: ViewContextMenuHandler::new(view),
         dialog: ViewDialogHandler::new(view),
         jsdialog: ViewJsDialogHandler::new(view),

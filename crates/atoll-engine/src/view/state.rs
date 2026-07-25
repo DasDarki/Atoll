@@ -1,4 +1,6 @@
 use std::cell::{Cell, RefCell};
+use std::sync::Arc;
+use std::sync::atomic::AtomicU32;
 
 use cef::{Browser, BrowserHost, ImplBrowser};
 
@@ -35,6 +37,9 @@ pub(crate) struct ViewState {
     pub(crate) clipboard_helper: Cell<bool>,
     /// The view shows a DevTools frontend, see [`crate::DevToolsSession`].
     pub(crate) dev_tools_frontend: Cell<bool>,
+    /// Requests blocked by the content filter since the page started loading. Counted on the
+    /// network thread.
+    pub(crate) blocked_requests: Arc<AtomicU32>,
 }
 
 impl ViewState {
@@ -54,6 +59,7 @@ impl ViewState {
             paint_failed: Cell::new(false),
             clipboard_helper: Cell::new(false),
             dev_tools_frontend: Cell::new(false),
+            blocked_requests: Arc::default(),
         }
     }
 
