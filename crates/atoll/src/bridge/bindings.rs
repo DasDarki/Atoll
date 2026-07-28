@@ -221,6 +221,8 @@ fn connect_overlays(window: &AppWindow, browser: &Rc<Browser>) {
         .site_info_reset_zoom());
     on!(state, on_site_info_clear_data, browser, |target| target
         .site_info_clear_data());
+    on!(state, on_site_info_toggle_adblock, browser, |target| target
+        .toggle_site_adblock());
     on!(state, on_palette_edited, browser, |target, text| target
         .palette_edited(&text));
     on!(state, on_palette_move, browser, |target, delta| target
@@ -315,6 +317,10 @@ fn connect_settings(window: &AppWindow, browser: &Rc<Browser>) {
     });
     on!(state, on_reset_download_directory, browser, |target| target
         .reset_download_directory());
+    on!(state, on_update_filter_lists, browser, |target| target
+        .update_filter_lists());
+    on!(state, on_clear_adblock_exceptions, browser, |target| target
+        .clear_adblock_exceptions());
     on!(state, on_close, browser, |target| target.close_settings());
 }
 

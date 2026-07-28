@@ -5,6 +5,7 @@ mod store;
 
 pub use connection::{Connected, Storage, StorageTransaction};
 pub use error::{StorageError, StorageResult};
+pub use store::adblock::AdblockStore;
 pub use store::bookmarks::{BookmarkStore, NewBookmark};
 pub use store::downloads::{DownloadProgress, DownloadStore, NewDownload};
 pub use store::favicons::FaviconStore;
@@ -18,7 +19,7 @@ pub use store::workspaces::WorkspaceStore;
 /// Brings every store trait into scope.
 pub mod prelude {
     pub use crate::{
-        BookmarkStore, Connected, DownloadStore, FaviconStore, HistoryStore, IslandStore,
-        SettingsStore, TabStore, WindowStore, WorkspaceStore,
+        AdblockStore, BookmarkStore, Connected, DownloadStore, FaviconStore, HistoryStore,
+        IslandStore, SettingsStore, TabStore, WindowStore, WorkspaceStore,
     };
 }

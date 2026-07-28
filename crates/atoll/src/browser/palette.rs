@@ -62,6 +62,9 @@ enum Command {
     ToggleNewTabStartPage,
     ToggleBookmarksBarAutoHide,
     SearchEngine(usize),
+    ToggleSiteAdblock,
+    ToggleAdblock,
+    UpdateFilterLists,
 }
 
 #[derive(Debug, Clone)]
@@ -577,6 +580,41 @@ impl Browser {
                 "window abtrennen",
             ));
         }
+        commands.push((
+            Command::ToggleAdblock,
+            if preferences.adblock_enabled {
+                "Werbeblocker ausschalten"
+            } else {
+                "Werbeblocker einschalten"
+            }
+            .to_owned(),
+            "",
+            "adblock werbung tracker einstellung",
+        ));
+        commands.push((
+            Command::UpdateFilterLists,
+            "Filterlisten aktualisieren".to_owned(),
+            "",
+            "adblock werbeblocker easylist",
+        ));
+        if preferences.adblock_enabled
+            && let Some(site) = self
+                .current_page_url()
+                .as_deref()
+                .filter(|url| url.starts_with("http"))
+                .and_then(atoll_adblock::site_of)
+        {
+            commands.push((
+                Command::ToggleSiteAdblock,
+                if self.adblock_allows_site(&site) {
+                    format!("Werbeblocker für {site} einschalten")
+                } else {
+                    format!("Werbeblocker für {site} ausschalten")
+                },
+                "",
+                "adblock werbung seite ausnahme",
+            ));
+        }
         if self.current_page_url().is_some() {
             commands.push((
                 Command::UseCurrentPageAsStartPage,
@@ -706,6 +744,12 @@ impl Browser {
                 let auto_hide = !self.preferences.borrow().bookmarks_bar_auto_hide;
                 self.set_bookmarks_bar_auto_hide(auto_hide);
             }
+            Command::ToggleSiteAdblock => self.toggle_site_adblock(),
+            Command::ToggleAdblock => {
+                let enabled = !self.preferences.borrow().adblock_enabled;
+                self.set_adblock_enabled(enabled);
+            }
+            Command::UpdateFilterLists => self.update_filter_lists(),
             Command::SearchEngine(index) => {
                 if let Some(engine) = SEARCH_ENGINES.get(index) {
                     self.set_search_url(engine.url);

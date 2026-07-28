@@ -1,0 +1,400 @@
+use std::cell::RefCell;
+use std::path::PathBuf;
+use std::sync::Arc;
+use std::time::{Duration, SystemTime};
+
+use atoll_adblock::{Blocker, FILTER_LISTS, ListState, ListStatus, Updater, site_of};
+use atoll_engine::{ContentFilter, DocumentRules, ResourceKind, ResourceRequest};
+use atoll_storage::prelude::*;
+use slint::ComponentHandle;
+
+use super::Browser;
+use super::preferences::PreferenceKey;
+use crate::ui::{OverlayState, SettingsState};
+
+thread_local! {
+    static STATUS_LISTENER: RefCell<Option<Box<dyn Fn()>>> = const { RefCell::new(None) };
+}
+
+/// The ad blocker all windows share.
+pub struct Adblock {
+    blocker: Arc<Blocker>,
+    updater: RefCell<Option<Updater>>,
+    directory: PathBuf,
+}
+
+impl Adblock {
+    pub fn new(enabled: bool, allowed_sites: Vec<String>, directory: PathBuf) -> Self {
+        Self {
+            blocker: Arc::new(Blocker::new(enabled, allowed_sites)),
+            updater: RefCell::new(None),
+            directory,
+        }
+    }
+
+    /// Starts loading and updating the filter lists and returns the filter for the engine.
+    /// `on_status` runs on the main thread whenever the state of the lists changes.
+    pub fn start(&self, on_status: impl Fn() + 'static) -> Arc<dyn ContentFilter> {
+        STATUS_LISTENER.with_borrow_mut(|listener| *listener = Some(Box::new(on_status)));
+        if self.updater.borrow().is_none() {
+            let updater = Updater::start(self.blocker.clone(), self.directory.clone(), |_| {
+                let _ = slint::invoke_from_event_loop(|| {
+                    STATUS_LISTENER.with_borrow(|listener| {
+                        if let Some(listener) = listener {
+                            listener();
+                        }
+                    });
+                });
+            });
+            *self.updater.borrow_mut() = Some(updater);
+        }
+        Arc::new(AdblockFilter {
+            blocker: self.blocker.clone(),
+        })
+    }
+
+    fn status(&self) -> Option<ListStatus> {
+        self.updater.borrow().as_ref().map(Updater::status)
+    }
+}
+
+/// Connects the ad blocker to the engine.
+struct AdblockFilter {
+    blocker: Arc<Blocker>,
+}
+
+impl ContentFilter for AdblockFilter {
+    fn blocks(&self, request: &ResourceRequest<'_>) -> bool {
+        self.blocker.blocks(
+            request.url,
+            request.source_url,
+            request.page_url,
+            request_type(request.kind),
+        )
+    }
+
+    fn document_rules(&self, url: &str) -> DocumentRules {
+        let cosmetics = self.blocker.cosmetics(url);
+        DocumentRules {
+            stylesheet: cosmetics.css,
+            script: cosmetics.script,
+            observe_elements: cosmetics.generic,
+        }
+    }
+
+    fn element_rules(&self, url: &str, classes: &[String], ids: &[String]) -> String {
+        self.blocker.element_css(url, classes, ids)
+    }
+}
+
+/// The request type of the filter syntax.
+fn request_type(kind: ResourceKind) -> &'static str {
+    match kind {
+        ResourceKind::Document => "document",
+        ResourceKind::Subframe => "sub_frame",
+        ResourceKind::Stylesheet => "stylesheet",
+        ResourceKind::Script | ResourceKind::Worker => "script",
+        ResourceKind::Image => "image",
+        ResourceKind::Font => "font",
+        ResourceKind::Media => "media",
+        ResourceKind::Object => "object",
+        ResourceKind::Xhr => "xmlhttprequest",
+        ResourceKind::Ping => "ping",
+        ResourceKind::Other => "other",
+    }
+}
+
+/// What the site information popup says about the ad blocker on a page.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct SiteAdblock {
+    active: bool,
+    switchable: bool,
+    detail: String,
+}
+
+impl Browser {
+    /// Settings, palette: switches the ad blocker on or off everywhere.
+    pub(super) fn set_adblock_enabled(&self, enabled: bool) {
+        self.update_preference(PreferenceKey::AdblockEnabled, |preferences| {
+            preferences.adblock_enabled = enabled;
+        });
+        self.adblock.blocker.set_enabled(enabled);
+        self.show_adblock_settings();
+        self.show_toast(if enabled {
+            "Werbeblocker eingeschaltet, wirkt ab dem nächsten Laden einer Seite"
+        } else {
+            "Werbeblocker ausgeschaltet"
+        });
+    }
+
+    /// Site information and palette: switches the ad blocker off for the current site, or on
+    /// again, and reloads the page. The reload bypasses the cache, the page would otherwise keep
+    /// resources it loaded before.
+    pub fn toggle_site_adblock(&self) {
+        let Some(site) = self.current_page_url().as_deref().and_then(site_of) else {
+            return;
+        };
+        let allowed = !self.adblock.blocker.is_site_allowed(&site);
+        let stored = self
+            .storage
+            .set_adblock_site_allowed(&site, allowed, Self::now());
+        self.report("Werbeblocker umschalten", stored);
+        self.adblock.blocker.set_site_allowed(&site, allowed);
+        self.reload(true);
+        if self
+            .window()
+            .is_some_and(|window| window.global::<OverlayState>().get_site_info_visible())
+        {
+            self.show_site_info();
+        }
+        self.show_toast(&if allowed {
+            format!("Werbeblocker für {site} ausgeschaltet")
+        } else {
+            format!("Werbeblocker für {site} eingeschaltet")
+        });
+        self.for_all_windows(Browser::show_adblock_settings);
+    }
+
+    pub(super) fn adblock_allows_site(&self, site: &str) -> bool {
+        self.adblock.blocker.is_site_allowed(site)
+    }
+
+    /// Settings: switches the ad blocker on again for every site it was switched off for.
+    pub fn clear_adblock_exceptions(&self) {
+        let sites = self.storage.adblock_allowed_sites().unwrap_or_default();
+        for site in &sites {
+            let result = self
+                .storage
+                .set_adblock_site_allowed(site, false, Self::now());
+            self.report("Ausnahme entfernen", result);
+            self.adblock.blocker.set_site_allowed(site, false);
+        }
+        self.for_all_windows(Browser::show_adblock_settings);
+    }
+
+    /// Settings and palette: downloads the filter lists now.
+    pub fn update_filter_lists(&self) {
+        if let Some(updater) = self.adblock.updater.borrow().as_ref() {
+            updater.update_now();
+        }
+        self.show_toast("Filterlisten werden aktualisiert");
+    }
+
+    /// Fills the ad blocker part of the settings page.
+    pub(super) fn show_adblock_settings(&self) {
+        let Some(window) = self.window() else { return };
+        let state = window.global::<SettingsState>();
+        let status = self.adblock.status();
+        state.set_adblock_enabled(self.preferences.borrow().adblock_enabled);
+        state.set_adblock_status(
+            status
+                .map(|status| list_status_text(&status, SystemTime::now()))
+                .unwrap_or_else(|| "Filterlisten werden geladen…".to_owned())
+                .into(),
+        );
+        state.set_adblock_updating(status.is_some_and(|status| {
+            matches!(status.state, ListState::Loading | ListState::Updating)
+        }));
+        let sites = self.storage.adblock_allowed_sites().unwrap_or_default();
+        state.set_adblock_exceptions(sites.join(", ").into());
+    }
+
+    /// Refreshes what shows the state of the filter lists.
+    pub(super) fn adblock_status_changed(&self) {
+        let Some(window) = self.window() else { return };
+        if window.global::<SettingsState>().get_visible() {
+            self.show_adblock_settings();
+        }
+        if window.global::<OverlayState>().get_site_info_visible()
+            && let Some(url) = self.current_page_url()
+        {
+            self.show_site_adblock(&url);
+        }
+    }
+
+    /// Fills the ad blocker row of the site information popup for the page at `url`.
+    pub(super) fn show_site_adblock(&self, url: &str) {
+        let Some(window) = self.window() else { return };
+        let overlay = window.global::<OverlayState>();
+        let site = is_web_address(url).then(|| site_of(url)).flatten();
+        overlay.set_site_info_adblock_available(site.is_some());
+        let Some(site) = site else { return };
+        let mut blocked = 0;
+        self.with_live_view(|view| blocked = view.blocked_requests());
+        let summary = site_adblock(&self.adblock.blocker, &site, blocked, self.adblock.status());
+        overlay.set_site_info_adblock_active(summary.active);
+        overlay.set_site_info_adblock_switchable(summary.switchable);
+        overlay.set_site_info_adblock_detail(summary.detail.into());
+    }
+}
+
+fn is_web_address(url: &str) -> bool {
+    url.starts_with("https://") || url.starts_with("http://")
+}
+
+fn site_adblock(
+    blocker: &Blocker,
+    site: &str,
+    blocked: u32,
+    status: Option<ListStatus>,
+) -> SiteAdblock {
+    if !blocker.is_enabled() {
+        return SiteAdblock {
+            active: false,
+            switchable: false,
+            detail: "In den Einstellungen ausgeschaltet".to_owned(),
+        };
+    }
+    if blocker.is_site_allowed(site) {
+        return SiteAdblock {
+            active: false,
+            switchable: true,
+            detail: format!("Für {site} ausgeschaltet"),
+        };
+    }
+    let detail = if !blocker.is_ready() {
+        match status.map(|status| status.state) {
+            Some(ListState::Failed { list }) => format!("{list} konnte nicht geladen werden"),
+            _ => "Filterlisten werden geladen…".to_owned(),
+        }
+    } else {
+        match blocked {
+            0 => "Auf dieser Seite wurde nichts blockiert".to_owned(),
+            1 => "1 Anfrage blockiert".to_owned(),
+            count => format!("{count} Anfragen blockiert"),
+        }
+    };
+    SiteAdblock {
+        active: true,
+        switchable: true,
+        detail,
+    }
+}
+
+/// The state of the filter lists for the settings page.
+fn list_status_text(status: &ListStatus, now: SystemTime) -> String {
+    let age = status
+        .downloaded_at
+        .map(|at| relative_age(now.duration_since(at).unwrap_or_default()));
+    let names = list_names();
+    match (status.state, age) {
+        (ListState::Loading, _) => "Filterlisten werden geladen…".to_owned(),
+        (ListState::Updating, _) => "Filterlisten werden aktualisiert…".to_owned(),
+        (ListState::Ready, Some(age)) => format!("{names}, aktualisiert {age}"),
+        (ListState::Ready, None) => names,
+        (ListState::Failed { list }, Some(age)) => {
+            format!("{list} konnte nicht geladen werden. Es gelten die Listen von {age}.")
+        }
+        (ListState::Failed { list }, None) => {
+            format!("{list} konnte nicht geladen werden. Neuer Versuch in einer Stunde.")
+        }
+    }
+}
+
+/// "EasyList, EasyPrivacy und EasyList Germany"
+fn list_names() -> String {
+    let names: Vec<&str> = FILTER_LISTS.iter().map(|list| list.name).collect();
+    match names.split_last() {
+        Some((last, [])) => (*last).to_owned(),
+        Some((last, rest)) => format!("{} und {last}", rest.join(", ")),
+        None => String::new(),
+    }
+}
+
+fn relative_age(age: Duration) -> String {
+    let minutes = age.as_secs() / 60;
+    match minutes {
+        0 => "gerade eben".to_owned(),
+        1 => "vor einer Minute".to_owned(),
+        2..60 => format!("vor {minutes} Minuten"),
+        60..120 => "vor einer Stunde".to_owned(),
+        120..1440 => format!("vor {} Stunden", minutes / 60),
+        1440..2880 => "gestern".to_owned(),
+        _ => format!("vor {} Tagen", minutes / 1440),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn status(state: ListState, age: Option<u64>, now: SystemTime) -> ListStatus {
+        ListStatus {
+            state,
+            downloaded_at: age.map(|seconds| now - Duration::from_secs(seconds)),
+        }
+    }
+
+    #[test]
+    fn list_status_names_the_lists_and_their_age() {
+        let now = SystemTime::now();
+        assert_eq!(
+            list_status_text(&status(ListState::Ready, Some(3 * 3600), now), now),
+            "EasyList, EasyPrivacy und EasyList Germany, aktualisiert vor 3 Stunden"
+        );
+        assert_eq!(
+            list_status_text(&status(ListState::Updating, Some(10), now), now),
+            "Filterlisten werden aktualisiert…"
+        );
+        assert_eq!(
+            list_status_text(
+                &status(
+                    ListState::Failed {
+                        list: "EasyPrivacy"
+                    },
+                    Some(5 * 86_400),
+                    now
+                ),
+                now
+            ),
+            "EasyPrivacy konnte nicht geladen werden. Es gelten die Listen von vor 5 Tagen."
+        );
+        assert_eq!(
+            list_status_text(
+                &status(ListState::Failed { list: "EasyList" }, None, now),
+                now
+            ),
+            "EasyList konnte nicht geladen werden. Neuer Versuch in einer Stunde."
+        );
+    }
+
+    #[test]
+    fn ages_read_naturally() {
+        assert_eq!(relative_age(Duration::from_secs(20)), "gerade eben");
+        assert_eq!(relative_age(Duration::from_secs(90)), "vor einer Minute");
+        assert_eq!(relative_age(Duration::from_secs(45 * 60)), "vor 45 Minuten");
+        assert_eq!(
+            relative_age(Duration::from_secs(61 * 60)),
+            "vor einer Stunde"
+        );
+        assert_eq!(relative_age(Duration::from_secs(30 * 3600)), "gestern");
+        assert_eq!(relative_age(Duration::from_secs(4 * 86_400)), "vor 4 Tagen");
+    }
+
+    #[test]
+    fn the_site_row_explains_why_nothing_is_blocked() {
+        let blocker = Blocker::new(true, ["quiet.example".to_owned()]);
+        assert_eq!(
+            site_adblock(&blocker, "quiet.example", 0, None),
+            SiteAdblock {
+                active: false,
+                switchable: true,
+                detail: "Für quiet.example ausgeschaltet".to_owned(),
+            }
+        );
+        assert_eq!(
+            site_adblock(&blocker, "example.org", 0, None).detail,
+            "Filterlisten werden geladen…"
+        );
+        let failed = ListStatus {
+            state: ListState::Failed { list: "EasyList" },
+            downloaded_at: None,
+        };
+        assert_eq!(
+            site_adblock(&blocker, "example.org", 0, Some(failed)).detail,
+            "EasyList konnte nicht geladen werden"
+        );
+        blocker.set_enabled(false);
+        assert!(!site_adblock(&blocker, "example.org", 3, None).switchable);
+    }
+}

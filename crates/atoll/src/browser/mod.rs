@@ -1,3 +1,4 @@
+mod adblock;
 mod archive;
 mod bookmarks;
 mod chrome;
@@ -35,6 +36,7 @@ use anyhow::Result;
 use atoll_core::{TabLifecycle, Timestamp, WindowId, WorkspaceId};
 use atoll_engine::{Engine, GpuContext, RequestId, ViewGeometry, ViewId};
 use atoll_storage::Storage;
+use atoll_storage::prelude::*;
 use slint::ComponentHandle;
 
 use crate::input::pointer::ClickTracker;
@@ -42,6 +44,7 @@ use crate::platform::clipboard::Clipboard;
 use crate::platform::paths::Paths;
 use crate::ui::AppWindow;
 
+use adblock::Adblock;
 use bookmarks::BookmarkState;
 use clipboard::ClipboardSync;
 use dev_tools::DevToolsPresentation;
@@ -77,12 +80,18 @@ struct Shared {
     clipboard: Rc<Clipboard>,
     clipboard_sync: Rc<RefCell<ClipboardSync>>,
     downloads: Rc<RefCell<Downloads>>,
+    adblock: Rc<Adblock>,
 }
 
 impl Shared {
     fn new(storage: Storage, gpu: Rc<GpuContext>, paths: Paths) -> Self {
         let preferences = Preferences::load(&storage);
         let lifecycle = TabLifecycle::new(preferences.frozen_limit);
+        let adblock = Adblock::new(
+            preferences.adblock_enabled,
+            storage.adblock_allowed_sites().unwrap_or_default(),
+            paths.adblock.clone(),
+        );
         Self {
             storage: Rc::new(storage),
             gpu,
@@ -96,6 +105,7 @@ impl Shared {
             clipboard: Rc::default(),
             clipboard_sync: Rc::default(),
             downloads: Rc::default(),
+            adblock: Rc::new(adblock),
         }
     }
 }
@@ -131,6 +141,7 @@ pub struct Browser {
     address_focus_requested: Cell<bool>,
     last_title_press: Cell<Option<std::time::Instant>>,
     downloads: Rc<RefCell<Downloads>>,
+    adblock: Rc<Adblock>,
     suggestions: RefCell<SuggestionState>,
     palette: RefCell<PaletteState>,
     bookmarks: RefCell<BookmarkState>,
@@ -180,6 +191,7 @@ impl Browser {
             address_focus_requested: Cell::new(false),
             last_title_press: Cell::new(None),
             downloads: shared.downloads.clone(),
+            adblock: shared.adblock.clone(),
             suggestions: RefCell::default(),
             palette: RefCell::default(),
             bookmarks: RefCell::default(),

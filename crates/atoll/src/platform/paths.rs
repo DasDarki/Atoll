@@ -7,6 +7,7 @@ use directories::{ProjectDirs, UserDirs};
 #[derive(Debug, Clone)]
 pub struct Paths {
     pub database: PathBuf,
+    pub adblock: PathBuf,
     pub engine_root: PathBuf,
     pub engine_profile: PathBuf,
     pub downloads: PathBuf,
@@ -33,6 +34,7 @@ impl Paths {
         let engine_root = data.join("engine");
         Ok(Self {
             database: data.join("atoll.db"),
+            adblock: data.join("adblock"),
             engine_profile: engine_root.join("Default"),
             engine_root,
             downloads,

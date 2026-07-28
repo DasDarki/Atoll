@@ -38,6 +38,7 @@ impl Browser {
         state.set_download_ask(preferences.download_ask);
         state.set_download_panel(preferences.download_panel);
         self.show_download_directory();
+        self.show_adblock_settings();
         state.set_visible(true);
     }
 
@@ -101,6 +102,7 @@ impl Browser {
                     preferences.download_panel = open;
                 });
             }
+            "adblock-enabled" => self.set_adblock_enabled(state.get_adblock_enabled()),
             "frozen-limit" => {
                 let limit = usize::try_from(state.get_frozen_limit()).unwrap_or_default();
                 self.set_frozen_limit(limit);

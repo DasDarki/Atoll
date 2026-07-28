@@ -1,3 +1,4 @@
+pub mod adblock;
 pub mod bookmarks;
 pub mod downloads;
 pub mod favicons;

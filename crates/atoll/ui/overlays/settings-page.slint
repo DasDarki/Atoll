@@ -315,6 +315,36 @@ export component SettingsPage inherits Modal {
                 }
 
                 if SettingsState.section == 4 : VerticalLayout {
+                    SectionTitle { text: "WERBEBLOCKER"; }
+                    SettingRow {
+                        title: "Werbung und Tracker blockieren";
+                        description: SettingsState.adblock-status;
+                        Toggle {
+                            checked <=> SettingsState.adblock-enabled;
+                            toggled => { SettingsState.changed("adblock-enabled"); }
+                        }
+                    }
+                    Divider { }
+                    SettingRow {
+                        title: "Filterlisten aktualisieren";
+                        description: "Geschieht automatisch alle vier Tage.";
+                        ActionButton {
+                            text: "Jetzt aktualisieren";
+                            enabled: !SettingsState.adblock-updating;
+                            clicked => { SettingsState.update-filter-lists(); }
+                        }
+                    }
+                    if SettingsState.adblock-exceptions != "" : Divider { }
+                    if SettingsState.adblock-exceptions != "" : SettingRow {
+                        title: "Ausgeschaltet auf";
+                        description: SettingsState.adblock-exceptions;
+                        ActionButton {
+                            text: "Alle entfernen";
+                            clicked => { SettingsState.clear-adblock-exceptions(); }
+                        }
+                    }
+                    Divider { }
+                    SectionTitle { text: "DATEN"; }
                     SettingRow {
                         title: "Verlauf löschen";
                         description: "Entfernt alle besuchten Seiten. Tabs, Inseln und Lesezeichen bleiben erhalten.";

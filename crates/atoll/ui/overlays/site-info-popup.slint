@@ -1,6 +1,7 @@
 import { Theme } from "../theme.slint";
 import { OverlayState } from "../state.slint";
 import { PageSecurity } from "../structs.slint";
+import { Toggle } from "../widgets/toggle.slint";
 
 component LinkButton inherits Rectangle {
     in property <string> text;
@@ -142,6 +143,49 @@ export component SiteInfoPopup inherits Rectangle {
                             wrap: word-wrap;
                         }
                     }
+                }
+            }
+
+            if OverlayState.site-info-adblock-available : HorizontalLayout {
+                spacing: 12px;
+                padding-left: 2px;
+                padding-right: 2px;
+
+                Rectangle {
+                    width: 30px;
+                    height: 30px;
+                    y: (parent.height - self.height) / 2;
+                    border-radius: self.height / 2;
+                    background: OverlayState.site-info-adblock-active ? Theme.accent.with-alpha(0.14) : Theme.surface;
+                    Image {
+                        width: 15px;
+                        height: 15px;
+                        source: @image-url("../icons/shield.svg");
+                        colorize: OverlayState.site-info-adblock-active ? Theme.accent : Theme.text-faint;
+                    }
+                }
+                VerticalLayout {
+                    horizontal-stretch: 1;
+                    alignment: center;
+                    spacing: 2px;
+                    Text {
+                        text: "Werbeblocker";
+                        color: Theme.text;
+                        font-size: Theme.font-normal;
+                        font-weight: 600;
+                    }
+                    Text {
+                        text: OverlayState.site-info-adblock-detail;
+                        color: Theme.text-muted;
+                        font-size: Theme.font-small + 1px;
+                        wrap: word-wrap;
+                    }
+                }
+                Toggle {
+                    y: (parent.height - self.height) / 2;
+                    enabled: OverlayState.site-info-adblock-switchable;
+                    checked: OverlayState.site-info-adblock-active;
+                    toggled => { OverlayState.site-info-toggle-adblock(); }
                 }
             }
 

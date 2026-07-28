@@ -66,6 +66,8 @@ pub struct Preferences {
     pub dev_tools_docked_right: bool,
     /// Height, or width when docked right, of the developer tools in logical pixels.
     pub dev_tools_size: u32,
+    /// Blocks ads and trackers.
+    pub adblock_enabled: bool,
 }
 
 /// A single preference, used to store exactly what changed.
@@ -84,6 +86,7 @@ pub enum PreferenceKey {
     DownloadPanel,
     DevToolsDockedRight,
     DevToolsSize,
+    AdblockEnabled,
 }
 
 impl PreferenceKey {
@@ -102,6 +105,7 @@ impl PreferenceKey {
             PreferenceKey::DownloadPanel => "download_panel",
             PreferenceKey::DevToolsDockedRight => "dev_tools_docked_right",
             PreferenceKey::DevToolsSize => "dev_tools_size",
+            PreferenceKey::AdblockEnabled => "adblock_enabled",
         }
     }
 }
@@ -122,6 +126,7 @@ impl Default for Preferences {
             download_panel: true,
             dev_tools_docked_right: false,
             dev_tools_size: DEFAULT_DEV_TOOLS_SIZE,
+            adblock_enabled: true,
         }
     }
 }
@@ -163,6 +168,7 @@ impl Preferences {
             dev_tools_size: text(PreferenceKey::DevToolsSize)
                 .and_then(|size| size.parse().ok())
                 .unwrap_or(defaults.dev_tools_size),
+            adblock_enabled: flag(PreferenceKey::AdblockEnabled, defaults.adblock_enabled),
         }
     }
 
@@ -187,6 +193,7 @@ impl Preferences {
             PreferenceKey::DownloadPanel => flag(self.download_panel),
             PreferenceKey::DevToolsDockedRight => flag(self.dev_tools_docked_right),
             PreferenceKey::DevToolsSize => self.dev_tools_size.to_string(),
+            PreferenceKey::AdblockEnabled => flag(self.adblock_enabled),
         };
         if let Err(error) = storage.set_setting(key.storage_key(), &value) {
             tracing::warn!(%error, key = key.storage_key(), "preference could not be stored");
@@ -228,6 +235,7 @@ mod tests {
             download_panel: false,
             dev_tools_docked_right: true,
             dev_tools_size: 480,
+            adblock_enabled: false,
         };
         for key in [
             PreferenceKey::SearchUrl,
@@ -243,6 +251,7 @@ mod tests {
             PreferenceKey::DownloadPanel,
             PreferenceKey::DevToolsDockedRight,
             PreferenceKey::DevToolsSize,
+            PreferenceKey::AdblockEnabled,
         ] {
             preferences.store(&storage, key);
         }

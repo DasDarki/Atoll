@@ -376,6 +376,14 @@ impl WindowManager {
         }
         let started = Instant::now();
         let preferences = self.shared.preferences.borrow().clone();
+        let manager = self.this.clone();
+        let content_filter = self.shared.adblock.start(move || {
+            if let Some(manager) = manager.upgrade() {
+                for browser in manager.browsers() {
+                    browser.adblock_status_changed();
+                }
+            }
+        });
         let paths = &self.shared.paths;
         let config = EngineConfig {
             root_cache_path: paths.engine_root.clone(),
@@ -391,6 +399,7 @@ impl WindowManager {
             sandbox: std::env::var_os("ATOLL_NO_SANDBOX").is_none(),
             extra_switches: chromium_switches(),
             schedule_work: MessagePump::scheduler(),
+            content_filter: Some(content_filter),
         };
         match Engine::initialize(config, self.shared.gpu.clone()) {
             Ok(engine) => {

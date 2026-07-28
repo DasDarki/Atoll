@@ -33,6 +33,10 @@ saved tabs therefore cost nothing at startup.
 - **Downloads**: a download list with progress, pause, resume and cancel that is kept in the
   database. The download folder, asking for a location each time and opening the list when a
   download starts are configurable.
+- **Ad blocker**: requests are checked against EasyList, EasyPrivacy and EasyList Germany with
+  Brave's `adblock` engine, and ad elements are hidden with the lists' cosmetic rules, including
+  elements pages add later. The lists are updated every four days. The blocker can be switched
+  off per site in the site information or everywhere in the settings.
 - **Site information**: the symbol in the address bar shows whether the connection is secure,
   the certificate and the zoom level, and deletes cookies and stored data of the site.
 - **Developer tools** docked below or next to the page, see *Architecture*.
@@ -130,6 +134,7 @@ crates/
   atoll-core       domain model and the tab lifecycle state machine
   atoll-storage    SQLite persistence (WAL), migrations, store traits
   atoll-transfer   URL list parser, exporter and import planner
+  atoll-adblock    ad blocking: filter lists, their updates and the per-site switch
   atoll-engine     CEF integration: off-screen browsers, rendering, input, clipboard bridge
   atoll            the application: Slint user interface and the controller
 ```
@@ -152,6 +157,11 @@ crates/
   off-screen view instead and connects it through a WebSocket on the loopback interface, served
   in-process under a random path and only accepted from the frontend's origin. Every message is
   relayed to the protocol session of the inspected browser.
+- **Ad blocking**: the engine asks a content filter about every request on Chromium's network
+  thread and injects the page's cosmetic rules when a document starts loading. A small observer
+  script reports the class names and ids appearing on the page, the matching generic rules are
+  added as a stylesheet. The prepared filter engine is kept on disk and loads in a few
+  milliseconds, so the first page is filtered as well.
 - **Storage**: structural changes are written to the database first and the in-memory session is
   reloaded from it. The database stays the single source of truth.
 
@@ -159,10 +169,9 @@ crates/
 
 Phase 1 of the concept (shell, tab model, workspaces and islands, database, fast startup, URL list
 import and export) is implemented, together with the global quick search, a command palette,
-address bar autocomplete, bookmarks, downloads, settings, docked developer tools and multiple
-windows. Next up are
-adblocking and archive suggestions, then uploads from the clipboard and the memory limit, then
-1Password.
+address bar autocomplete, bookmarks, downloads, settings, docked developer tools, multiple
+windows and an ad blocker. Next up are archive suggestions, then uploads from the clipboard and
+the memory limit, then 1Password.
 
 Known limitations:
 
@@ -171,5 +180,7 @@ Known limitations:
   are denied.
 - Dragging files from other applications into a page is not supported yet.
 - Input method composition (for example for CJK input) is forwarded but not positioned.
+- The ad blocker applies no scriptlets and none of the procedural cosmetic rules that need
+  script, such as `:has-text()`.
 - Under Wayland, new windows are placed by the compositor, not at the point where a tab was
   dropped.

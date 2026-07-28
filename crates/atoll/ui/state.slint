@@ -127,6 +127,11 @@ export global OverlayState {
     in property <[SiteInfoDetail]> site-info-details;
     in property <int> site-info-zoom: 100;
     in property <bool> site-info-can-clear;
+    in property <bool> site-info-adblock-available;
+    in property <bool> site-info-adblock-active;
+    in property <bool> site-info-adblock-switchable;
+    in property <string> site-info-adblock-detail;
+    callback site-info-toggle-adblock();
     callback site-info-clear-data();
     callback site-info-reset-zoom();
     callback site-info-close();
@@ -247,6 +252,13 @@ export global SettingsState {
     in-out property <bool> download-panel;
     callback choose-download-directory();
     callback reset-download-directory();
+
+    in-out property <bool> adblock-enabled;
+    in property <string> adblock-status;
+    in property <bool> adblock-updating;
+    in property <string> adblock-exceptions;
+    callback update-filter-lists();
+    callback clear-adblock-exceptions();
 
     callback changed(string);
     callback use-current-page();

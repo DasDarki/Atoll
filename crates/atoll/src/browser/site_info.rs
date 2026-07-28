@@ -49,6 +49,7 @@ impl Browser {
         overlay.set_site_info_details(ModelRc::from(Rc::new(VecModel::from(details))));
         overlay.set_site_info_zoom(i32::try_from(zoom).unwrap_or(100));
         overlay.set_site_info_can_clear(is_web_address(&url) && origin_of(&url).is_some());
+        self.show_site_adblock(&url);
         overlay.set_site_info_visible(true);
     }
 

@@ -13,6 +13,8 @@ atoll-core = { path = "crates/atoll-core" }
 atoll-storage = { path = "crates/atoll-storage" }
 atoll-transfer = { path = "crates/atoll-transfer" }
 atoll-engine = { path = "crates/atoll-engine" }
+atoll-adblock = { path = "crates/atoll-adblock" }
+adblock = { version = "0.13", default-features = false, features = ["embedded-domain-resolver", "full-regex-handling"] }
 
 ash = "0.38"
 cef = { version = "152.3", default-features = false }
@@ -38,6 +40,7 @@ slint = { version = "1.18", default-features = false, features = [
 slint-build = "1.18"
 thiserror = "2"
 tracing = "0.1"
+ureq = "3.4"
 tungstenite = { version = "0.28", default-features = false, features = ["handshake"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 url = "2.5"
