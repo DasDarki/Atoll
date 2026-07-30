@@ -319,6 +319,7 @@ impl Browser {
                         name: &name,
                         color,
                         index,
+                        created_at: Self::now(),
                     })?;
                     transaction.move_tab(tab, island.id, 0)
                 });
@@ -358,6 +359,7 @@ impl Browser {
             name: "Tabs",
             color: self.next_island_color(),
             index: None,
+            created_at: Self::now(),
         });
         match created {
             Ok(island) => {

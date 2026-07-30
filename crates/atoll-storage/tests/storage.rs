@@ -22,6 +22,7 @@ fn new_island(workspace: atoll_core::WorkspaceId, name: &str) -> NewIsland<'_> {
         name,
         color: IslandColor::Blue,
         index: None,
+        created_at: Timestamp(0),
     }
 }
 
@@ -273,4 +274,27 @@ fn file_database_uses_write_ahead_logging() {
     assert_eq!(reopened.workspaces().unwrap().len(), 1);
     drop(reopened);
     std::fs::remove_dir_all(directory).unwrap();
+}
+
+#[test]
+fn new_islands_count_as_used_when_created() {
+    let storage = storage();
+    let workspace = storage.create_workspace("Arbeit").unwrap();
+    let island = storage
+        .create_island(NewIsland {
+            created_at: Timestamp(100),
+            ..new_island(workspace.id, "Neu")
+        })
+        .unwrap();
+    assert_eq!(island.last_used_at, Some(Timestamp(100)));
+    assert!(
+        storage
+            .islands_unused_since(Timestamp(100))
+            .unwrap()
+            .is_empty()
+    );
+    assert_eq!(
+        storage.islands_unused_since(Timestamp(101)).unwrap().len(),
+        1
+    );
 }

@@ -4,6 +4,7 @@ import { OverlayState } from "../state.slint";
 import { Modal } from "modal.slint";
 import { ActionButton, ButtonKind } from "../widgets/button.slint";
 import { IconButton } from "../widgets/icon-button.slint";
+import { FieldLabel } from "../widgets/field-label.slint";
 
 export component ArchivePanel inherits Modal {
     title: "Archiv";
@@ -15,6 +16,93 @@ export component ArchivePanel inherits Modal {
         color: Theme.text-muted;
         font-size: Theme.font-normal;
         wrap: word-wrap;
+    }
+
+    if OverlayState.archive-suggestions.length > 0 : VerticalLayout {
+        spacing: 8px;
+
+        HorizontalLayout {
+            spacing: 10px;
+            VerticalLayout {
+                horizontal-stretch: 1;
+                alignment: center;
+                spacing: 2px;
+                FieldLabel { text: "VORSCHLÄGE"; }
+                Text {
+                    text: OverlayState.archive-suggestion-weeks == 1
+                        ? "Seit über einer Woche nicht benutzt."
+                        : "Seit über " + OverlayState.archive-suggestion-weeks + " Wochen nicht benutzt.";
+                    color: Theme.text-faint;
+                    font-size: Theme.font-small + 1px;
+                }
+            }
+            ActionButton {
+                y: (parent.height - self.height) / 2;
+                text: "Alle archivieren";
+                clicked => { OverlayState.archive-all-suggested(); }
+            }
+        }
+
+        Rectangle {
+            height: min(220px, OverlayState.archive-suggestions.length * 56px + 8px);
+            border-radius: Theme.radius;
+            background: Theme.background;
+            border-width: 1px;
+            border-color: Theme.border;
+            ListView {
+                for item in OverlayState.archive-suggestions : Rectangle {
+                    height: 56px;
+                    HorizontalLayout {
+                        padding-left: 14px;
+                        padding-right: 8px;
+                        spacing: 10px;
+                        Rectangle {
+                            width: 10px;
+                            height: 10px;
+                            y: (parent.height - self.height) / 2;
+                            border-radius: 5px;
+                            background: item.color;
+                        }
+                        VerticalLayout {
+                            alignment: center;
+                            spacing: 2px;
+                            horizontal-stretch: 1;
+                            Text {
+                                text: item.name;
+                                color: Theme.text;
+                                font-size: Theme.font-normal;
+                                font-weight: 600;
+                                overflow: elide;
+                            }
+                            Text {
+                                text: item.workspace + " · " + (item.tab-count == 1 ? "1 Tab" : item.tab-count + " Tabs") + " · zuletzt benutzt " + item.archived;
+                                color: Theme.text-faint;
+                                font-size: Theme.font-small + 1px;
+                                overflow: elide;
+                            }
+                        }
+                        ActionButton {
+                            y: (parent.height - self.height) / 2;
+                            text: "Behalten";
+                            clicked => { OverlayState.archive-keep(item.id); }
+                        }
+                        ActionButton {
+                            y: (parent.height - self.height) / 2;
+                            text: "Archivieren";
+                            kind: ButtonKind.primary;
+                            clicked => { OverlayState.archive-suggested(item.id); }
+                        }
+                    }
+                    Rectangle {
+                        y: parent.height - 1px;
+                        height: 1px;
+                        background: Theme.border;
+                    }
+                }
+            }
+        }
+
+        FieldLabel { text: "ARCHIVIERT"; }
     }
 
     if OverlayState.archive-items.length == 0 : Rectangle {
@@ -60,7 +148,7 @@ export component ArchivePanel inherits Modal {
                             overflow: elide;
                         }
                         Text {
-                            text: item.workspace + " · " + item.tab-count + " Tabs · archiviert " + item.archived;
+                            text: item.workspace + " · " + (item.tab-count == 1 ? "1 Tab" : item.tab-count + " Tabs") + " · archiviert " + item.archived;
                             color: Theme.text-faint;
                             font-size: Theme.font-small + 1px;
                             overflow: elide;

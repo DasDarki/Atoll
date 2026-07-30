@@ -260,6 +260,18 @@ export component SettingsPage inherits Modal {
                             edited => { SettingsState.changed("frozen-limit"); }
                         }
                     }
+                    Divider { }
+                    SettingRow {
+                        title: "Archivierung vorschlagen nach Wochen";
+                        description: "Inseln, die so lange nicht benutzt wurden, werden in der Sidebar markiert und im Archiv vorgeschlagen. Archiviert wird nur nach deiner Bestätigung. 0 schaltet die Vorschläge aus.";
+                        SpinBox {
+                            width: 110px;
+                            minimum: 0;
+                            maximum: SettingsState.max-archive-suggestion-weeks;
+                            value <=> SettingsState.archive-suggestion-weeks;
+                            edited => { SettingsState.changed("archive-suggestion-weeks"); }
+                        }
+                    }
                 }
 
                 if SettingsState.section == 3 : VerticalLayout {

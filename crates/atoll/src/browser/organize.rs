@@ -237,6 +237,7 @@ impl Browser {
                     name: &name,
                     color,
                     index: None,
+                    created_at: Self::now(),
                 });
                 match created {
                     Ok(island) => {
@@ -347,13 +348,18 @@ impl Browser {
     }
 
     fn archive_island(&self, island: IslandId) {
+        self.archive_island_quietly(island);
+        self.show_toast("Insel archiviert. Wiederherstellen über das Archiv.");
+    }
+
+    /// Archives `island` of this window's workspace.
+    pub(super) fn archive_island_quietly(&self, island: IslandId) {
         self.leave_island_if_active(island);
         self.forget_tabs(self.tabs_of_island(island));
         let result = self.storage.archive_island(island, Self::now());
         self.report("Archivieren", result);
         self.reload_session();
         self.refresh_after_structure_change();
-        self.show_toast("Insel archiviert. Wiederherstellen über das Archiv.");
     }
 
     fn delete_island(&self, island: IslandId) {

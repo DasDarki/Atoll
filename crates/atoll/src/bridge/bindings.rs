@@ -278,6 +278,12 @@ fn connect_overlays(window: &AppWindow, browser: &Rc<Browser>) {
         .restore_island(island(id)));
     on!(state, on_archive_delete, browser, |target, id| target
         .delete_archived_island(island(id)));
+    on!(state, on_archive_keep, browser, |target, id| target
+        .keep_island(island(id)));
+    on!(state, on_archive_suggested, browser, |target, id| target
+        .archive_suggested_island(island(id)));
+    on!(state, on_archive_all_suggested, browser, |target| target
+        .archive_all_suggested());
     on!(state, on_archive_close, browser, |target| target
         .close_archive());
     on!(state, on_import_text_edited, browser, |target, text| target

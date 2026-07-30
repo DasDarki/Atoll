@@ -126,6 +126,7 @@ fn visits_feed_the_global_history() {
             name: "A",
             color: IslandColor::Blue,
             index: None,
+            created_at: Timestamp(0),
         })
         .unwrap();
     let tab = storage
@@ -180,6 +181,7 @@ fn tab_entries_span_all_workspaces_including_archived_islands() {
                 name: "Insel",
                 color: IslandColor::Blue,
                 index: None,
+                created_at: Timestamp(0),
             })
             .unwrap();
         storage

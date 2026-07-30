@@ -60,6 +60,7 @@ impl Browser {
                 name: &island.name,
                 color: island.color,
                 index: None,
+                created_at: Self::now(),
             })?;
             transaction.move_tab(tab, target.id, 0)?;
             transaction.set_setting(
@@ -231,6 +232,7 @@ mod tests {
                     name,
                     color: IslandColor::for_position(0),
                     index: None,
+                    created_at: Timestamp(0),
                 })
                 .unwrap();
             for index in 0..count {

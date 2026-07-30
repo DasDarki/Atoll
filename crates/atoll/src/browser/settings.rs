@@ -6,7 +6,9 @@ use slint::{ComponentHandle, ModelRc, SharedString, VecModel};
 
 use super::Browser;
 use super::navigation::resolve_input;
-use super::preferences::{MAX_FROZEN_LIMIT, PreferenceKey, Preferences, SEARCH_ENGINES};
+use super::preferences::{
+    MAX_ARCHIVE_SUGGESTION_WEEKS, MAX_FROZEN_LIMIT, PreferenceKey, Preferences, SEARCH_ENGINES,
+};
 use crate::platform::dialogs::{self, FileDialogKind, FileDialogOptions};
 use crate::ui::{BrowserState, SettingsState};
 
@@ -35,6 +37,8 @@ impl Browser {
         state.set_bookmarks_bar_auto_hide(preferences.bookmarks_bar_auto_hide);
         state.set_frozen_limit(preferences.frozen_limit as i32);
         state.set_max_frozen_limit(MAX_FROZEN_LIMIT as i32);
+        state.set_archive_suggestion_weeks(preferences.archive_suggestion_weeks as i32);
+        state.set_max_archive_suggestion_weeks(MAX_ARCHIVE_SUGGESTION_WEEKS as i32);
         state.set_download_ask(preferences.download_ask);
         state.set_download_panel(preferences.download_panel);
         self.show_download_directory();
@@ -103,6 +107,15 @@ impl Browser {
                 });
             }
             "adblock-enabled" => self.set_adblock_enabled(state.get_adblock_enabled()),
+            "archive-suggestion-weeks" => {
+                let weeks = u32::try_from(state.get_archive_suggestion_weeks())
+                    .unwrap_or_default()
+                    .min(MAX_ARCHIVE_SUGGESTION_WEEKS);
+                self.update_preference(PreferenceKey::ArchiveSuggestionWeeks, |preferences| {
+                    preferences.archive_suggestion_weeks = weeks;
+                });
+                self.for_all_windows(Browser::refresh_sidebar);
+            }
             "frozen-limit" => {
                 let limit = usize::try_from(state.get_frozen_limit()).unwrap_or_default();
                 self.set_frozen_limit(limit);

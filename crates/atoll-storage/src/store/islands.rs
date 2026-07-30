@@ -14,6 +14,8 @@ pub struct NewIsland<'a> {
     pub color: IslandColor,
     /// Position among the workspace's active islands, appended when `None`.
     pub index: Option<usize>,
+    /// Counts as the first use, archiving is only suggested for islands unused for a while.
+    pub created_at: Timestamp,
 }
 
 /// An archived island together with context for the archive view.
@@ -88,9 +90,15 @@ pub trait IslandStore: Connected {
     fn create_island(&self, new: NewIsland<'_>) -> StorageResult<Island> {
         self.connection()
             .prepare_cached(
-                "INSERT INTO island (workspace_id, name, position, color) VALUES (?1, ?2, 0, ?3)",
+                "INSERT INTO island (workspace_id, name, position, color, last_used_at)
+                 VALUES (?1, ?2, 0, ?3, ?4)",
             )?
-            .execute(params![new.workspace_id.0, new.name, new.color.index()])?;
+            .execute(params![
+                new.workspace_id.0,
+                new.name,
+                new.color.index(),
+                new.created_at.0
+            ])?;
         let id = IslandId(self.connection().last_insert_rowid());
         place_island(self, id, new.workspace_id, new.index)?;
         self.island(id)

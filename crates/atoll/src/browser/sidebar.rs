@@ -39,6 +39,8 @@ impl Browser {
     /// Rebuilds the workspace chips, the island and tab rows and the move targets.
     pub(super) fn refresh_sidebar(&self) {
         let shown_elsewhere = self.workspaces_shown_elsewhere();
+        let cutoff = self.archive_cutoff();
+        let suggestions = cutoff.is_some() && self.has_archive_suggestions();
         let session = self.session.borrow();
         let lifecycle = self.lifecycle.borrow();
         let views = self.views.borrow();
@@ -77,6 +79,9 @@ impl Browser {
                 color,
                 collapsed: entry.island.collapsed,
                 count: entry.tabs.len() as i32,
+                idle: cutoff.is_some_and(|cutoff| {
+                    entry.island.last_used_at.is_none_or(|used| used < cutoff)
+                }),
                 ..SidebarRow::default()
             });
             if entry.island.collapsed {
@@ -110,6 +115,11 @@ impl Browser {
         self.sidebar.rows.set_vec(rows);
         self.sidebar.targets.set_vec(targets);
         self.sidebar.windows.set_vec(windows);
+        if let Some(window) = self.window() {
+            window
+                .global::<SidebarState>()
+                .set_archive_suggestion(suggestions);
+        }
     }
 
     /// The workspaces other windows show.

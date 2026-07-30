@@ -246,6 +246,7 @@ impl Browser {
                             name: &planned.name,
                             color: IslandColor::for_position(existing_islands + created),
                             index: None,
+                            created_at: Self::now(),
                         })?;
                         created += 1;
                         island.id

@@ -5,7 +5,9 @@ use atoll_storage::prelude::*;
 
 const DEFAULT_FROZEN_LIMIT: usize = 6;
 const DEFAULT_DEV_TOOLS_SIZE: u32 = 320;
+const DEFAULT_ARCHIVE_SUGGESTION_WEEKS: u32 = 4;
 pub const MAX_FROZEN_LIMIT: usize = 20;
+pub const MAX_ARCHIVE_SUGGESTION_WEEKS: u32 = 52;
 
 /// A search provider offered in the settings.
 pub struct SearchEngine {
@@ -68,6 +70,8 @@ pub struct Preferences {
     pub dev_tools_size: u32,
     /// Blocks ads and trackers.
     pub adblock_enabled: bool,
+    /// Islands unused for this many weeks are suggested for the archive, `0` suggests none.
+    pub archive_suggestion_weeks: u32,
 }
 
 /// A single preference, used to store exactly what changed.
@@ -87,6 +91,7 @@ pub enum PreferenceKey {
     DevToolsDockedRight,
     DevToolsSize,
     AdblockEnabled,
+    ArchiveSuggestionWeeks,
 }
 
 impl PreferenceKey {
@@ -106,6 +111,7 @@ impl PreferenceKey {
             PreferenceKey::DevToolsDockedRight => "dev_tools_docked_right",
             PreferenceKey::DevToolsSize => "dev_tools_size",
             PreferenceKey::AdblockEnabled => "adblock_enabled",
+            PreferenceKey::ArchiveSuggestionWeeks => "archive_suggestion_weeks",
         }
     }
 }
@@ -127,6 +133,7 @@ impl Default for Preferences {
             dev_tools_docked_right: false,
             dev_tools_size: DEFAULT_DEV_TOOLS_SIZE,
             adblock_enabled: true,
+            archive_suggestion_weeks: DEFAULT_ARCHIVE_SUGGESTION_WEEKS,
         }
     }
 }
@@ -169,6 +176,11 @@ impl Preferences {
                 .and_then(|size| size.parse().ok())
                 .unwrap_or(defaults.dev_tools_size),
             adblock_enabled: flag(PreferenceKey::AdblockEnabled, defaults.adblock_enabled),
+            archive_suggestion_weeks: text(PreferenceKey::ArchiveSuggestionWeeks)
+                .and_then(|weeks| weeks.parse::<u32>().ok())
+                .map_or(defaults.archive_suggestion_weeks, |weeks| {
+                    weeks.min(MAX_ARCHIVE_SUGGESTION_WEEKS)
+                }),
         }
     }
 
@@ -194,6 +206,7 @@ impl Preferences {
             PreferenceKey::DevToolsDockedRight => flag(self.dev_tools_docked_right),
             PreferenceKey::DevToolsSize => self.dev_tools_size.to_string(),
             PreferenceKey::AdblockEnabled => flag(self.adblock_enabled),
+            PreferenceKey::ArchiveSuggestionWeeks => self.archive_suggestion_weeks.to_string(),
         };
         if let Err(error) = storage.set_setting(key.storage_key(), &value) {
             tracing::warn!(%error, key = key.storage_key(), "preference could not be stored");
@@ -236,6 +249,7 @@ mod tests {
             dev_tools_docked_right: true,
             dev_tools_size: 480,
             adblock_enabled: false,
+            archive_suggestion_weeks: 9,
         };
         for key in [
             PreferenceKey::SearchUrl,
@@ -252,6 +266,7 @@ mod tests {
             PreferenceKey::DevToolsDockedRight,
             PreferenceKey::DevToolsSize,
             PreferenceKey::AdblockEnabled,
+            PreferenceKey::ArchiveSuggestionWeeks,
         ] {
             preferences.store(&storage, key);
         }

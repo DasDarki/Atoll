@@ -21,7 +21,9 @@ saved tabs therefore cost nothing at startup.
 - **Four tab states**: *Live* (visible), *Frozen* (recently used, paused in the background),
   *Sleeping* (plain record, the normal state) and *Archived* (part of an archived island).
   Frozen tabs beyond the limit and tabs put to sleep release their engine instance.
-- **Archive**: islands can be archived and restored with one click.
+- **Archive**: islands can be archived and restored with one click. Islands unused for four
+  weeks, configurable in the settings, are marked in the sidebar and suggested in the archive.
+  Nothing is archived without confirmation.
 - **Quick search and command palette**: `Ctrl+K` searches the tabs of all workspaces (archived
   ones included), bookmarks and history. `Ctrl+Shift+P` or a leading `>` lists commands instead.
 - **Address bar autocomplete**: addresses are completed inline from history and bookmarks. The
@@ -167,11 +169,11 @@ crates/
 
 ## Status
 
-Phase 1 of the concept (shell, tab model, workspaces and islands, database, fast startup, URL list
-import and export) is implemented, together with the global quick search, a command palette,
-address bar autocomplete, bookmarks, downloads, settings, docked developer tools, multiple
-windows and an ad blocker. Next up are archive suggestions, then uploads from the clipboard and
-the memory limit, then 1Password.
+Phases 1 and 2 of the concept are implemented: the shell, tab model, workspaces and islands,
+database, fast startup, URL list import and export, the ad blocker, the global quick search and
+the archive with its suggestions. On top come a command palette, address bar autocomplete,
+bookmarks, downloads, settings, docked developer tools and multiple windows. Next up are uploads
+from the clipboard and the memory limit, then 1Password.
 
 Known limitations:
 

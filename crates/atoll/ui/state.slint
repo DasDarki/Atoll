@@ -191,6 +191,11 @@ export global OverlayState {
     in property <bool> archive-visible;
     in property <[ArchiveItem]> archive-items;
     callback archive-restore(int);
+    in property <[ArchiveItem]> archive-suggestions;
+    in property <int> archive-suggestion-weeks;
+    callback archive-keep(int);
+    callback archive-suggested(int);
+    callback archive-all-suggested();
     callback archive-delete(int);
     callback archive-close();
 
@@ -245,6 +250,8 @@ export global SettingsState {
 
     in-out property <int> frozen-limit;
     in property <int> max-frozen-limit;
+    in-out property <int> archive-suggestion-weeks;
+    in property <int> max-archive-suggestion-weeks;
 
     in property <string> download-directory;
     in property <bool> download-directory-custom;
