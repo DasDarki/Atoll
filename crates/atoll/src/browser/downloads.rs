@@ -415,7 +415,7 @@ fn download_detail(entry: &Download, status: DownloadItemStatus, speed: i64) -> 
 }
 
 /// A byte count with a binary unit and a German decimal comma, like `12,5 MB`.
-fn format_bytes(bytes: i64) -> String {
+pub(super) fn format_bytes(bytes: i64) -> String {
     const UNITS: [&str; 4] = ["KB", "MB", "GB", "TB"];
     if bytes < 1024 {
         return format!("{bytes} B");

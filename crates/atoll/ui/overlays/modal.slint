@@ -5,6 +5,7 @@ export component Modal inherits Rectangle {
     in property <length> card-width: 460px;
     in property <bool> autofocus: true;
     callback dismissed();
+    callback confirmed();
 
     background: Theme.scrim;
 
@@ -20,6 +21,10 @@ export component Modal inherits Rectangle {
         key-pressed(event) => {
             if (event.text == Key.Escape) {
                 root.dismissed();
+                return accept;
+            }
+            if (event.text == Key.Return) {
+                root.confirmed();
                 return accept;
             }
             return reject;

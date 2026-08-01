@@ -260,7 +260,8 @@ impl Browser {
         }
     }
 
-    pub(super) fn show_file_dialog(&self, request: FileDialogRequest) {
+    /// Lets the user pick files for a page in the system dialog.
+    pub(super) fn show_system_file_dialog(&self, request: FileDialogRequest) {
         let kind = match request.mode {
             FileDialogMode::Open => FileDialogKind::Open,
             FileDialogMode::OpenMultiple => FileDialogKind::OpenMultiple,
@@ -390,7 +391,7 @@ fn tidy_separators(items: &mut Vec<MenuItemData>) {
 }
 
 /// File extensions for the dialog filter, derived from the page's `accept` attribute.
-fn accepted_extensions(request: &FileDialogRequest) -> Vec<String> {
+pub(super) fn accepted_extensions(request: &FileDialogRequest) -> Vec<String> {
     let mut extensions = request.accept_extensions.clone();
     for accept in &request.accept_types {
         let accept = accept.trim().to_ascii_lowercase();

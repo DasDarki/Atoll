@@ -223,6 +223,14 @@ fn connect_overlays(window: &AppWindow, browser: &Rc<Browser>) {
         .site_info_clear_data());
     on!(state, on_site_info_toggle_adblock, browser, |target| target
         .toggle_site_adblock());
+    on!(state, on_upload_clipboard, browser, |target| target
+        .upload_clipboard_image());
+    on!(state, on_upload_file, browser, |target, index| target
+        .upload_recent_file(index));
+    on!(state, on_upload_browse, browser, |target| target
+        .upload_browse());
+    on!(state, on_upload_cancel, browser, |target| target
+        .upload_cancel());
     on!(state, on_palette_edited, browser, |target, text| target
         .palette_edited(&text));
     on!(state, on_palette_move, browser, |target, delta| target

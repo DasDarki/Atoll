@@ -13,6 +13,7 @@ import { ImportDialog } from "overlays/import-dialog.slint";
 import { ImportReport } from "overlays/import-report.slint";
 import { ExportDialog } from "overlays/export-dialog.slint";
 import { ArchivePanel } from "overlays/archive-panel.slint";
+import { UploadPicker } from "overlays/upload-picker.slint";
 import { Toast } from "overlays/toast.slint";
 import { SuggestionList } from "overlays/suggestion-list.slint";
 import { CommandPalette } from "overlays/command-palette.slint";
@@ -58,6 +59,7 @@ export component AppWindow inherits Window {
         || OverlayState.import-visible
         || OverlayState.export-visible
         || OverlayState.archive-visible
+        || OverlayState.upload-visible
         || OverlayState.report-visible
         || OverlayState.menu-visible;
 
@@ -215,6 +217,11 @@ export component AppWindow inherits Window {
     }
 
     if OverlayState.archive-visible : ArchivePanel {
+        width: root.width;
+        height: root.height;
+    }
+
+    if OverlayState.upload-visible : UploadPicker {
         width: root.width;
         height: root.height;
     }

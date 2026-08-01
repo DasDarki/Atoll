@@ -32,6 +32,9 @@ saved tabs therefore cost nothing at startup.
 - **Bookmarks**: a bookmarks bar with folders, `Ctrl+D` to bookmark the current page, whole
   islands saved as folders, a bookmark manager and import from the HTML export of other browsers.
   Entries of the bar are rearranged and moved into folders by drag and drop.
+- **Uploads**: when a page asks for a file, Atoll first offers the image in the clipboard, saved
+  as a PNG, and the newest matching files from the download folder and the download history.
+  The system dialog is one click away and opens directly if there is nothing to offer.
 - **Downloads**: a download list with progress, pause, resume and cancel that is kept in the
   database. The download folder, asking for a location each time and opening the list when a
   download starts are configurable.

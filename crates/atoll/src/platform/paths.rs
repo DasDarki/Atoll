@@ -8,6 +8,8 @@ use directories::{ProjectDirs, UserDirs};
 pub struct Paths {
     pub database: PathBuf,
     pub adblock: PathBuf,
+    /// Clipboard images handed to pages for uploading.
+    pub uploads: PathBuf,
     pub engine_root: PathBuf,
     pub engine_profile: PathBuf,
     pub downloads: PathBuf,
@@ -35,6 +37,7 @@ impl Paths {
         Ok(Self {
             database: data.join("atoll.db"),
             adblock: data.join("adblock"),
+            uploads: data.join("uploads"),
             engine_profile: engine_root.join("Default"),
             engine_root,
             downloads,

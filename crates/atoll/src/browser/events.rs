@@ -149,7 +149,7 @@ impl Browser {
                 Effect::NONE
             }
             EngineEvent::FileDialog { request, .. } => {
-                self.show_file_dialog(request);
+                self.request_file(request);
                 Effect::NONE
             }
             EngineEvent::JsDialog { view, request } => {

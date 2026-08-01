@@ -1,0 +1,139 @@
+import { Theme } from "../theme.slint";
+import { OverlayState } from "../state.slint";
+import { Modal } from "modal.slint";
+import { ActionButton } from "../widgets/button.slint";
+import { FieldLabel } from "../widgets/field-label.slint";
+
+component RecentFileRow inherits Rectangle {
+    in property <string> name;
+    in property <string> detail;
+    callback clicked();
+
+    height: 48px;
+    border-radius: Theme.radius-small;
+    background: touch.pressed ? Theme.pressed : touch.has-hover ? Theme.hover : transparent;
+
+    HorizontalLayout {
+        padding-left: 10px;
+        padding-right: 10px;
+        spacing: 12px;
+
+        Image {
+            source: @image-url("../icons/file.svg");
+            width: 18px;
+            height: 18px;
+            y: (parent.height - self.height) / 2;
+            colorize: Theme.text-muted;
+        }
+        VerticalLayout {
+            alignment: center;
+            spacing: 2px;
+            Text {
+                text: root.name;
+                color: Theme.text;
+                font-size: Theme.font-normal;
+                overflow: elide;
+            }
+            Text {
+                text: root.detail;
+                color: Theme.text-faint;
+                font-size: Theme.font-small + 1px;
+            }
+        }
+    }
+
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+export component UploadPicker inherits Modal {
+    title: "Datei hochladen";
+    card-width: 540px;
+    dismissed => { OverlayState.upload-cancel(); }
+    confirmed => {
+        if (OverlayState.upload-has-image) {
+            OverlayState.upload-clipboard();
+        }
+    }
+
+    if OverlayState.upload-has-image : Rectangle {
+        height: 150px;
+        border-radius: Theme.radius;
+        background: image-touch.pressed ? Theme.pressed : image-touch.has-hover ? Theme.hover : Theme.background;
+        border-width: 1px;
+        border-color: image-touch.has-hover ? Theme.accent : Theme.border-strong;
+        animate background, border-color { duration: 100ms; }
+
+        HorizontalLayout {
+            padding: 12px;
+            spacing: 16px;
+
+            Rectangle {
+                width: 180px;
+                border-radius: Theme.radius-small;
+                background: Theme.surface-raised;
+                clip: true;
+                Image {
+                    width: parent.width;
+                    height: parent.height;
+                    source: OverlayState.upload-image;
+                    image-fit: contain;
+                }
+            }
+            VerticalLayout {
+                alignment: center;
+                spacing: 4px;
+                Text {
+                    text: "Bild aus der Zwischenablage";
+                    color: Theme.text;
+                    font-size: Theme.font-large;
+                    font-weight: 700;
+                }
+                Text {
+                    text: OverlayState.upload-image-size;
+                    color: Theme.text-muted;
+                    font-size: Theme.font-normal;
+                    wrap: word-wrap;
+                }
+                Text {
+                    text: "Enter lädt es hoch.";
+                    color: Theme.text-faint;
+                    font-size: Theme.font-small + 1px;
+                }
+            }
+        }
+
+        image-touch := TouchArea {
+            mouse-cursor: pointer;
+            clicked => { OverlayState.upload-clipboard(); }
+        }
+    }
+
+    if OverlayState.upload-files.length > 0 : VerticalLayout {
+        spacing: 6px;
+        FieldLabel { text: "ZULETZT HERUNTERGELADEN"; }
+        VerticalLayout {
+            spacing: 2px;
+            for file[index] in OverlayState.upload-files : RecentFileRow {
+                name: file.name;
+                detail: file.detail;
+                clicked => { OverlayState.upload-file(index); }
+            }
+        }
+    }
+
+    HorizontalLayout {
+        spacing: 8px;
+        ActionButton {
+            text: "Datei auswählen…";
+            clicked => { OverlayState.upload-browse(); }
+        }
+        Rectangle { horizontal-stretch: 1; }
+        ActionButton {
+            text: "Abbrechen";
+            clicked => { OverlayState.upload-cancel(); }
+        }
+    }
+}
