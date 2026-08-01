@@ -4,6 +4,7 @@
 //! [`BrowserView`], ready to be composited by the user interface. All input is forwarded
 //! explicitly through the view.
 
+mod activity;
 mod app;
 mod clipboard;
 mod config;

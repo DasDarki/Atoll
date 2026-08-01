@@ -7,6 +7,7 @@ use cef::{
     WrapLoadHandler, rc::Rc as _, wrap_load_handler,
 };
 
+use crate::activity;
 use crate::events::EngineEvent;
 use crate::filter;
 use crate::registry;
@@ -48,22 +49,26 @@ wrap_load_handler! {
             registry::with_view(self.view, |runtime, view| {
                 if main {
                     view.blocked_requests.store(0, Ordering::Relaxed);
+                    if view.activity.borrow_mut().reset() {
+                        runtime.emit(EngineEvent::PageBusy { view: view.id, busy: false });
+                    }
                 }
-                let Some(content_filter) = runtime.content_filter.as_ref() else {
-                    return;
-                };
                 if view.dev_tools_frontend.get() || view.clipboard_helper.get() {
                     return;
                 }
                 let url = CefString::from(&frame.url()).to_string();
-                if !(url.starts_with("http://") || url.starts_with("https://")) {
+                if !["http://", "https://", "file://"].iter().any(|scheme| url.starts_with(scheme)) {
                     return;
                 }
-                let mut rules = content_filter.document_rules(&url);
-                rules.observe_elements &= main;
-                if let Some(script) = filter::document_script(&rules) {
-                    frame.execute_java_script(Some(&script.as_str().into()), Some(&url.as_str().into()), 0);
+                let mut script = activity::page_observer_script();
+                if let Some(content_filter) = runtime.content_filter.as_ref() {
+                    let mut rules = content_filter.document_rules(&url);
+                    rules.observe_elements &= main;
+                    if let Some(filtering) = filter::document_script(&rules) {
+                        script.push_str(&filtering);
+                    }
                 }
+                frame.execute_java_script(Some(&script.as_str().into()), Some(&url.as_str().into()), 0);
             });
         }
 

@@ -111,6 +111,12 @@ pub enum EngineEvent {
     RenderProcessGone(ViewId),
     /// Shared texture import failed, the view should be recreated with CPU rendering.
     AcceleratedPaintFailed(ViewId),
+    /// The page started or stopped being busy: it plays audible media or holds input the user
+    /// has not sent yet. Busy pages should not be unloaded to save memory.
+    PageBusy {
+        view: ViewId,
+        busy: bool,
+    },
 }
 
 impl EngineEvent {
@@ -140,7 +146,8 @@ impl EngineEvent {
             | EngineEvent::JsDialog { view, .. }
             | EngineEvent::JsDialogDismissed { view }
             | EngineEvent::FindResult { view, .. }
-            | EngineEvent::InspectElement { view, .. } => Some(*view),
+            | EngineEvent::InspectElement { view, .. }
+            | EngineEvent::PageBusy { view, .. } => Some(*view),
             EngineEvent::PopupOpened { opener, .. } => Some(*opener),
             EngineEvent::Download(_)
             | EngineEvent::CopyText(_)

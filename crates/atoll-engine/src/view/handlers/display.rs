@@ -10,6 +10,7 @@ use cef::{
 };
 
 use super::{list, text};
+use crate::activity;
 use crate::clipboard;
 use crate::events::{CursorKind, EngineEvent};
 use crate::filter;
@@ -99,6 +100,15 @@ wrap_display_handler! {
             _line: c_int,
         ) -> c_int {
             let message = text(message);
+            if let Some((frame, media, input)) = activity::parse_page_report(&message) {
+                registry::with_view(self.view, |runtime, view| {
+                    let changed = view.activity.borrow_mut().update(frame, media, input);
+                    if let Some(busy) = changed {
+                        runtime.emit(EngineEvent::PageBusy { view: view.id, busy });
+                    }
+                });
+                return 1;
+            }
             if let Some((classes, ids)) = filter::parse_element_report(&message) {
                 registry::with_view(self.view, |runtime, view| {
                     apply_element_rules(runtime, view, &classes, &ids);

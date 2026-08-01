@@ -5,6 +5,7 @@ use std::sync::atomic::AtomicU32;
 use cef::{Browser, BrowserHost, ImplBrowser};
 
 use super::{ViewGeometry, ViewId, ViewRect};
+use crate::activity::PageActivity;
 use crate::render::ViewSurface;
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -40,6 +41,7 @@ pub(crate) struct ViewState {
     /// Requests blocked by the content filter since the page started loading. Counted on the
     /// network thread.
     pub(crate) blocked_requests: Arc<AtomicU32>,
+    pub(crate) activity: RefCell<PageActivity>,
 }
 
 impl ViewState {
@@ -60,6 +62,7 @@ impl ViewState {
             clipboard_helper: Cell::new(false),
             dev_tools_frontend: Cell::new(false),
             blocked_requests: Arc::default(),
+            activity: RefCell::default(),
         }
     }
 
