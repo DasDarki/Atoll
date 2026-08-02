@@ -262,6 +262,26 @@ export component SettingsPage inherits Modal {
                     }
                     Divider { }
                     SettingRow {
+                        title: "Arbeitsspeicher begrenzen";
+                        description: "Belegen die Seiten mehr als das Budget, schlafen die am längsten nicht genutzten Hintergrund-Tabs ein. Tabs mit Wiedergabe, ungesendeten Eingaben und angepinnte Tabs bleiben geladen. " + SettingsState.memory-usage;
+                        Toggle {
+                            checked <=> SettingsState.memory-limit-enabled;
+                            toggled => { SettingsState.changed("memory-limit"); }
+                        }
+                    }
+                    SettingRow {
+                        title: "Budget in GB";
+                        SpinBox {
+                            width: 110px;
+                            enabled: SettingsState.memory-limit-enabled;
+                            minimum: 1;
+                            maximum: SettingsState.max-memory-limit-gb;
+                            value <=> SettingsState.memory-limit-gb;
+                            edited => { SettingsState.changed("memory-limit"); }
+                        }
+                    }
+                    Divider { }
+                    SettingRow {
                         title: "Archivierung vorschlagen nach Wochen";
                         description: "Inseln, die so lange nicht benutzt wurden, werden in der Sidebar markiert und im Archiv vorgeschlagen. Archiviert wird nur nach deiner Bestätigung. 0 schaltet die Vorschläge aus.";
                         SpinBox {

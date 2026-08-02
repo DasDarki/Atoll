@@ -43,6 +43,7 @@ impl Browser {
         state.set_download_panel(preferences.download_panel);
         self.show_download_directory();
         self.show_adblock_settings();
+        self.show_memory_settings();
         state.set_visible(true);
     }
 
@@ -107,6 +108,10 @@ impl Browser {
                 });
             }
             "adblock-enabled" => self.set_adblock_enabled(state.get_adblock_enabled()),
+            "memory-limit" => self.set_memory_limit(
+                state.get_memory_limit_enabled(),
+                u32::try_from(state.get_memory_limit_gb()).unwrap_or(1),
+            ),
             "archive-suggestion-weeks" => {
                 let weeks = u32::try_from(state.get_archive_suggestion_weeks())
                     .unwrap_or_default()

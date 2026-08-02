@@ -10,6 +10,7 @@ use atoll_storage::prelude::*;
 use slint::winit_030::WinitWindowAccessor;
 use slint::{CloseRequestResponse, ComponentHandle, LogicalPosition, LogicalSize};
 
+use super::memory::exceeds_budget;
 use super::{Browser, Shared};
 use crate::bridge::{bindings, window_events};
 use crate::platform::paths::Paths;
@@ -425,6 +426,42 @@ impl WindowManager {
         }));
         for browser in self.browsers() {
             browser.engine_started();
+        }
+        let manager = self.this.clone();
+        self.shared.memory.start(move |usage| {
+            if let Some(manager) = manager.upgrade() {
+                manager.memory_measured(usage);
+            }
+        });
+    }
+
+    /// Puts the least recently used background tab to sleep while the pages use more memory than
+    /// the budget, one per measurement.
+    fn memory_measured(&self, usage: u64) {
+        tracing::debug!(usage, "renderer memory measured");
+        self.shared.memory.set_usage(usage);
+        let (enabled, budget) = {
+            let preferences = self.shared.preferences.borrow();
+            (
+                preferences.memory_limit_enabled,
+                preferences.memory_limit_gb,
+            )
+        };
+        if enabled && exceeds_budget(usage, budget) {
+            let demoted = self.shared.lifecycle.borrow_mut().demote_least_recent();
+            if let Some(command) = demoted
+                && let Some(browser) = self.browsers().first()
+            {
+                tracing::info!(usage, budget, ?command, "memory budget exceeded");
+                browser.apply(vec![command]);
+                for browser in self.browsers() {
+                    browser.refresh_sidebar();
+                }
+                self.shared.memory.measure_soon();
+            }
+        }
+        for browser in self.browsers() {
+            browser.memory_measured();
         }
     }
 

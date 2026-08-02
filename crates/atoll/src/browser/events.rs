@@ -226,6 +226,16 @@ impl Browser {
                     page: self.is_live_view(view),
                 }
             }
+            EngineEvent::PageBusy { view, busy } => {
+                if let Some(tab) = self.tab_of(view) {
+                    let commands = self.lifecycle.borrow_mut().set_busy(tab, busy);
+                    self.apply(commands);
+                }
+                Effect {
+                    sidebar: !busy,
+                    page: false,
+                }
+            }
             EngineEvent::AcceleratedPaintFailed(view) => {
                 if let Some(owner) = self.dev_tools_owner(view) {
                     self.reopen_dev_tools(owner);

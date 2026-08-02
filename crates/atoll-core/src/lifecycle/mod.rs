@@ -37,14 +37,15 @@ pub enum LifecycleCommand {
 ///
 /// Every window has at most one `Live` tab. Tabs that were live before become `Frozen` and are
 /// kept in most-recently-used order, shared by all windows, until the frozen limit or the memory
-/// budget pushes the least recently used ones back to `Sleeping`. Protected tabs are never
-/// unloaded automatically.
+/// budget pushes the least recently used ones back to `Sleeping`. Protected tabs, such as pinned
+/// ones, and busy tabs, which play media or hold unsaved input, are never unloaded automatically.
 #[derive(Debug, Clone)]
 pub struct TabLifecycle {
     live: BTreeMap<WindowId, TabId>,
     frozen: Vec<TabId>,
     frozen_limit: usize,
     protected: HashSet<TabId>,
+    busy: HashSet<TabId>,
 }
 
 impl TabLifecycle {
@@ -54,6 +55,7 @@ impl TabLifecycle {
             frozen: Vec::new(),
             frozen_limit,
             protected: HashSet::new(),
+            busy: HashSet::new(),
         }
     }
 
@@ -146,6 +148,7 @@ impl TabLifecycle {
     /// Removes every trace of `tab`, used when the tab is closed or archived.
     pub fn forget(&mut self, tab: TabId) -> Vec<LifecycleCommand> {
         self.protected.remove(&tab);
+        self.busy.remove(&tab);
         self.sleep(tab)
     }
 
@@ -164,18 +167,36 @@ impl TabLifecycle {
         self.protected.contains(&tab)
     }
 
+    /// Busy tabs play media or hold unsaved input and are kept like protected ones while busy.
+    pub fn set_busy(&mut self, tab: TabId, busy: bool) -> Vec<LifecycleCommand> {
+        if busy {
+            self.busy.insert(tab);
+            Vec::new()
+        } else if self.busy.remove(&tab) {
+            self.enforce_frozen_limit()
+        } else {
+            Vec::new()
+        }
+    }
+
+    pub fn is_busy(&self, tab: TabId) -> bool {
+        self.busy.contains(&tab)
+    }
+
+    /// Whether `tab` is never unloaded automatically.
+    fn is_kept(&self, tab: TabId) -> bool {
+        self.protected.contains(&tab) || self.busy.contains(&tab)
+    }
+
     pub fn set_frozen_limit(&mut self, limit: usize) -> Vec<LifecycleCommand> {
         self.frozen_limit = limit;
         self.enforce_frozen_limit()
     }
 
-    /// Unloads the least recently used unprotected frozen tab, used when the memory budget is
-    /// exceeded. Returns `None` if nothing can be demoted.
+    /// Unloads the least recently used frozen tab that is neither protected nor busy, used when
+    /// the memory budget is exceeded. Returns `None` if nothing can be demoted.
     pub fn demote_least_recent(&mut self) -> Option<LifecycleCommand> {
-        let index = self
-            .frozen
-            .iter()
-            .rposition(|tab| !self.protected.contains(tab))?;
+        let index = self.frozen.iter().rposition(|tab| !self.is_kept(*tab))?;
         let tab = self.frozen.remove(index);
         Some(LifecycleCommand::Unload(tab))
     }
@@ -195,7 +216,7 @@ impl TabLifecycle {
         let mut unprotected = self
             .frozen
             .iter()
-            .filter(|tab| !self.protected.contains(tab))
+            .filter(|tab| !self.is_kept(**tab))
             .count();
         while unprotected > self.frozen_limit {
             match self.demote_least_recent() {

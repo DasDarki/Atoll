@@ -21,6 +21,9 @@ saved tabs therefore cost nothing at startup.
 - **Four tab states**: *Live* (visible), *Frozen* (recently used, paused in the background),
   *Sleeping* (plain record, the normal state) and *Archived* (part of an archived island).
   Frozen tabs beyond the limit and tabs put to sleep release their engine instance.
+- **Memory limit**: while the pages use more memory than the budget (4 GB by default), the least
+  recently used background tabs go to sleep. Pinned tabs, tabs playing audible media and pages
+  with input that was not sent yet stay loaded, also when the frozen limit is reached.
 - **Archive**: islands can be archived and restored with one click. Islands unused for four
   weeks, configurable in the settings, are marked in the sidebar and suggested in the archive.
   Nothing is archived without confirmation.
@@ -167,16 +170,20 @@ crates/
   script reports the class names and ids appearing on the page, the matching generic rules are
   added as a stylesheet. The prepared filter engine is kept on disk and loads in a few
   milliseconds, so the first page is filtered as well.
+- **Memory limit**: a background thread sums the proportional memory of the processes below
+  Chromium's sandboxed zygote, which are the renderers, every 30 seconds. A small script on
+  every page reports audible media and changed form fields through the console, the tab
+  lifecycle keeps such busy tabs like pinned ones.
 - **Storage**: structural changes are written to the database first and the in-memory session is
   reloaded from it. The database stays the single source of truth.
 
 ## Status
 
-Phases 1 and 2 of the concept are implemented: the shell, tab model, workspaces and islands,
-database, fast startup, URL list import and export, the ad blocker, the global quick search and
-the archive with its suggestions. On top come a command palette, address bar autocomplete,
-bookmarks, downloads, settings, docked developer tools and multiple windows. Next up are uploads
-from the clipboard and the memory limit, then 1Password.
+Phases 1 to 3 of the concept are implemented: the shell, tab model, workspaces and islands,
+database, fast startup, URL list import and export, the ad blocker, the global quick search, the
+archive with its suggestions, uploads from the clipboard and the download folder, the download
+history and the memory limit. On top come a command palette, address bar autocomplete, bookmarks,
+settings, docked developer tools and multiple windows. Next up is 1Password.
 
 Known limitations:
 

@@ -155,3 +155,29 @@ fn sleeping_a_live_tab_clears_its_window() {
     assert_eq!(lifecycle.live_in(V), None);
     assert_eq!(lifecycle.live_in(W), Some(A));
 }
+
+#[test]
+fn busy_tabs_survive_the_frozen_limit_until_they_are_idle() {
+    let mut lifecycle = TabLifecycle::new(1);
+    lifecycle.activate(W, A);
+    lifecycle.set_busy(A, true);
+    lifecycle.activate(W, B);
+    assert_eq!(lifecycle.activate(W, C), vec![Hide(B), Wake(C), Show(C)]);
+    assert_eq!(lifecycle.frozen(), &[B, A]);
+    assert!(lifecycle.is_busy(A));
+    assert_eq!(lifecycle.set_busy(A, false), vec![Unload(A)]);
+    assert!(lifecycle.set_busy(A, false).is_empty());
+}
+
+#[test]
+fn demote_skips_busy_tabs() {
+    let mut lifecycle = TabLifecycle::new(8);
+    lifecycle.activate(W, A);
+    lifecycle.activate(W, B);
+    lifecycle.activate(W, C);
+    lifecycle.set_busy(A, true);
+    assert_eq!(lifecycle.demote_least_recent(), Some(Unload(B)));
+    assert_eq!(lifecycle.demote_least_recent(), None);
+    assert_eq!(lifecycle.forget(A), vec![Unload(A)]);
+    assert!(!lifecycle.is_busy(A));
+}

@@ -8,6 +8,8 @@ const DEFAULT_DEV_TOOLS_SIZE: u32 = 320;
 const DEFAULT_ARCHIVE_SUGGESTION_WEEKS: u32 = 4;
 pub const MAX_FROZEN_LIMIT: usize = 20;
 pub const MAX_ARCHIVE_SUGGESTION_WEEKS: u32 = 52;
+const DEFAULT_MEMORY_LIMIT_GB: u32 = 4;
+pub const MAX_MEMORY_LIMIT_GB: u32 = 64;
 
 /// A search provider offered in the settings.
 pub struct SearchEngine {
@@ -72,6 +74,10 @@ pub struct Preferences {
     pub adblock_enabled: bool,
     /// Islands unused for this many weeks are suggested for the archive, `0` suggests none.
     pub archive_suggestion_weeks: u32,
+    /// Puts background tabs to sleep while the pages use more memory than the budget.
+    pub memory_limit_enabled: bool,
+    /// The memory budget of all pages in binary gigabytes.
+    pub memory_limit_gb: u32,
 }
 
 /// A single preference, used to store exactly what changed.
@@ -92,6 +98,8 @@ pub enum PreferenceKey {
     DevToolsSize,
     AdblockEnabled,
     ArchiveSuggestionWeeks,
+    MemoryLimitEnabled,
+    MemoryLimitGb,
 }
 
 impl PreferenceKey {
@@ -112,6 +120,8 @@ impl PreferenceKey {
             PreferenceKey::DevToolsSize => "dev_tools_size",
             PreferenceKey::AdblockEnabled => "adblock_enabled",
             PreferenceKey::ArchiveSuggestionWeeks => "archive_suggestion_weeks",
+            PreferenceKey::MemoryLimitEnabled => "memory_limit_enabled",
+            PreferenceKey::MemoryLimitGb => "memory_limit_gb",
         }
     }
 }
@@ -134,6 +144,8 @@ impl Default for Preferences {
             dev_tools_size: DEFAULT_DEV_TOOLS_SIZE,
             adblock_enabled: true,
             archive_suggestion_weeks: DEFAULT_ARCHIVE_SUGGESTION_WEEKS,
+            memory_limit_enabled: true,
+            memory_limit_gb: DEFAULT_MEMORY_LIMIT_GB,
         }
     }
 }
@@ -181,6 +193,15 @@ impl Preferences {
                 .map_or(defaults.archive_suggestion_weeks, |weeks| {
                     weeks.min(MAX_ARCHIVE_SUGGESTION_WEEKS)
                 }),
+            memory_limit_enabled: flag(
+                PreferenceKey::MemoryLimitEnabled,
+                defaults.memory_limit_enabled,
+            ),
+            memory_limit_gb: text(PreferenceKey::MemoryLimitGb)
+                .and_then(|gigabytes| gigabytes.parse::<u32>().ok())
+                .map_or(defaults.memory_limit_gb, |gigabytes| {
+                    gigabytes.clamp(1, MAX_MEMORY_LIMIT_GB)
+                }),
         }
     }
 
@@ -207,6 +228,8 @@ impl Preferences {
             PreferenceKey::DevToolsSize => self.dev_tools_size.to_string(),
             PreferenceKey::AdblockEnabled => flag(self.adblock_enabled),
             PreferenceKey::ArchiveSuggestionWeeks => self.archive_suggestion_weeks.to_string(),
+            PreferenceKey::MemoryLimitEnabled => flag(self.memory_limit_enabled),
+            PreferenceKey::MemoryLimitGb => self.memory_limit_gb.to_string(),
         };
         if let Err(error) = storage.set_setting(key.storage_key(), &value) {
             tracing::warn!(%error, key = key.storage_key(), "preference could not be stored");
@@ -250,6 +273,8 @@ mod tests {
             dev_tools_size: 480,
             adblock_enabled: false,
             archive_suggestion_weeks: 9,
+            memory_limit_enabled: false,
+            memory_limit_gb: 12,
         };
         for key in [
             PreferenceKey::SearchUrl,
@@ -267,6 +292,8 @@ mod tests {
             PreferenceKey::DevToolsSize,
             PreferenceKey::AdblockEnabled,
             PreferenceKey::ArchiveSuggestionWeeks,
+            PreferenceKey::MemoryLimitEnabled,
+            PreferenceKey::MemoryLimitGb,
         ] {
             preferences.store(&storage, key);
         }
