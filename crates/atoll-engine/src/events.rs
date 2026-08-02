@@ -117,6 +117,11 @@ pub enum EngineEvent {
         view: ViewId,
         busy: bool,
     },
+    /// A password field appeared on the page or the last one disappeared.
+    LoginFormChanged {
+        view: ViewId,
+        present: bool,
+    },
 }
 
 impl EngineEvent {
@@ -147,7 +152,8 @@ impl EngineEvent {
             | EngineEvent::JsDialogDismissed { view }
             | EngineEvent::FindResult { view, .. }
             | EngineEvent::InspectElement { view, .. }
-            | EngineEvent::PageBusy { view, .. } => Some(*view),
+            | EngineEvent::PageBusy { view, .. }
+            | EngineEvent::LoginFormChanged { view, .. } => Some(*view),
             EngineEvent::PopupOpened { opener, .. } => Some(*opener),
             EngineEvent::Download(_)
             | EngineEvent::CopyText(_)

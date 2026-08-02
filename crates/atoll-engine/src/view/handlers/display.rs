@@ -9,6 +9,7 @@ use cef::{
     wrap_download_image_callback,
 };
 
+use super::load::emit_activity;
 use super::{list, text};
 use crate::activity;
 use crate::clipboard;
@@ -100,12 +101,10 @@ wrap_display_handler! {
             _line: c_int,
         ) -> c_int {
             let message = text(message);
-            if let Some((frame, media, input)) = activity::parse_page_report(&message) {
+            if let Some((frame, report)) = activity::parse_page_report(&message) {
                 registry::with_view(self.view, |runtime, view| {
-                    let changed = view.activity.borrow_mut().update(frame, media, input);
-                    if let Some(busy) = changed {
-                        runtime.emit(EngineEvent::PageBusy { view: view.id, busy });
-                    }
+                    let change = view.activity.borrow_mut().update(frame, report);
+                    emit_activity(runtime, view.id, change);
                 });
                 return 1;
             }

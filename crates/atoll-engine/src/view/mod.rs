@@ -334,6 +334,27 @@ impl BrowserView {
         }
     }
 
+    /// The address of the frame that has the keyboard focus, the main frame if none has.
+    pub fn focused_frame_url(&self) -> Option<String> {
+        let frame = self
+            .state
+            .browser()
+            .and_then(|browser| browser.focused_frame().or_else(|| browser.main_frame()))?;
+        let url = CefString::from(&frame.url()).to_string();
+        (!url.is_empty()).then_some(url)
+    }
+
+    /// Runs `code` in the frame that has the keyboard focus, the main frame if none has.
+    pub fn execute_script_in_focused_frame(&self, code: &str) {
+        if let Some(frame) = self
+            .state
+            .browser()
+            .and_then(|browser| browser.focused_frame().or_else(|| browser.main_frame()))
+        {
+            frame.execute_java_script(Some(&code.into()), None, 0);
+        }
+    }
+
     pub fn execute_script(&self, code: &str) {
         if let Some(frame) = self
             .state

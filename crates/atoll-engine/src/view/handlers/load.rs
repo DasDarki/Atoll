@@ -7,10 +7,10 @@ use cef::{
     WrapLoadHandler, rc::Rc as _, wrap_load_handler,
 };
 
-use crate::activity;
+use crate::activity::{self, ActivityChange};
 use crate::events::EngineEvent;
 use crate::filter;
-use crate::registry;
+use crate::registry::{self, Runtime};
 use crate::view::ViewId;
 use crate::view::state::NavigationState;
 
@@ -49,9 +49,8 @@ wrap_load_handler! {
             registry::with_view(self.view, |runtime, view| {
                 if main {
                     view.blocked_requests.store(0, Ordering::Relaxed);
-                    if view.activity.borrow_mut().reset() {
-                        runtime.emit(EngineEvent::PageBusy { view: view.id, busy: false });
-                    }
+                    let change = view.activity.borrow_mut().reset();
+                    emit_activity(runtime, view.id, change);
                 }
                 if view.dev_tools_frontend.get() || view.clipboard_helper.get() {
                     return;
@@ -80,5 +79,15 @@ wrap_load_handler! {
                 });
             }
         }
+    }
+}
+
+/// Reports how the activity of the page in `view` changed.
+pub(crate) fn emit_activity(runtime: &Runtime, view: ViewId, change: ActivityChange) {
+    if let Some(busy) = change.busy {
+        runtime.emit(EngineEvent::PageBusy { view, busy });
+    }
+    if let Some(present) = change.login_form {
+        runtime.emit(EngineEvent::LoginFormChanged { view, present });
     }
 }
