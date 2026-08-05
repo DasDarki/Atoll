@@ -202,6 +202,9 @@ Known limitations:
 - Dragging files from other applications into a page is not supported yet.
 - Input method composition (for example for CJK input) is forwarded but not positioned.
 - 1Password fills logins in but does not offer to save new ones.
+- Passkeys and security keys are not supported. Chromium asks for them with a window of its own
+  that an off-screen browser cannot show, so the Web Authentication API is hidden and requests are
+  refused, which makes pages offer another way to sign in.
 - The prebuilt CEF binaries contain no proprietary codecs, so H.264 and AAC media, which many
   sites such as Reddit serve, do not play. VP8, VP9, AV1, Opus and Vorbis work.
 - The ad blocker applies no scriptlets and none of the procedural cosmetic rules that need

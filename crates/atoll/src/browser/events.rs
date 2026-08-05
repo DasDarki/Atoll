@@ -251,6 +251,14 @@ impl Browser {
                 self.login_filled(view, fields);
                 Effect::NONE
             }
+            EngineEvent::PasskeyRefused(view) => {
+                if self.is_live_view(view) {
+                    self.show_toast(
+                        "Passkeys werden in Atoll nicht unterstützt, melde dich anders an",
+                    );
+                }
+                Effect::NONE
+            }
             EngineEvent::AcceleratedPaintFailed(view) => {
                 if let Some(owner) = self.dev_tools_owner(view) {
                     self.reopen_dev_tools(owner);

@@ -15,6 +15,7 @@ mod error;
 mod events;
 mod filter;
 mod input;
+mod passkeys;
 mod process;
 mod pump;
 mod registry;

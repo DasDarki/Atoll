@@ -128,6 +128,8 @@ pub enum EngineEvent {
         view: ViewId,
         fields: FilledFields,
     },
+    /// The page asked for a passkey or security key, which was refused.
+    PasskeyRefused(ViewId),
 }
 
 impl EngineEvent {
@@ -140,7 +142,8 @@ impl EngineEvent {
             | EngineEvent::CloseRequested(view)
             | EngineEvent::Closed(view)
             | EngineEvent::RenderProcessGone(view)
-            | EngineEvent::AcceleratedPaintFailed(view) => Some(*view),
+            | EngineEvent::AcceleratedPaintFailed(view)
+            | EngineEvent::PasskeyRefused(view) => Some(*view),
             EngineEvent::AddressChanged { view, .. }
             | EngineEvent::TitleChanged { view, .. }
             | EngineEvent::FaviconReady { view, .. }

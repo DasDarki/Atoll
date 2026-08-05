@@ -16,6 +16,7 @@ use crate::autofill;
 use crate::clipboard;
 use crate::events::{CursorKind, EngineEvent};
 use crate::filter;
+use crate::passkeys;
 use crate::registry::{self, Runtime};
 use crate::view::{ViewId, ViewState};
 
@@ -114,6 +115,10 @@ wrap_display_handler! {
                     view: self.view,
                     fields,
                 });
+                return 1;
+            }
+            if message == passkeys::PASSKEY_REPORT {
+                registry::emit(EngineEvent::PasskeyRefused(self.view));
                 return 1;
             }
             if let Some((classes, ids)) = filter::parse_element_report(&message) {
