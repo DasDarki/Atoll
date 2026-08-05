@@ -16,6 +16,8 @@ pub struct TabView {
     pub expected_address: Option<String>,
     /// The developer tools docked to this tab, if open.
     pub dev_tools: Option<DevTools>,
+    /// Whether the page shows a password field.
+    pub login_form: bool,
 }
 
 impl TabView {
@@ -30,6 +32,7 @@ impl TabView {
             replacement_history: false,
             expected_address: None,
             dev_tools: None,
+            login_form: false,
         }
     }
 }

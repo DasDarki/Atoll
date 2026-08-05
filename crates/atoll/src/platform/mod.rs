@@ -4,3 +4,4 @@ pub mod logging;
 pub mod memory;
 pub mod opener;
 pub mod paths;
+pub mod tasks;

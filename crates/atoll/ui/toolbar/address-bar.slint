@@ -138,6 +138,16 @@ export component AddressBar inherits Rectangle {
                 }
             }
 
+            if BrowserState.login-form : IconButton {
+                width: 26px;
+                height: 26px;
+                y: (parent.height - self.height) / 2;
+                icon-size: 15px;
+                icon: @image-url("../icons/key.svg");
+                tint: Theme.accent;
+                clicked => { BrowserState.show-passwords(); }
+            }
+
             if BrowserState.has-page : IconButton {
                 width: 26px;
                 height: 26px;

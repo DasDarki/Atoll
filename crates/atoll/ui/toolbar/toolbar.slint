@@ -180,6 +180,11 @@ export component Toolbar inherits Rectangle {
                 activated => { BrowserState.menu-action("commands"); }
             }
             MenuItem {
+                title: "Mit 1Password anmelden";
+                enabled: BrowserState.has-page;
+                activated => { BrowserState.menu-action("passwords"); }
+            }
+            MenuItem {
                 title: "Auf Seite suchen";
                 enabled: BrowserState.has-page;
                 activated => { BrowserState.menu-action("find"); }

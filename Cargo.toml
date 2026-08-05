@@ -14,6 +14,7 @@ atoll-storage = { path = "crates/atoll-storage" }
 atoll-transfer = { path = "crates/atoll-transfer" }
 atoll-engine = { path = "crates/atoll-engine" }
 atoll-adblock = { path = "crates/atoll-adblock" }
+atoll-onepassword = { path = "crates/atoll-onepassword" }
 adblock = { version = "0.13", default-features = false, features = ["embedded-domain-resolver", "full-regex-handling"] }
 
 ash = "0.38"
@@ -27,6 +28,7 @@ libc = "0.2"
 pollster = "1"
 rfd = "0.17"
 rusqlite = { version = "0.40", features = ["bundled"] }
+serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 slint = { version = "1.18", default-features = false, features = [
     "std",

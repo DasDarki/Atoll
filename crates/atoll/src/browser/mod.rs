@@ -17,6 +17,7 @@ mod organize;
 mod overlays;
 mod page;
 mod palette;
+mod passwords;
 mod preferences;
 mod session;
 mod settings;
@@ -56,6 +57,7 @@ use memory::MemoryWatcher;
 use overlays::DialogQueue;
 use page::PageState;
 use palette::PaletteState;
+use passwords::{PasswordPopup, PasswordVault};
 use preferences::Preferences;
 use session::Session;
 use sidebar::SidebarModels;
@@ -86,6 +88,7 @@ struct Shared {
     downloads: Rc<RefCell<Downloads>>,
     adblock: Rc<Adblock>,
     memory: Rc<MemoryWatcher>,
+    vault: Rc<PasswordVault>,
 }
 
 impl Shared {
@@ -112,6 +115,7 @@ impl Shared {
             downloads: Rc::default(),
             adblock: Rc::new(adblock),
             memory: Rc::default(),
+            vault: Rc::new(PasswordVault::from_environment()),
         }
     }
 }
@@ -149,6 +153,8 @@ pub struct Browser {
     downloads: Rc<RefCell<Downloads>>,
     adblock: Rc<Adblock>,
     memory: Rc<MemoryWatcher>,
+    vault: Rc<PasswordVault>,
+    passwords: RefCell<PasswordPopup>,
     suggestions: RefCell<SuggestionState>,
     palette: RefCell<PaletteState>,
     bookmarks: RefCell<BookmarkState>,
@@ -201,6 +207,8 @@ impl Browser {
             downloads: shared.downloads.clone(),
             adblock: shared.adblock.clone(),
             memory: shared.memory.clone(),
+            vault: shared.vault.clone(),
+            passwords: RefCell::default(),
             suggestions: RefCell::default(),
             palette: RefCell::default(),
             bookmarks: RefCell::default(),

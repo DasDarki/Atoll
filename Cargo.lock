@@ -493,11 +493,13 @@ dependencies = [
  "atoll-adblock",
  "atoll-core",
  "atoll-engine",
+ "atoll-onepassword",
  "atoll-storage",
  "atoll-transfer",
  "directories",
  "image",
  "rfd",
+ "serde_json",
  "slint",
  "slint-build",
  "tracing",
@@ -538,6 +540,16 @@ dependencies = [
  "tracing",
  "tungstenite",
  "wgpu",
+]
+
+[[package]]
+name = "atoll-onepassword"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+ "url",
 ]
 
 [[package]]

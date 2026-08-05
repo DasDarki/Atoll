@@ -21,6 +21,7 @@ impl Browser {
             "palette" => self.open_palette(false),
             "commands" => self.open_palette(true),
             "bookmark" => self.bookmark_page(),
+            "passwords" => self.show_passwords(),
             "bookmarks-bar" => self.toggle_bookmarks_bar(),
             "bookmarks" => self.open_bookmark_manager(),
             "sidebar" => self.toggle_sidebar(),

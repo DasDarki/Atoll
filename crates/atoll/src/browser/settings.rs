@@ -44,6 +44,7 @@ impl Browser {
         self.show_download_directory();
         self.show_adblock_settings();
         self.show_memory_settings();
+        self.show_password_settings();
         state.set_visible(true);
     }
 

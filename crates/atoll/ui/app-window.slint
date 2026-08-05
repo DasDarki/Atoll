@@ -23,6 +23,7 @@ import { BookmarkManager } from "overlays/bookmark-manager.slint";
 import { HoverCard } from "overlays/hover-card.slint";
 import { SettingsPage } from "overlays/settings-page.slint";
 import { SiteInfoPopup } from "overlays/site-info-popup.slint";
+import { PasswordPopup } from "overlays/password-popup.slint";
 import { DownloadsPanel } from "overlays/downloads-panel.slint";
 import { BookmarksBar } from "toolbar/bookmarks-bar.slint";
 import { ResizeFrame } from "window/resize-frame.slint";
@@ -60,6 +61,7 @@ export component AppWindow inherits Window {
         || OverlayState.export-visible
         || OverlayState.archive-visible
         || OverlayState.upload-visible
+        || OverlayState.passwords-visible
         || OverlayState.report-visible
         || OverlayState.menu-visible;
 
@@ -177,6 +179,13 @@ export component AppWindow inherits Window {
     if OverlayState.folder-popup-visible : FolderPopup {
         width: root.width;
         height: root.height;
+    }
+
+    if OverlayState.passwords-visible : PasswordPopup {
+        width: root.width;
+        height: root.height;
+        anchor-x: toolbar.address-x + toolbar.address-width;
+        anchor-y: toolbar.address-y;
     }
 
     if OverlayState.site-info-visible : SiteInfoPopup {

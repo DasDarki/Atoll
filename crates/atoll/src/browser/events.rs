@@ -236,6 +236,17 @@ impl Browser {
                     page: false,
                 }
             }
+            EngineEvent::LoginFormChanged { view, present } => {
+                if let Some(tab) = self.tab_of(view)
+                    && let Some(entry) = self.views.borrow_mut().get_mut(tab)
+                {
+                    entry.login_form = present;
+                }
+                Effect {
+                    sidebar: false,
+                    page: self.is_live_view(view),
+                }
+            }
             EngineEvent::AcceleratedPaintFailed(view) => {
                 if let Some(owner) = self.dev_tools_owner(view) {
                     self.reopen_dev_tools(owner);

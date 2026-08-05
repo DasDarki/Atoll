@@ -376,6 +376,12 @@ export component SettingsPage inherits Modal {
                         }
                     }
                     Divider { }
+                    SectionTitle { text: "1PASSWORD"; }
+                    SettingRow {
+                        title: "Anmeldungen mit 1Password ausfüllen";
+                        description: SettingsState.onepassword-status;
+                    }
+                    Divider { }
                     SectionTitle { text: "DATEN"; }
                     SettingRow {
                         title: "Verlauf löschen";

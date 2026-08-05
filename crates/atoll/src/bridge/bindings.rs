@@ -138,6 +138,8 @@ fn connect_browser(window: &AppWindow, browser: &Rc<Browser>) {
         .open_downloads());
     on!(state, on_show_site_info, browser, |target| target
         .show_site_info());
+    on!(state, on_show_passwords, browser, |target| target
+        .show_passwords());
     on!(state, on_window_drag, browser, |target| target
         .window_drag());
     on!(state, on_window_control, browser, |target, action| target
@@ -231,6 +233,16 @@ fn connect_overlays(window: &AppWindow, browser: &Rc<Browser>) {
         .upload_browse());
     on!(state, on_upload_cancel, browser, |target| target
         .upload_cancel());
+    on!(
+        state,
+        on_passwords_query_edited,
+        browser,
+        |target, query| target.password_query_changed(&query)
+    );
+    on!(state, on_passwords_choose, browser, |target, index| target
+        .choose_password(index));
+    on!(state, on_passwords_close, browser, |target| target
+        .close_passwords());
     on!(state, on_palette_edited, browser, |target, text| target
         .palette_edited(&text));
     on!(state, on_palette_move, browser, |target, delta| target

@@ -45,6 +45,12 @@ saved tabs therefore cost nothing at startup.
   Brave's `adblock` engine, and ad elements are hidden with the lists' cosmetic rules, including
   elements pages add later. The lists are updated every four days. The blocker can be switched
   off per site in the site information or everywhere in the settings.
+- **1Password**: on pages with a login form a key appears in the address bar. It, `Ctrl+Shift+L`
+  and the command palette list the 1Password logins saved for the site and fill the chosen one
+  in. A one-time password is copied to the clipboard. Logins of other sites can be searched and
+  used after a confirmation. Atoll talks to the 1Password CLI (`op`, package `1password-cli`),
+  which asks the 1Password app to unlock, so enable "Integrate with 1Password CLI" in the app's
+  developer settings.
 - **Site information**: the symbol in the address bar shows whether the connection is secure,
   the certificate and the zoom level, and deletes cookies and stored data of the site.
 - **Developer tools** docked below or next to the page, see *Architecture*.
@@ -108,6 +114,7 @@ storage).
 | `Ctrl+Shift+B` | Show or hide the bookmarks bar |
 | `Ctrl+Shift+O` | Manage bookmarks |
 | `Ctrl+J` | Downloads |
+| `Ctrl+Shift+L` | Log in with 1Password |
 | `Ctrl+,` | Settings |
 | `Alt+Home` | Open the start page |
 | `Ctrl+Plus`, `Ctrl+Minus`, `Ctrl+0` | Zoom |
@@ -143,6 +150,7 @@ crates/
   atoll-storage    SQLite persistence (WAL), migrations, store traits
   atoll-transfer   URL list parser, exporter and import planner
   atoll-adblock    ad blocking: filter lists, their updates and the per-site switch
+  atoll-onepassword  logins from the 1Password CLI and matching them to sites
   atoll-engine     CEF integration: off-screen browsers, rendering, input, clipboard bridge
   atoll            the application: Slint user interface and the controller
 ```
@@ -179,11 +187,11 @@ crates/
 
 ## Status
 
-Phases 1 to 3 of the concept are implemented: the shell, tab model, workspaces and islands,
+All four phases of the concept are implemented: the shell, tab model, workspaces and islands,
 database, fast startup, URL list import and export, the ad blocker, the global quick search, the
 archive with its suggestions, uploads from the clipboard and the download folder, the download
-history and the memory limit. On top come a command palette, address bar autocomplete, bookmarks,
-settings, docked developer tools and multiple windows. Next up is 1Password.
+history, the memory limit and 1Password. On top come a command palette, address bar
+autocomplete, bookmarks, settings, docked developer tools and multiple windows.
 
 Known limitations:
 
@@ -192,6 +200,7 @@ Known limitations:
   are denied.
 - Dragging files from other applications into a page is not supported yet.
 - Input method composition (for example for CJK input) is forwarded but not positioned.
+- 1Password fills logins in but does not offer to save new ones.
 - The ad blocker applies no scriptlets and none of the procedural cosmetic rules that need
   script, such as `:has-text()`.
 - Under Wayland, new windows are placed by the compositor, not at the point where a tab was

@@ -1,4 +1,4 @@
-import { WorkspaceItem, SidebarRow, IslandTarget, MenuItemData, ArchiveItem, ExportIslandItem, DialogData, WebCursor, WebPointer, WebScroll, SuggestionItem, Completion, PaletteItem, BookmarkItem, PageSecurity, SiteInfoDetail, DownloadItem, UploadFile } from "structs.slint";
+import { WorkspaceItem, SidebarRow, IslandTarget, MenuItemData, ArchiveItem, ExportIslandItem, DialogData, WebCursor, WebPointer, WebScroll, SuggestionItem, Completion, PaletteItem, BookmarkItem, PageSecurity, SiteInfoDetail, DownloadItem, UploadFile, PasswordItem } from "structs.slint";
 
 export global SidebarState {
     in property <bool> visible: true;
@@ -60,6 +60,8 @@ export global BrowserState {
 
     callback navigate(string);
     callback show-site-info();
+    in property <bool> login-form;
+    callback show-passwords();
 
     in property <bool> maximized;
     callback window-drag();
@@ -132,6 +134,16 @@ export global OverlayState {
     in property <bool> site-info-adblock-switchable;
     in property <string> site-info-adblock-detail;
     callback site-info-toggle-adblock();
+
+    in property <bool> passwords-visible;
+    in property <string> passwords-host;
+    in-out property <string> passwords-query;
+    in property <string> passwords-status;
+    in property <bool> passwords-busy;
+    in property <[PasswordItem]> passwords-items;
+    callback passwords-query-edited(string);
+    callback passwords-choose(int);
+    callback passwords-close();
 
     in property <bool> upload-visible;
     in property <bool> upload-has-image;
@@ -266,6 +278,7 @@ export global SettingsState {
     in-out property <int> memory-limit-gb;
     in property <int> max-memory-limit-gb;
     in property <string> memory-usage;
+    in property <string> onepassword-status;
 
     in property <string> download-directory;
     in property <bool> download-directory-custom;

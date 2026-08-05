@@ -62,6 +62,7 @@ enum Command {
     ToggleNewTabStartPage,
     ToggleBookmarksBarAutoHide,
     SearchEngine(usize),
+    FillPassword,
     ToggleSiteAdblock,
     ToggleAdblock,
     UpdateFilterLists,
@@ -580,6 +581,14 @@ impl Browser {
                 "window abtrennen",
             ));
         }
+        if self.current_page_url().is_some() {
+            commands.push((
+                Command::FillPassword,
+                "Mit 1Password anmelden".to_owned(),
+                "Strg+Umschalt+L",
+                "passwort login zugangsdaten ausfüllen",
+            ));
+        }
         commands.push((
             Command::ToggleAdblock,
             if preferences.adblock_enabled {
@@ -744,6 +753,7 @@ impl Browser {
                 let auto_hide = !self.preferences.borrow().bookmarks_bar_auto_hide;
                 self.set_bookmarks_bar_auto_hide(auto_hide);
             }
+            Command::FillPassword => self.show_passwords(),
             Command::ToggleSiteAdblock => self.toggle_site_adblock(),
             Command::ToggleAdblock => {
                 let enabled = !self.preferences.borrow().adblock_enabled;
