@@ -110,12 +110,34 @@ fn classify(message: &str) -> OpError {
 mod tests {
     use std::fs;
     use std::os::unix::fs::PermissionsExt;
-    use std::path::Path;
+    use std::sync::{Mutex, MutexGuard, PoisonError};
 
     use super::*;
 
+    /// Tests that write a program and tests that start one take turns: a program another thread
+    /// still has open for writing while a process is forked cannot be started ("Text file busy").
+    static PROGRAMS: Mutex<()> = Mutex::new(());
+
+    fn take_turn() -> MutexGuard<'static, ()> {
+        PROGRAMS.lock().unwrap_or_else(PoisonError::into_inner)
+    }
+
+    /// A stand-in for `op`, removed when dropped.
+    struct FakeOp {
+        cli: OnePassword,
+        directory: PathBuf,
+        _turn: MutexGuard<'static, ()>,
+    }
+
+    impl Drop for FakeOp {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.directory);
+        }
+    }
+
     /// A stand-in for `op` that answers from `script`, a shell `case` over the arguments.
-    fn fake_op(name: &str, script: &str) -> (OnePassword, PathBuf) {
+    fn fake_op(name: &str, script: &str) -> FakeOp {
+        let turn = take_turn();
         let directory =
             std::env::temp_dir().join(format!("atoll-op-{name}-{}", std::process::id()));
         let _ = fs::remove_dir_all(&directory);
@@ -123,16 +145,16 @@ mod tests {
         let program = directory.join("op");
         fs::write(&program, format!("#!/bin/sh\n{script}\n")).unwrap();
         fs::set_permissions(&program, fs::Permissions::from_mode(0o755)).unwrap();
-        (OnePassword::new(&program), directory)
-    }
-
-    fn remove(directory: &Path) {
-        fs::remove_dir_all(directory).unwrap();
+        FakeOp {
+            cli: OnePassword::new(&program),
+            directory,
+            _turn: turn,
+        }
     }
 
     #[test]
     fn logins_and_credentials_are_read_from_the_cli() {
-        let (op, directory) = fake_op(
+        let op = fake_op(
             "read",
             r#"case "$1 $2" in
   "item list") echo '[{"id":"a1","title":"Forum","additional_information":"me","urls":[{"href":"https://forum.example"}]}]' ;;
@@ -140,31 +162,31 @@ mod tests {
   *) echo "2.30.0" ;;
 esac"#,
         );
-        assert_eq!(op.version().unwrap(), "2.30.0");
-        let logins = op.logins().unwrap();
+        assert_eq!(op.cli.version().unwrap(), "2.30.0");
+        let logins = op.cli.logins().unwrap();
         assert_eq!(logins.len(), 1);
         assert_eq!(logins[0].urls, ["https://forum.example"]);
-        let credentials = op.credentials("a1").unwrap();
+        let credentials = op.cli.credentials("a1").unwrap();
         assert_eq!(credentials.username, "me");
         assert_eq!(credentials.password, "pw");
         assert_eq!(credentials.one_time_code, None);
-        remove(&directory);
     }
 
     #[test]
     fn a_missing_cli_is_reported() {
+        let _turn = take_turn();
         let op = OnePassword::new("/nonexistent/atoll/op");
         assert_eq!(op.logins(), Err(OpError::Missing));
     }
 
     #[test]
     fn failures_are_classified() {
-        let (op, directory) = fake_op(
+        let op = fake_op(
             "fail",
             "echo '[ERROR] 2026/09/19 authorization prompt dismissed, please try again' >&2\nexit 1",
         );
-        assert_eq!(op.logins(), Err(OpError::Cancelled));
-        remove(&directory);
+        assert_eq!(op.cli.logins(), Err(OpError::Cancelled));
+        drop(op);
 
         assert_eq!(
             classify("[ERROR] account is not signed in"),
@@ -182,8 +204,7 @@ esac"#,
 
     #[test]
     fn unexpected_output_is_invalid() {
-        let (op, directory) = fake_op("invalid", "echo 'Hallo'");
-        assert!(matches!(op.logins(), Err(OpError::Invalid(_))));
-        remove(&directory);
+        let op = fake_op("invalid", "echo 'Hallo'");
+        assert!(matches!(op.cli.logins(), Err(OpError::Invalid(_))));
     }
 }
