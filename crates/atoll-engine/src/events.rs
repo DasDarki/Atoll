@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use crate::autofill::FilledFields;
 use crate::view::ViewId;
 
 /// Identifies a pending request that must be answered through the [`crate::Engine`].
@@ -122,6 +123,11 @@ pub enum EngineEvent {
         view: ViewId,
         present: bool,
     },
+    /// A frame answered [`crate::BrowserView::fill_login`] with the fields it filled.
+    LoginFilled {
+        view: ViewId,
+        fields: FilledFields,
+    },
 }
 
 impl EngineEvent {
@@ -153,7 +159,8 @@ impl EngineEvent {
             | EngineEvent::FindResult { view, .. }
             | EngineEvent::InspectElement { view, .. }
             | EngineEvent::PageBusy { view, .. }
-            | EngineEvent::LoginFormChanged { view, .. } => Some(*view),
+            | EngineEvent::LoginFormChanged { view, .. }
+            | EngineEvent::LoginFilled { view, .. } => Some(*view),
             EngineEvent::PopupOpened { opener, .. } => Some(*opener),
             EngineEvent::Download(_)
             | EngineEvent::CopyText(_)

@@ -6,6 +6,7 @@
 
 mod activity;
 mod app;
+mod autofill;
 mod clipboard;
 mod config;
 mod dev_tools;
@@ -20,6 +21,7 @@ mod registry;
 mod render;
 mod view;
 
+pub use autofill::{FilledFields, LoginFill};
 pub use clipboard::ClipboardHelper;
 pub use config::EngineConfig;
 pub use dev_tools::DevToolsSession;

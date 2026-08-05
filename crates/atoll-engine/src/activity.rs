@@ -88,7 +88,7 @@ pub(crate) fn page_observer_script() -> String {
 }
 
 /// Reports whether audible media plays, whether form fields differ from their initial values and
-/// whether the frame shows a password field.
+/// whether the frame shows a password field, also inside open shadow roots.
 const PAGE_OBSERVER: &str = r#"(() => {
   const prefix = __PREFIX__;
   const frame = Math.random().toString(36).slice(2);
@@ -118,10 +118,18 @@ const PAGE_OBSERVER: &str = r#"(() => {
       report();
     }
   };
+  const hasPassword = (root) => {
+    if (root.querySelector("input[type=password]")) return true;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      if (node.shadowRoot && hasPassword(node.shadowRoot)) return true;
+    }
+    return false;
+  };
   let loginCheck = 0;
   const updateLogin = () => {
     loginCheck = 0;
-    const present = document.querySelector("input[type=password]") !== null;
+    const present = hasPassword(document);
     if (present !== login) {
       login = present;
       report();

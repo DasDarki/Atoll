@@ -12,6 +12,7 @@ use cef::{
 use super::load::emit_activity;
 use super::{list, text};
 use crate::activity;
+use crate::autofill;
 use crate::clipboard;
 use crate::events::{CursorKind, EngineEvent};
 use crate::filter;
@@ -105,6 +106,13 @@ wrap_display_handler! {
                 registry::with_view(self.view, |runtime, view| {
                     let change = view.activity.borrow_mut().update(frame, report);
                     emit_activity(runtime, view.id, change);
+                });
+                return 1;
+            }
+            if let Some(fields) = autofill::parse_fill_report(&message) {
+                registry::emit(EngineEvent::LoginFilled {
+                    view: self.view,
+                    fields,
                 });
                 return 1;
             }

@@ -65,6 +65,10 @@ struct FullItem {
 
 #[derive(Deserialize)]
 struct Field {
+    #[serde(default)]
+    id: String,
+    #[serde(default)]
+    label: String,
     #[serde(default, rename = "type")]
     kind: String,
     #[serde(default)]
@@ -105,8 +109,22 @@ pub(crate) fn parse_credentials(json: &str) -> serde_json::Result<Credentials> {
             .and_then(|field| field.value.clone())
             .unwrap_or_default()
     };
+    let username = Some(value_for("USERNAME"))
+        .filter(|username| !username.is_empty())
+        .or_else(|| {
+            item.fields
+                .iter()
+                .filter(|field| field.kind == "STRING" || field.kind == "EMAIL")
+                .find(|field| {
+                    let label = field.label.to_lowercase();
+                    field.id == "username"
+                        || ["username", "benutzername", "email", "e-mail"].contains(&label.as_str())
+                })
+                .and_then(|field| field.value.clone())
+        })
+        .unwrap_or_default();
     Ok(Credentials {
-        username: value_for("USERNAME"),
+        username,
         password: value_for("PASSWORD"),
         one_time_code: item
             .fields
@@ -175,6 +193,19 @@ mod tests {
         assert_eq!(credentials.username, "octo@example.org");
         assert_eq!(credentials.password, "s3cr\"et");
         assert_eq!(credentials.one_time_code.as_deref(), Some("492039"));
+    }
+
+    #[test]
+    fn a_username_without_purpose_is_found_by_its_label() {
+        let item = r#"{
+          "fields": [
+            { "id": "a1", "type": "EMAIL", "label": "E-Mail", "value": "kim@example.org" },
+            { "id": "password", "type": "CONCEALED", "purpose": "PASSWORD", "value": "geheim" }
+          ]
+        }"#;
+        let credentials = parse_credentials(item).unwrap();
+        assert_eq!(credentials.username, "kim@example.org");
+        assert_eq!(credentials.password, "geheim");
     }
 
     #[test]

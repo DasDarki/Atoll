@@ -47,7 +47,8 @@ saved tabs therefore cost nothing at startup.
   off per site in the site information or everywhere in the settings.
 - **1Password**: on pages with a login form a key appears in the address bar. It, `Ctrl+Shift+L`
   and the command palette list the 1Password logins saved for the site and fill the chosen one
-  in. A one-time password is copied to the clipboard. Logins of other sites can be searched and
+  into every frame of that site, including fields inside shadow roots, and a message says what
+  was filled. A one-time password is copied to the clipboard. Logins of other sites can be searched and
   used after a confirmation. Atoll talks to the 1Password CLI (`op`, package `1password-cli`),
   which asks the 1Password app to unlock, so enable "Integrate with 1Password CLI" in the app's
   developer settings.
@@ -201,6 +202,8 @@ Known limitations:
 - Dragging files from other applications into a page is not supported yet.
 - Input method composition (for example for CJK input) is forwarded but not positioned.
 - 1Password fills logins in but does not offer to save new ones.
+- The prebuilt CEF binaries contain no proprietary codecs, so H.264 and AAC media, which many
+  sites such as Reddit serve, do not play. VP8, VP9, AV1, Opus and Vorbis work.
 - The ad blocker applies no scriptlets and none of the procedural cosmetic rules that need
   script, such as `:has-text()`.
 - Under Wayland, new windows are placed by the compositor, not at the point where a tab was

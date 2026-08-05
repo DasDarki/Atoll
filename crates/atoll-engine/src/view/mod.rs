@@ -6,7 +6,8 @@ mod state;
 use std::rc::Rc;
 
 use cef::{
-    CefString, ImplBrowser, ImplBrowserHost, ImplDictionaryValue, ImplFrame, MouseEvent, Range,
+    CefString, CefStringList, ImplBrowser, ImplBrowserHost, ImplDictionaryValue, ImplFrame,
+    MouseEvent, Range,
 };
 
 /// Chromium's "no range", used when input method text does not replace existing text.
@@ -19,6 +20,7 @@ pub(crate) use client::build_client;
 pub use security::{CertificateInfo, SecurityInfo};
 pub(crate) use state::{DragSession, ViewState};
 
+use crate::autofill::{self, LoginFill};
 use crate::input::{EditCommand, KeyInput, Modifiers, MouseButton, ZoomCommand};
 use crate::render::{SurfaceFrame, SurfaceLayer};
 
@@ -334,25 +336,32 @@ impl BrowserView {
         }
     }
 
-    /// The address of the frame that has the keyboard focus, the main frame if none has.
-    pub fn focused_frame_url(&self) -> Option<String> {
-        let frame = self
-            .state
-            .browser()
-            .and_then(|browser| browser.focused_frame().or_else(|| browser.main_frame()))?;
-        let url = CefString::from(&frame.url()).to_string();
-        (!url.is_empty()).then_some(url)
-    }
-
-    /// Runs `code` in the frame that has the keyboard focus, the main frame if none has.
-    pub fn execute_script_in_focused_frame(&self, code: &str) {
-        if let Some(frame) = self
-            .state
-            .browser()
-            .and_then(|browser| browser.focused_frame().or_else(|| browser.main_frame()))
-        {
-            frame.execute_java_script(Some(&code.into()), None, 0);
+    /// Fills `login` into the visible login form of every frame whose address `include`
+    /// accepts. Each of them answers with [`crate::EngineEvent::LoginFilled`], the number of
+    /// frames asked is returned.
+    pub fn fill_login(&self, login: LoginFill<'_>, include: impl Fn(&str) -> bool) -> usize {
+        let Some(browser) = self.state.browser() else {
+            return 0;
+        };
+        let mut identifiers = CefStringList::new();
+        browser.frame_identifiers(Some(&mut identifiers));
+        let script = autofill::fill_script(login);
+        let mut asked = 0;
+        for identifier in identifiers {
+            let Some(frame) = browser.frame_by_identifier(Some(&identifier.as_str().into())) else {
+                continue;
+            };
+            let url = CefString::from(&frame.url()).to_string();
+            if frame.is_valid() != 0 && include(&url) {
+                frame.execute_java_script(
+                    Some(&script.as_str().into()),
+                    Some(&url.as_str().into()),
+                    0,
+                );
+                asked += 1;
+            }
         }
+        asked
     }
 
     pub fn execute_script(&self, code: &str) {

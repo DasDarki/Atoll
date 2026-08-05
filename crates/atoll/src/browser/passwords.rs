@@ -3,8 +3,9 @@ use std::rc::Rc;
 use std::time::{Duration, Instant};
 
 use atoll_core::address::display_host;
+use atoll_engine::{FilledFields, LoginFill, ViewId};
 use atoll_onepassword::{Credentials, Login, OnePassword, OpError, logins_for, matches};
-use slint::{ComponentHandle, ModelRc, VecModel};
+use slint::{ComponentHandle, ModelRc, Timer, TimerMode, VecModel};
 
 use super::Browser;
 use crate::platform::tasks::run_in_background;
@@ -12,6 +13,9 @@ use crate::ui::{OverlayState, PasswordItem, SettingsState};
 
 /// How long the list of logins is reused before 1Password is asked again.
 const LOGIN_CACHE: Duration = Duration::from_secs(5 * 60);
+
+/// How long the frames of a page get to answer a fill.
+const FILL_TIMEOUT: Duration = Duration::from_secs(3);
 
 /// 1Password, shared by all windows.
 pub struct PasswordVault {
@@ -44,6 +48,15 @@ impl PasswordVault {
         *self.logins.borrow_mut() = Some((Instant::now(), logins.clone()));
         logins
     }
+}
+
+/// A fill that not every frame has answered yet.
+pub struct PendingFill {
+    view: ViewId,
+    unanswered: usize,
+    filled: FilledFields,
+    code_copied: bool,
+    _timeout: Timer,
 }
 
 /// The login popup of one window.
@@ -253,29 +266,77 @@ impl Browser {
             self.show_toast("Die Seite hat sich geändert, es wurde nichts eingefügt");
             return;
         }
-        let script = fill_script(&credentials);
-        let mut filled = false;
+        let page_host = display_host(&page_url);
+        let fill = LoginFill {
+            username: &credentials.username,
+            password: &credentials.password,
+            one_time_code: credentials.one_time_code.as_deref(),
+        };
+        let mut asked = None;
         self.with_live_view(|view| {
-            let focused = view.focused_frame_url().unwrap_or_default();
-            if other_site || matches(login, &focused) {
-                view.execute_script_in_focused_frame(&script);
-                filled = true;
-            } else if matches(login, &page_url) {
-                view.execute_script(&script);
-                filled = true;
-            }
+            let frames = view.fill_login(fill, |url| {
+                matches(login, url) || (other_site && display_host(url) == page_host)
+            });
+            asked = Some((view.id(), frames));
         });
         self.close_passwords();
-        if !filled {
+        let Some((view, frames)) = asked.filter(|(_, frames)| *frames > 0) else {
             self.show_toast(
                 "Das Anmeldefeld gehört zu einer anderen Seite, es wurde nichts eingefügt",
             );
             return;
+        };
+        tracing::info!(frames, "filling a login from 1Password");
+        let code_copied = credentials
+            .one_time_code
+            .as_deref()
+            .is_some_and(|code| self.clipboard.set_text(code));
+        let this = self.this();
+        let timeout = Timer::default();
+        timeout.start(TimerMode::SingleShot, FILL_TIMEOUT, move || {
+            if let Some(browser) = this.upgrade() {
+                browser.fill_timed_out();
+            }
+        });
+        *self.pending_fill.borrow_mut() = Some(PendingFill {
+            view,
+            unanswered: frames,
+            filled: FilledFields::default(),
+            code_copied,
+            _timeout: timeout,
+        });
+    }
+
+    /// A frame answered the fill with the fields it filled. The first frame that filled
+    /// something, or the last one to answer, ends the fill.
+    pub(super) fn login_filled(&self, view: ViewId, fields: FilledFields) {
+        let finished = {
+            let mut pending = self.pending_fill.borrow_mut();
+            let Some(fill) = pending.as_mut().filter(|fill| fill.view == view) else {
+                return;
+            };
+            fill.unanswered = fill.unanswered.saturating_sub(1);
+            fill.filled.username |= fields.username;
+            fill.filled.password |= fields.password;
+            fill.filled.one_time_code |= fields.one_time_code;
+            if fill.filled.any() || fill.unanswered == 0 {
+                pending.take()
+            } else {
+                None
+            }
+        };
+        if let Some(fill) = finished {
+            tracing::info!(filled = ?fill.filled, "login filled");
+            self.show_toast(&fill_message(fill.filled, fill.code_copied));
         }
-        if let Some(code) = &credentials.one_time_code {
-            self.copy_text(code);
-            self.show_toast("Einmalcode in die Zwischenablage kopiert");
-        }
+    }
+
+    fn fill_timed_out(&self) {
+        let Some(fill) = self.pending_fill.borrow_mut().take() else {
+            return;
+        };
+        tracing::info!(unanswered = fill.unanswered, "no frame filled the login");
+        self.show_toast(&fill_message(fill.filled, fill.code_copied));
     }
 
     /// Settings: shows whether the 1Password CLI can be used.
@@ -363,43 +424,26 @@ fn error_text(error: &OpError) -> String {
     }
 }
 
-/// The script filling `credentials` into the visible login form of a frame.
-fn fill_script(credentials: &Credentials) -> String {
-    let arguments = serde_json::json!([
-        credentials.username,
-        credentials.password,
-        credentials.one_time_code.clone().unwrap_or_default(),
-    ]);
-    format!("({FILL_FUNCTION})(...{arguments});")
+/// What the toast says after a fill, for example `Benutzername und Passwort eingefügt`.
+fn fill_message(filled: FilledFields, code_copied: bool) -> String {
+    let names: Vec<&str> = [
+        (filled.username, "Benutzername"),
+        (filled.password, "Passwort"),
+        (filled.one_time_code, "Einmalcode"),
+    ]
+    .into_iter()
+    .filter_map(|(filled, name)| filled.then_some(name))
+    .collect();
+    let mut message = match names.as_slice() {
+        [] => "Keine Anmeldefelder gefunden".to_owned(),
+        [name] => format!("{name} eingefügt"),
+        [first @ .., last] => format!("{} und {last} eingefügt", first.join(", ")),
+    };
+    if code_copied && !filled.one_time_code {
+        message.push_str(", Einmalcode in der Zwischenablage");
+    }
+    message
 }
-
-/// Fills username, password or one-time code into the visible fields that look like them, the
-/// way typing would, so pages built with frameworks notice the values.
-const FILL_FUNCTION: &str = r#"(username, secret, code) => {
-  const visible = (field) => field.getClientRects().length > 0
-    && getComputedStyle(field).visibility !== "hidden" && !field.disabled && !field.readOnly;
-  const fill = (field, value) => {
-    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set;
-    field.focus();
-    setter.call(field, value);
-    field.dispatchEvent(new Event("input", { bubbles: true }));
-    field.dispatchEvent(new Event("change", { bubbles: true }));
-  };
-  const hint = (field) => [field.autocomplete, field.name, field.id, field.placeholder].join(" ").toLowerCase();
-  const textual = (field) => ["text", "email", "tel", ""].includes(field.type);
-  const fields = [...document.querySelectorAll("input")].filter(visible);
-  const password = fields.find((field) => field.type === "password");
-  const oneTime = fields.find((field) => field.autocomplete === "one-time-code"
-    || /otp|totp|2fa|mfa|one.?time|verification|einmal/.test(hint(field)));
-  const user = fields.find((field) => field.autocomplete === "username" && textual(field))
-    || (password
-      ? fields.slice(0, fields.indexOf(password)).reverse().find(textual)
-      : fields.find((field) => textual(field) && field !== oneTime
-        && /user|login|mail|konto|account|name/.test(hint(field))));
-  if (user && username) fill(user, username);
-  if (password && secret) fill(password, secret);
-  if (!password && oneTime && code) fill(oneTime, code);
-}"#;
 
 #[cfg(test)]
 mod tests {
@@ -440,14 +484,32 @@ mod tests {
     }
 
     #[test]
-    fn credentials_are_passed_as_json_arguments() {
-        let script = fill_script(&Credentials {
-            username: "kim".to_owned(),
-            password: "a\"b</script>\\".to_owned(),
-            one_time_code: None,
-        });
-        assert!(script.starts_with("((username, secret, code) =>"));
-        assert!(script.ends_with(r#")(...["kim","a\"b</script>\\",""]);"#));
+    fn fill_messages_name_the_filled_fields() {
+        let fields = |username, password, one_time_code| FilledFields {
+            username,
+            password,
+            one_time_code,
+        };
+        assert_eq!(
+            fill_message(fields(true, true, false), false),
+            "Benutzername und Passwort eingefügt"
+        );
+        assert_eq!(
+            fill_message(fields(false, true, false), true),
+            "Passwort eingefügt, Einmalcode in der Zwischenablage"
+        );
+        assert_eq!(
+            fill_message(fields(true, false, true), true),
+            "Benutzername und Einmalcode eingefügt"
+        );
+        assert_eq!(
+            fill_message(fields(true, true, true), false),
+            "Benutzername, Passwort und Einmalcode eingefügt"
+        );
+        assert_eq!(
+            fill_message(FilledFields::default(), false),
+            "Keine Anmeldefelder gefunden"
+        );
     }
 
     #[test]

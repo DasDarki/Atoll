@@ -57,7 +57,7 @@ use memory::MemoryWatcher;
 use overlays::DialogQueue;
 use page::PageState;
 use palette::PaletteState;
-use passwords::{PasswordPopup, PasswordVault};
+use passwords::{PasswordPopup, PasswordVault, PendingFill};
 use preferences::Preferences;
 use session::Session;
 use sidebar::SidebarModels;
@@ -155,6 +155,7 @@ pub struct Browser {
     memory: Rc<MemoryWatcher>,
     vault: Rc<PasswordVault>,
     passwords: RefCell<PasswordPopup>,
+    pending_fill: RefCell<Option<PendingFill>>,
     suggestions: RefCell<SuggestionState>,
     palette: RefCell<PaletteState>,
     bookmarks: RefCell<BookmarkState>,
@@ -209,6 +210,7 @@ impl Browser {
             memory: shared.memory.clone(),
             vault: shared.vault.clone(),
             passwords: RefCell::default(),
+            pending_fill: RefCell::default(),
             suggestions: RefCell::default(),
             palette: RefCell::default(),
             bookmarks: RefCell::default(),

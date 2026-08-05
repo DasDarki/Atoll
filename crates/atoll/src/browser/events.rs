@@ -247,6 +247,10 @@ impl Browser {
                     page: self.is_live_view(view),
                 }
             }
+            EngineEvent::LoginFilled { view, fields } => {
+                self.login_filled(view, fields);
+                Effect::NONE
+            }
             EngineEvent::AcceleratedPaintFailed(view) => {
                 if let Some(owner) = self.dev_tools_owner(view) {
                     self.reopen_dev_tools(owner);
