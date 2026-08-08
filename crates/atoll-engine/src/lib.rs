@@ -20,6 +20,7 @@ mod process;
 mod pump;
 mod registry;
 mod render;
+mod video;
 mod view;
 
 pub use autofill::{FilledFields, LoginFill};
@@ -36,4 +37,5 @@ pub use filter::{ContentFilter, DocumentRules, ResourceKind, ResourceRequest};
 pub use input::{EditCommand, KeyInput, KeyInputKind, Modifiers, MouseButton, ZoomCommand};
 pub use process::run_subprocess;
 pub use render::{GpuContext, GpuError, SurfaceFrame, prune_unusable_vulkan_drivers};
+pub use video::{FrameVideos, PageVideo};
 pub use view::{BrowserView, CertificateInfo, SecurityInfo, ViewGeometry, ViewId, ViewRect};

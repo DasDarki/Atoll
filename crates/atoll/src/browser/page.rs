@@ -32,6 +32,7 @@ impl Browser {
             state.set_loading(false);
             state.set_crashed(false);
             state.set_login_form(false);
+            state.set_page_video(false);
             state.set_status_text("".into());
             state.set_find_visible(false);
             state.set_page_frame(Image::default());
@@ -63,6 +64,7 @@ impl Browser {
         state.set_progress(entry.map_or(0.0, |entry| entry.progress as f32));
         state.set_crashed(entry.is_some_and(|entry| entry.crashed));
         state.set_login_form(entry.is_some_and(|entry| entry.login_form));
+        state.set_page_video(entry.is_some_and(|entry| entry.video));
         state.set_status_text(entry.map_or("", |entry| entry.status.as_str()).into());
         state.set_cursor(web_cursor(
             entry.map_or(CursorKind::Default, |entry| entry.cursor),

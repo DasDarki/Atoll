@@ -218,6 +218,7 @@ impl Browser {
             Shortcut::Home => self.go_home(),
             Shortcut::Downloads => self.open_downloads(),
             Shortcut::Passwords => self.show_passwords(),
+            Shortcut::DownloadVideo => self.download_video(),
         }
     }
 }

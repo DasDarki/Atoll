@@ -18,6 +18,7 @@ use crate::events::{CursorKind, EngineEvent};
 use crate::filter;
 use crate::passkeys;
 use crate::registry::{self, Runtime};
+use crate::video;
 use crate::view::{ViewId, ViewState};
 
 const FAVICON_SIZE: f32 = 16.0;
@@ -114,6 +115,13 @@ wrap_display_handler! {
                 registry::emit(EngineEvent::LoginFilled {
                     view: self.view,
                     fields,
+                });
+                return 1;
+            }
+            if let Some(frame) = video::parse_video_report(&message) {
+                registry::emit(EngineEvent::VideosFound {
+                    view: self.view,
+                    frame,
                 });
                 return 1;
             }

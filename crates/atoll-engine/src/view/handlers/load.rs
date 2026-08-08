@@ -90,4 +90,7 @@ pub(crate) fn emit_activity(runtime: &Runtime, view: ViewId, change: ActivityCha
     if let Some(present) = change.login_form {
         runtime.emit(EngineEvent::LoginFormChanged { view, present });
     }
+    if let Some(present) = change.video {
+        runtime.emit(EngineEvent::VideoChanged { view, present });
+    }
 }

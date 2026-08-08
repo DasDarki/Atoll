@@ -7,7 +7,7 @@ mod window;
 mod workspace;
 
 pub use bookmark::Bookmark;
-pub use download::{Download, DownloadStatus};
+pub use download::{Download, DownloadKind, DownloadStatus};
 pub use island::{Island, IslandColor};
 pub use tab::Tab;
 pub use visited_page::VisitedPage;

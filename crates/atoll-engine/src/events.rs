@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use crate::autofill::FilledFields;
+use crate::video::FrameVideos;
 use crate::view::ViewId;
 
 /// Identifies a pending request that must be answered through the [`crate::Engine`].
@@ -130,6 +131,16 @@ pub enum EngineEvent {
     },
     /// The page asked for a passkey or security key, which was refused.
     PasskeyRefused(ViewId),
+    /// A video of a noticeable size appeared on the page or the last one disappeared.
+    VideoChanged {
+        view: ViewId,
+        present: bool,
+    },
+    /// A frame answered [`crate::BrowserView::find_videos`].
+    VideosFound {
+        view: ViewId,
+        frame: FrameVideos,
+    },
 }
 
 impl EngineEvent {
@@ -163,7 +174,9 @@ impl EngineEvent {
             | EngineEvent::InspectElement { view, .. }
             | EngineEvent::PageBusy { view, .. }
             | EngineEvent::LoginFormChanged { view, .. }
-            | EngineEvent::LoginFilled { view, .. } => Some(*view),
+            | EngineEvent::LoginFilled { view, .. }
+            | EngineEvent::VideoChanged { view, .. }
+            | EngineEvent::VideosFound { view, .. } => Some(*view),
             EngineEvent::PopupOpened { opener, .. } => Some(*opener),
             EngineEvent::Download(_)
             | EngineEvent::CopyText(_)

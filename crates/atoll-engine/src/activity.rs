@@ -1,5 +1,6 @@
 //! What a page is doing: whether it is busy, playing media or holding input the user has not
-//! sent yet, so it should not be unloaded to save memory, and whether it shows a login form.
+//! sent yet, so it should not be unloaded to save memory, and whether it shows a login form or a
+//! video.
 
 use std::collections::HashMap;
 
@@ -21,6 +22,7 @@ pub(crate) struct FrameActivity {
     pub(crate) media: bool,
     pub(crate) input: bool,
     pub(crate) login: bool,
+    pub(crate) video: bool,
 }
 
 /// How a report changed the page, `None` where nothing changed.
@@ -28,6 +30,7 @@ pub(crate) struct FrameActivity {
 pub(crate) struct ActivityChange {
     pub(crate) busy: Option<bool>,
     pub(crate) login_form: Option<bool>,
+    pub(crate) video: Option<bool>,
 }
 
 impl PageActivity {
@@ -39,9 +42,13 @@ impl PageActivity {
         self.frames.values().any(|frame| frame.login)
     }
 
+    pub(crate) fn has_video(&self) -> bool {
+        self.frames.values().any(|frame| frame.video)
+    }
+
     /// Applies the report of a frame.
     pub(crate) fn update(&mut self, frame: String, activity: FrameActivity) -> ActivityChange {
-        let before = (self.is_busy(), self.has_login_form());
+        let before = self.summary();
         if self.frames.len() < MAX_FRAMES || self.frames.contains_key(&frame) {
             self.frames.insert(frame, activity);
         }
@@ -50,17 +57,22 @@ impl PageActivity {
 
     /// Forgets every frame when the page navigates.
     pub(crate) fn reset(&mut self) -> ActivityChange {
-        let before = (self.is_busy(), self.has_login_form());
+        let before = self.summary();
         self.frames.clear();
         self.change_since(before)
     }
 
-    fn change_since(&self, (was_busy, had_login_form): (bool, bool)) -> ActivityChange {
-        let busy = self.is_busy();
-        let login_form = self.has_login_form();
+    fn summary(&self) -> [bool; 3] {
+        [self.is_busy(), self.has_login_form(), self.has_video()]
+    }
+
+    fn change_since(&self, before: [bool; 3]) -> ActivityChange {
+        let [busy, login_form, video] = self.summary();
+        let changed = |now: bool, then: bool| (now != then).then_some(now);
         ActivityChange {
-            busy: (busy != was_busy).then_some(busy),
-            login_form: (login_form != had_login_form).then_some(login_form),
+            busy: changed(busy, before[0]),
+            login_form: changed(login_form, before[1]),
+            video: changed(video, before[2]),
         }
     }
 }
@@ -68,13 +80,14 @@ impl PageActivity {
 /// The frame and its activity from a report of the observer, `None` for other messages.
 pub(crate) fn parse_page_report(message: &str) -> Option<(String, FrameActivity)> {
     let payload = message.strip_prefix(PAGE_REPORT_PREFIX)?;
-    let (frame, media, input, login) = serde_json::from_str(payload).ok()?;
+    let (frame, media, input, login, video) = serde_json::from_str(payload).ok()?;
     Some((
         frame,
         FrameActivity {
             media,
             input,
             login,
+            video,
         },
     ))
 }
@@ -88,7 +101,8 @@ pub(crate) fn page_observer_script() -> String {
 }
 
 /// Reports whether audible media plays, whether form fields differ from their initial values and
-/// whether the frame shows a password field, also inside open shadow roots.
+/// whether the frame shows a password field or a video of a noticeable size, also inside open
+/// shadow roots.
 const PAGE_OBSERVER: &str = r#"(() => {
   const prefix = __PREFIX__;
   const frame = Math.random().toString(36).slice(2);
@@ -96,7 +110,8 @@ const PAGE_OBSERVER: &str = r#"(() => {
   let input = false;
   let edited = false;
   let login = false;
-  const report = () => console.log(prefix + JSON.stringify([frame, media, input, login]));
+  let video = false;
+  const report = () => console.log(prefix + JSON.stringify([frame, media, input, login, video]));
   const audible = (element) => !element.paused && !element.ended && !element.muted && element.volume > 0;
   const updateMedia = () => {
     const playing = [...document.querySelectorAll("video, audio")].some(audible);
@@ -118,29 +133,36 @@ const PAGE_OBSERVER: &str = r#"(() => {
       report();
     }
   };
-  const hasPassword = (root) => {
-    if (root.querySelector("input[type=password]")) return true;
+  const noticeable = (element) => {
+    const box = element.getBoundingClientRect();
+    return box.width >= 160 && box.height >= 90;
+  };
+  const inspect = (root, found) => {
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
     for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-      if (node.shadowRoot && hasPassword(node.shadowRoot)) return true;
+      if (node.tagName === "INPUT" && node.type === "password") found.login = true;
+      if (node.tagName === "VIDEO" && !found.video && noticeable(node)) found.video = true;
+      if (node.shadowRoot) inspect(node.shadowRoot, found);
     }
-    return false;
+    return found;
   };
-  let loginCheck = 0;
-  const updateLogin = () => {
-    loginCheck = 0;
-    const present = hasPassword(document);
-    if (present !== login) {
-      login = present;
+  let pageCheck = 0;
+  const updatePage = () => {
+    pageCheck = 0;
+    const found = inspect(document, { login: false, video: false });
+    if (found.login !== login || found.video !== video) {
+      login = found.login;
+      video = found.video;
       report();
     }
   };
-  const scheduleLogin = () => {
-    if (!loginCheck) loginCheck = setTimeout(updateLogin, 400);
+  const schedulePage = () => {
+    if (!pageCheck) pageCheck = setTimeout(updatePage, 400);
   };
   for (const type of ["playing", "pause", "ended", "volumechange", "emptied"]) {
     document.addEventListener(type, updateMedia, true);
   }
+  document.addEventListener("loadedmetadata", schedulePage, true);
   document.addEventListener("input", updateInput, true);
   document.addEventListener("change", updateInput, true);
   document.addEventListener("submit", () => {
@@ -150,9 +172,12 @@ const PAGE_OBSERVER: &str = r#"(() => {
       report();
     }
   }, true);
-  document.addEventListener("DOMContentLoaded", updateLogin);
-  document.addEventListener("focusin", updateLogin, true);
-  new MutationObserver(scheduleLogin).observe(document, { childList: true, subtree: true });
+  document.addEventListener("DOMContentLoaded", updatePage);
+  window.addEventListener("load", schedulePage);
+  document.addEventListener("focusin", updatePage, true);
+  document.addEventListener("click", schedulePage, true);
+  new MutationObserver(schedulePage).observe(document, { childList: true, subtree: true });
+  schedulePage();
 })();
 "#;
 
@@ -164,12 +189,13 @@ mod tests {
         media: false,
         input: false,
         login: false,
+        video: false,
     };
 
     fn busy(busy: bool) -> ActivityChange {
         ActivityChange {
             busy: Some(busy),
-            login_form: None,
+            ..ActivityChange::default()
         }
     }
 
@@ -207,8 +233,8 @@ mod tests {
         assert_eq!(
             activity.update("sso".to_owned(), login),
             ActivityChange {
-                busy: None,
                 login_form: Some(true),
+                ..ActivityChange::default()
             }
         );
         assert!(activity.has_login_form());
@@ -216,19 +242,49 @@ mod tests {
     }
 
     #[test]
-    fn navigating_forgets_every_frame() {
+    fn a_video_in_any_frame_counts() {
         let mut activity = PageActivity::default();
-        let both = FrameActivity {
-            media: true,
-            login: true,
+        let video = FrameActivity {
+            video: true,
             ..IDLE
         };
-        activity.update("main".to_owned(), both);
+        assert_eq!(
+            activity.update("player".to_owned(), video),
+            ActivityChange {
+                video: Some(true),
+                ..ActivityChange::default()
+            }
+        );
+        assert_eq!(
+            activity.update("main".to_owned(), IDLE),
+            ActivityChange::default()
+        );
+        assert!(activity.has_video());
+        assert_eq!(
+            activity.update("player".to_owned(), IDLE),
+            ActivityChange {
+                video: Some(false),
+                ..ActivityChange::default()
+            }
+        );
+    }
+
+    #[test]
+    fn navigating_forgets_every_frame() {
+        let mut activity = PageActivity::default();
+        let everything = FrameActivity {
+            media: true,
+            input: false,
+            login: true,
+            video: true,
+        };
+        activity.update("main".to_owned(), everything);
         assert_eq!(
             activity.reset(),
             ActivityChange {
                 busy: Some(false),
                 login_form: Some(false),
+                video: Some(false),
             }
         );
         assert!(!activity.is_busy());
@@ -254,7 +310,7 @@ mod tests {
 
     #[test]
     fn page_reports_are_parsed() {
-        let message = format!(r#"{PAGE_REPORT_PREFIX}["k3j", true, false, true]"#);
+        let message = format!(r#"{PAGE_REPORT_PREFIX}["k3j", true, false, true, true]"#);
         assert_eq!(
             parse_page_report(&message),
             Some((
@@ -263,6 +319,7 @@ mod tests {
                     media: true,
                     input: false,
                     login: true,
+                    video: true,
                 }
             ))
         );

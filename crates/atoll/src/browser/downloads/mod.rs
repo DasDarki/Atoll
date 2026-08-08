@@ -3,21 +3,34 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 use atoll_core::address::display_host;
-use atoll_core::{Download, DownloadId, DownloadStatus};
+use atoll_core::{Download, DownloadId, DownloadKind, DownloadStatus};
 use atoll_engine::DownloadState;
 use atoll_storage::prelude::*;
 use atoll_storage::{DownloadProgress, NewDownload};
+use atoll_video::Canceller;
 use slint::{ComponentHandle, ModelRc, VecModel};
 
 use super::Browser;
 use crate::platform::opener;
 use crate::ui::{BrowserState, DownloadItem, DownloadItemStatus, OverlayState};
 
+mod streams;
+mod videos;
+
+pub use videos::VideoSearch;
+
 const LISTED_DOWNLOADS: usize = 50;
 
-/// What only the engine knows about a running download.
+/// Who runs a download.
+#[derive(Clone)]
+enum Control {
+    Engine(u32),
+    Video(Canceller),
+}
+
+/// The live state of a running download.
 struct Transfer {
-    engine_id: u32,
+    control: Control,
     speed: i64,
     paused: bool,
 }
@@ -85,7 +98,7 @@ impl Browser {
                 downloads.transfers.insert(
                     id,
                     Transfer {
-                        engine_id: state.id,
+                        control: Control::Engine(state.id),
                         speed: state.speed,
                         paused: state.paused,
                     },
@@ -156,6 +169,7 @@ impl Browser {
             file_name: &state.file_name,
             total_bytes: state.total_bytes,
             started_at: now,
+            kind: DownloadKind::File,
         });
         let id = match created {
             Ok(id) => id,
@@ -178,6 +192,7 @@ impl Browser {
                     status: DownloadStatus::Running,
                     started_at: now,
                     finished_at: None,
+                    kind: DownloadKind::File,
                 },
             );
             downloads.by_engine_id.insert(state.id, id);
@@ -261,16 +276,16 @@ impl Browser {
 
     /// Buttons of an entry in the download list.
     pub fn download_action(&self, id: DownloadId, action: &str) {
-        let (entry, engine_id) = {
+        let (entry, control) = {
             let downloads = self.downloads.borrow();
             let Some(entry) = downloads.entries.iter().find(|entry| entry.id == id) else {
                 return;
             };
-            let engine_id = downloads
+            let control = downloads
                 .transfers
                 .get(&id)
-                .map(|transfer| transfer.engine_id);
-            (entry.clone(), engine_id)
+                .map(|transfer| transfer.control.clone());
+            (entry.clone(), control)
         };
         match action {
             "open" => match entry.path.as_deref().map(Path::new) {
@@ -286,17 +301,23 @@ impl Browser {
                     opener::show_in_folder(PathBuf::from(path));
                 }
             }
-            "cancel" | "pause" | "resume" => {
-                if let (Some(engine_id), Some(engine)) = (engine_id, self.engine.borrow().as_ref())
-                {
-                    match action {
-                        "cancel" => engine.cancel_download(engine_id),
-                        "pause" => engine.pause_download(engine_id),
-                        _ => engine.resume_download(engine_id),
+            "cancel" | "pause" | "resume" => match control {
+                Some(Control::Engine(engine_id)) => {
+                    if let Some(engine) = self.engine.borrow().as_ref() {
+                        match action {
+                            "cancel" => engine.cancel_download(engine_id),
+                            "pause" => engine.pause_download(engine_id),
+                            _ => engine.resume_download(engine_id),
+                        }
                     }
                 }
-            }
-            "retry" => self.retry_download(&entry.url),
+                Some(Control::Video(canceller)) if action == "cancel" => canceller.cancel(),
+                Some(Control::Video(_)) | None => {}
+            },
+            "retry" => match entry.kind {
+                DownloadKind::File => self.retry_download(&entry.url),
+                DownloadKind::Video => self.retry_stream(&entry),
+            },
             "remove" => {
                 let result = self.storage.remove_download(id);
                 self.report("Download entfernen", result);
@@ -354,6 +375,7 @@ fn download_item(entry: &Download, transfer: Option<&Transfer>) -> DownloadItem 
             .into(),
         progress,
         status,
+        can_pause: transfer.is_some_and(|transfer| matches!(transfer.control, Control::Engine(_))),
     }
 }
 
@@ -460,6 +482,7 @@ mod tests {
             status,
             started_at: Timestamp(0),
             finished_at: None,
+            kind: DownloadKind::File,
         }
     }
 
@@ -492,7 +515,7 @@ mod tests {
             "2,0 KB · example.org"
         );
         let paused = Transfer {
-            engine_id: 1,
+            control: Control::Engine(1),
             speed: 0,
             paused: true,
         };

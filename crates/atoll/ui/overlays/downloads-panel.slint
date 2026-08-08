@@ -101,7 +101,7 @@ component DownloadRow inherits Rectangle {
             }
         }
 
-        if root.item.status == DownloadItemStatus.running : IconButton {
+        if root.item.status == DownloadItemStatus.running && root.item.can-pause : IconButton {
             width: 26px;
             height: 26px;
             y: (parent.height - self.height) / 2;

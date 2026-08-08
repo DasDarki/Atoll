@@ -63,6 +63,7 @@ enum Command {
     ToggleBookmarksBarAutoHide,
     SearchEngine(usize),
     FillPassword,
+    DownloadVideo,
     ToggleSiteAdblock,
     ToggleAdblock,
     UpdateFilterLists,
@@ -588,6 +589,12 @@ impl Browser {
                 "Strg+Umschalt+L",
                 "passwort login zugangsdaten ausfüllen",
             ));
+            commands.push((
+                Command::DownloadVideo,
+                "Video herunterladen".to_owned(),
+                "Strg+Umschalt+S",
+                "video speichern download film clip",
+            ));
         }
         commands.push((
             Command::ToggleAdblock,
@@ -754,6 +761,7 @@ impl Browser {
                 self.set_bookmarks_bar_auto_hide(auto_hide);
             }
             Command::FillPassword => self.show_passwords(),
+            Command::DownloadVideo => self.download_video(),
             Command::ToggleSiteAdblock => self.toggle_site_adblock(),
             Command::ToggleAdblock => {
                 let enabled = !self.preferences.borrow().adblock_enabled;

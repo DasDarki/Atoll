@@ -8,7 +8,7 @@ pub mod time;
 pub use ids::{BookmarkId, DownloadId, FaviconId, IslandId, TabId, WindowId, WorkspaceId};
 pub use lifecycle::{LifecycleCommand, TabLifecycle, TabState};
 pub use model::{
-    Bookmark, Download, DownloadStatus, Island, IslandColor, Tab, VisitedPage, WindowPlacement,
-    Workspace,
+    Bookmark, Download, DownloadKind, DownloadStatus, Island, IslandColor, Tab, VisitedPage,
+    WindowPlacement, Workspace,
 };
 pub use time::Timestamp;

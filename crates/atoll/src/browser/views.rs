@@ -18,6 +18,8 @@ pub struct TabView {
     pub dev_tools: Option<DevTools>,
     /// Whether the page shows a password field.
     pub login_form: bool,
+    /// Whether the page shows a video of a noticeable size.
+    pub video: bool,
 }
 
 impl TabView {
@@ -33,6 +35,7 @@ impl TabView {
             expected_address: None,
             dev_tools: None,
             login_form: false,
+            video: false,
         }
     }
 }

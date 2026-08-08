@@ -1,4 +1,4 @@
-use atoll_core::{DownloadStatus, Timestamp};
+use atoll_core::{DownloadKind, DownloadStatus, Timestamp};
 use atoll_storage::prelude::*;
 use atoll_storage::{DownloadProgress, NewDownload, Storage};
 
@@ -14,6 +14,7 @@ fn start(storage: &Storage, name: &str, at: i64) -> atoll_core::DownloadId {
             file_name: name,
             total_bytes: 100,
             started_at: Timestamp(at),
+            kind: DownloadKind::File,
         })
         .unwrap()
 }
@@ -106,4 +107,25 @@ fn clearing_keeps_running_downloads_and_restarts_interrupt_them() {
 
     storage.remove_download(running).unwrap();
     assert!(storage.downloads(10).unwrap().is_empty());
+}
+
+#[test]
+fn video_downloads_keep_their_kind() {
+    let storage = storage();
+    let file = start(&storage, "file.zip", 1);
+    let video = storage
+        .create_download(NewDownload {
+            url: "https://videos.example/watch?v=1",
+            path: None,
+            file_name: "Katze.mp4",
+            total_bytes: 0,
+            started_at: Timestamp(2),
+            kind: DownloadKind::Video,
+        })
+        .unwrap();
+    let downloads = storage.downloads(10).unwrap();
+    assert_eq!(downloads[0].id, video);
+    assert_eq!(downloads[0].kind, DownloadKind::Video);
+    assert_eq!(downloads[1].id, file);
+    assert_eq!(downloads[1].kind, DownloadKind::File);
 }

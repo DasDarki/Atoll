@@ -15,6 +15,7 @@ atoll-transfer = { path = "crates/atoll-transfer" }
 atoll-engine = { path = "crates/atoll-engine" }
 atoll-adblock = { path = "crates/atoll-adblock" }
 atoll-onepassword = { path = "crates/atoll-onepassword" }
+atoll-video = { path = "crates/atoll-video" }
 adblock = { version = "0.13", default-features = false, features = ["embedded-domain-resolver", "full-regex-handling"] }
 
 ash = "0.38"

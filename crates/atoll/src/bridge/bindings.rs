@@ -140,6 +140,8 @@ fn connect_browser(window: &AppWindow, browser: &Rc<Browser>) {
         .show_site_info());
     on!(state, on_show_passwords, browser, |target| target
         .show_passwords());
+    on!(state, on_download_video, browser, |target| target
+        .download_video());
     on!(state, on_window_drag, browser, |target| target
         .window_drag());
     on!(state, on_window_control, browser, |target, action| target

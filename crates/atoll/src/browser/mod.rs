@@ -40,6 +40,7 @@ use atoll_core::{TabLifecycle, Timestamp, WindowId, WorkspaceId};
 use atoll_engine::{Engine, GpuContext, RequestId, ViewGeometry, ViewId};
 use atoll_storage::Storage;
 use atoll_storage::prelude::*;
+use atoll_video::YtDlp;
 use slint::ComponentHandle;
 
 use crate::input::pointer::ClickTracker;
@@ -51,7 +52,7 @@ use adblock::Adblock;
 use bookmarks::BookmarkState;
 use clipboard::ClipboardSync;
 use dev_tools::DevToolsPresentation;
-use downloads::Downloads;
+use downloads::{Downloads, VideoSearch};
 use favicons::FaviconCache;
 use memory::MemoryWatcher;
 use overlays::DialogQueue;
@@ -89,6 +90,7 @@ struct Shared {
     adblock: Rc<Adblock>,
     memory: Rc<MemoryWatcher>,
     vault: Rc<PasswordVault>,
+    yt_dlp: YtDlp,
 }
 
 impl Shared {
@@ -116,6 +118,9 @@ impl Shared {
             adblock: Rc::new(adblock),
             memory: Rc::default(),
             vault: Rc::new(PasswordVault::from_environment()),
+            yt_dlp: std::env::var_os("ATOLL_YTDLP")
+                .map(YtDlp::new)
+                .unwrap_or_default(),
         }
     }
 }
@@ -156,6 +161,8 @@ pub struct Browser {
     vault: Rc<PasswordVault>,
     passwords: RefCell<PasswordPopup>,
     pending_fill: RefCell<Option<PendingFill>>,
+    yt_dlp: YtDlp,
+    video_search: RefCell<Option<VideoSearch>>,
     suggestions: RefCell<SuggestionState>,
     palette: RefCell<PaletteState>,
     bookmarks: RefCell<BookmarkState>,
@@ -211,6 +218,8 @@ impl Browser {
             vault: shared.vault.clone(),
             passwords: RefCell::default(),
             pending_fill: RefCell::default(),
+            yt_dlp: shared.yt_dlp.clone(),
+            video_search: RefCell::default(),
             suggestions: RefCell::default(),
             palette: RefCell::default(),
             bookmarks: RefCell::default(),

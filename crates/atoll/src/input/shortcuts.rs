@@ -34,6 +34,7 @@ pub enum Shortcut {
     Home,
     Downloads,
     Passwords,
+    DownloadVideo,
 }
 
 impl Shortcut {
@@ -117,6 +118,7 @@ pub fn detect(event: &KeyEvent, modifiers: ModifiersState) -> Option<Shortcut> {
             (",", false) => Shortcut::Settings,
             ("j", false) => Shortcut::Downloads,
             ("l", true) => Shortcut::Passwords,
+            ("s", true) => Shortcut::DownloadVideo,
             ("+" | "=", _) => Shortcut::ZoomIn,
             ("-", _) => Shortcut::ZoomOut,
             ("0", false) => Shortcut::ZoomReset,

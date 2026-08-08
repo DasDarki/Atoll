@@ -32,6 +32,33 @@ impl DownloadStatus {
     }
 }
 
+/// How a download is fetched.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum DownloadKind {
+    /// A file the browser engine downloads.
+    #[default]
+    File,
+    /// A video put together from a stream by yt-dlp, `url` is what yt-dlp was given.
+    Video,
+}
+
+impl DownloadKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            DownloadKind::File => "file",
+            DownloadKind::Video => "video",
+        }
+    }
+
+    pub fn parse(text: &str) -> Option<Self> {
+        match text {
+            "file" => Some(DownloadKind::File),
+            "video" => Some(DownloadKind::Video),
+            _ => None,
+        }
+    }
+}
+
 /// An entry of the download list. Finished downloads stay until the user removes them.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Download {
@@ -46,4 +73,5 @@ pub struct Download {
     pub status: DownloadStatus,
     pub started_at: Timestamp,
     pub finished_at: Option<Timestamp>,
+    pub kind: DownloadKind,
 }

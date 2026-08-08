@@ -496,6 +496,7 @@ dependencies = [
  "atoll-onepassword",
  "atoll-storage",
  "atoll-transfer",
+ "atoll-video",
  "directories",
  "image",
  "rfd",
@@ -535,6 +536,7 @@ dependencies = [
  "getrandom 0.3.4",
  "libc",
  "pollster 1.0.1",
+ "serde",
  "serde_json",
  "thiserror 2.0.20",
  "tracing",
@@ -567,6 +569,14 @@ version = "0.1.0"
 dependencies = [
  "atoll-core",
  "url",
+]
+
+[[package]]
+name = "atoll-video"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "thiserror 2.0.20",
 ]
 
 [[package]]

@@ -48,10 +48,16 @@ saved tabs therefore cost nothing at startup.
 - **1Password**: on pages with a login form a key appears in the address bar. It, `Ctrl+Shift+L`
   and the command palette list the 1Password logins saved for the site and fill the chosen one
   into every frame of that site, including fields inside shadow roots, and a message says what
-  was filled. A one-time password is copied to the clipboard. Logins of other sites can be searched and
-  used after a confirmation. Atoll talks to the 1Password CLI (`op`, package `1password-cli`),
-  which asks the 1Password app to unlock, so enable "Integrate with 1Password CLI" in the app's
-  developer settings.
+  was filled. A one-time password is copied to the clipboard. Logins of other sites can be
+  searched and used after a confirmation. Atoll talks to the 1Password CLI (`op`, package
+  `1password-cli`), which asks the 1Password app to unlock, so enable "Integrate with 1Password
+  CLI" in the app's developer settings.
+- **Video download**: on pages with a video a download button appears in the address bar. It,
+  `Ctrl+Shift+S` and the command palette save the video that plays, else the largest one. Plain
+  video files go through the download list like any file. Streams that pages put together from
+  pieces (HLS, DASH, for example on Reddit or YouTube) are downloaded by `yt-dlp` (package
+  `yt-dlp`, merging with `ffmpeg`) and show up in the same list with progress and cancel.
+  Copy-protected videos cannot be saved.
 - **Site information**: the symbol in the address bar shows whether the connection is secure,
   the certificate and the zoom level, and deletes cookies and stored data of the site.
 - **Developer tools** docked below or next to the page, see *Architecture*.
@@ -86,6 +92,8 @@ The build copies the CEF runtime files next to the binary in `target/<profile>/`
 | `ATOLL_SOFTWARE_RENDERING` | Receive page frames as CPU buffers instead of shared GPU textures |
 | `ATOLL_NO_SANDBOX` | Disable the Chromium sandbox |
 | `ATOLL_CHROMIUM_FLAGS` | Additional Chromium switches, e.g. `remote-debugging-port=9222` |
+| `ATOLL_OP` | The 1Password CLI to use instead of `op` from the search path |
+| `ATOLL_YTDLP` | The video downloader to use instead of `yt-dlp` from the search path |
 | `ATOLL_SYSTEM_KEYRING` | Keep the key for cookies in the system keyring (KWallet, GNOME Keyring or the Secret portal) instead of Chromium's own store. Chromium waits for the keyring before loading anything, so an unresponsive keyring service stops all pages from loading |
 | `RUST_LOG` | Log filter, e.g. `info,atoll=debug` |
 
@@ -116,6 +124,7 @@ storage).
 | `Ctrl+Shift+O` | Manage bookmarks |
 | `Ctrl+J` | Downloads |
 | `Ctrl+Shift+L` | Log in with 1Password |
+| `Ctrl+Shift+S` | Download the video of the page |
 | `Ctrl+,` | Settings |
 | `Alt+Home` | Open the start page |
 | `Ctrl+Plus`, `Ctrl+Minus`, `Ctrl+0` | Zoom |
@@ -152,6 +161,7 @@ crates/
   atoll-transfer   URL list parser, exporter and import planner
   atoll-adblock    ad blocking: filter lists, their updates and the per-site switch
   atoll-onepassword  logins from the 1Password CLI and matching them to sites
+  atoll-video      video downloads through yt-dlp with progress and cancel
   atoll-engine     CEF integration: off-screen browsers, rendering, input, clipboard bridge
   atoll            the application: Slint user interface and the controller
 ```
@@ -202,6 +212,7 @@ Known limitations:
 - Dragging files from other applications into a page is not supported yet.
 - Input method composition (for example for CJK input) is forwarded but not positioned.
 - 1Password fills logins in but does not offer to save new ones.
+- yt-dlp does not get Atoll's cookies, so streamed videos that need a login may fail to download.
 - Passkeys and security keys are not supported. Chromium asks for them with a window of its own
   that an off-screen browser cannot show, so the Web Authentication API is hidden and requests are
   refused, which makes pages offer another way to sign in.

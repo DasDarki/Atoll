@@ -23,6 +23,7 @@ pub(crate) use state::{DragSession, ViewState};
 use crate::autofill::{self, LoginFill};
 use crate::input::{EditCommand, KeyInput, Modifiers, MouseButton, ZoomCommand};
 use crate::render::{SurfaceFrame, SurfaceLayer};
+use crate::video;
 
 /// Identifies a browser created by the engine.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -340,12 +341,27 @@ impl BrowserView {
     /// accepts. Each of them answers with [`crate::EngineEvent::LoginFilled`], the number of
     /// frames asked is returned.
     pub fn fill_login(&self, login: LoginFill<'_>, include: impl Fn(&str) -> bool) -> usize {
+        self.execute_in_frames(&autofill::fill_script(login), include)
+    }
+
+    /// Asks every web frame for its videos. Each of them answers with
+    /// [`crate::EngineEvent::VideosFound`], the number of frames asked is returned.
+    pub fn find_videos(&self) -> usize {
+        self.execute_in_frames(&video::find_videos_script(), |url| {
+            ["http://", "https://", "file://"]
+                .iter()
+                .any(|scheme| url.starts_with(scheme))
+        })
+    }
+
+    /// Runs `script` in every frame whose address `include` accepts and returns how many there
+    /// were.
+    fn execute_in_frames(&self, script: &str, include: impl Fn(&str) -> bool) -> usize {
         let Some(browser) = self.state.browser() else {
             return 0;
         };
         let mut identifiers = CefStringList::new();
         browser.frame_identifiers(Some(&mut identifiers));
-        let script = autofill::fill_script(login);
         let mut asked = 0;
         for identifier in identifiers {
             let Some(frame) = browser.frame_by_identifier(Some(&identifier.as_str().into())) else {
@@ -353,11 +369,7 @@ impl BrowserView {
             };
             let url = CefString::from(&frame.url()).to_string();
             if frame.is_valid() != 0 && include(&url) {
-                frame.execute_java_script(
-                    Some(&script.as_str().into()),
-                    Some(&url.as_str().into()),
-                    0,
-                );
+                frame.execute_java_script(Some(&script.into()), Some(&url.as_str().into()), 0);
                 asked += 1;
             }
         }

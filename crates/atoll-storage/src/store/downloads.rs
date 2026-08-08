@@ -1,11 +1,11 @@
-use atoll_core::{Download, DownloadId, DownloadStatus, Timestamp};
+use atoll_core::{Download, DownloadId, DownloadKind, DownloadStatus, Timestamp};
 use rusqlite::{Row, params};
 
 use crate::connection::Connected;
 use crate::error::StorageResult;
 
-const COLUMNS: &str =
-    "id, url, path, file_name, received_bytes, total_bytes, status, started_at, finished_at";
+const COLUMNS: &str = "id, url, path, file_name, received_bytes, total_bytes, status, started_at, \
+                       finished_at, kind";
 
 /// Parameters for [`DownloadStore::create_download`].
 #[derive(Debug, Clone)]
@@ -15,6 +15,7 @@ pub struct NewDownload<'a> {
     pub file_name: &'a str,
     pub total_bytes: i64,
     pub started_at: Timestamp,
+    pub kind: DownloadKind,
 }
 
 /// The latest known state of a download, see [`DownloadStore::update_download`].
@@ -34,8 +35,8 @@ pub trait DownloadStore: Connected {
     fn create_download(&self, download: NewDownload<'_>) -> StorageResult<DownloadId> {
         self.connection()
             .prepare_cached(
-                "INSERT INTO download (url, path, file_name, total_bytes, status, started_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                "INSERT INTO download (url, path, file_name, total_bytes, status, started_at, kind)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
             )?
             .execute(params![
                 download.url,
@@ -43,7 +44,8 @@ pub trait DownloadStore: Connected {
                 download.file_name,
                 download.total_bytes,
                 DownloadStatus::Running.as_str(),
-                download.started_at.0
+                download.started_at.0,
+                download.kind.as_str()
             ])?;
         Ok(DownloadId(self.connection().last_insert_rowid()))
     }
@@ -110,6 +112,7 @@ impl<T: Connected + ?Sized> DownloadStore for T {}
 
 fn download(row: &Row<'_>) -> rusqlite::Result<Download> {
     let status: String = row.get(6)?;
+    let kind: String = row.get(9)?;
     Ok(Download {
         id: DownloadId(row.get(0)?),
         url: row.get(1)?,
@@ -120,5 +123,6 @@ fn download(row: &Row<'_>) -> rusqlite::Result<Download> {
         status: DownloadStatus::parse(&status).unwrap_or(DownloadStatus::Interrupted),
         started_at: Timestamp(row.get(7)?),
         finished_at: row.get::<_, Option<i64>>(8)?.map(Timestamp),
+        kind: DownloadKind::parse(&kind).unwrap_or_default(),
     })
 }

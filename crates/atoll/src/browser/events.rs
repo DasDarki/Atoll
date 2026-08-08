@@ -247,6 +247,21 @@ impl Browser {
                     page: self.is_live_view(view),
                 }
             }
+            EngineEvent::VideoChanged { view, present } => {
+                if let Some(tab) = self.tab_of(view)
+                    && let Some(entry) = self.views.borrow_mut().get_mut(tab)
+                {
+                    entry.video = present;
+                }
+                Effect {
+                    sidebar: false,
+                    page: self.is_live_view(view),
+                }
+            }
+            EngineEvent::VideosFound { view, frame } => {
+                self.videos_found(view, frame);
+                Effect::NONE
+            }
             EngineEvent::LoginFilled { view, fields } => {
                 self.login_filled(view, fields);
                 Effect::NONE
