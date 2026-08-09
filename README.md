@@ -84,6 +84,14 @@ cargo run --release -p atoll
 The first build downloads the matching CEF distribution (about 1.8 GB extracted) into `.cef/`.
 The build copies the CEF runtime files next to the binary in `target/<profile>/`.
 
+### CEF with H.264 and AAC
+
+The prebuilt CEF cannot play H.264 and AAC, which many video sites use. `scripts/build-cef.sh`
+builds the same CEF version with these codecs and installs it into `.cef/`, keeping the prebuilt
+one for `scripts/build-cef.sh restore`. It needs about 100 GB in `~/.cache/atoll/cef-build`
+(`ATOLL_CEF_BUILD_DIR`) and takes a few hours. Afterwards rebuild Atoll. The codecs are covered
+by patents, so builds that contain them are for personal use and should not be distributed.
+
 ### Configuration
 
 | Variable | Effect |
@@ -217,7 +225,7 @@ Known limitations:
   that an off-screen browser cannot show, so the Web Authentication API is hidden and requests are
   refused, which makes pages offer another way to sign in.
 - The prebuilt CEF binaries contain no proprietary codecs, so H.264 and AAC media, which many
-  sites such as Reddit serve, do not play. VP8, VP9, AV1, Opus and Vorbis work.
+  sites such as Reddit serve, only play with a CEF built by `scripts/build-cef.sh`.
 - The ad blocker applies no scriptlets and none of the procedural cosmetic rules that need
   script, such as `:has-text()`.
 - Under Wayland, new windows are placed by the compositor, not at the point where a tab was
