@@ -1,0 +1,80 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Atoll",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/debug/atoll",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "cargo build",
+            "environment": [
+                {
+                    "name": "RUST_LOG",
+                    "value": "info,atoll=debug"
+                }
+            ],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "${env:HOME}/.cargo/bin/rust-gdb",
+            "setupCommands": [
+                {
+                    "description": "Show values as they are written",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Show Rust types readably, rust-gdb brings the printers along",
+                    "text": "python import gdb_lookup; gdb_lookup.register_printers(gdb)",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Chromium uses these signals itself, do not break on them",
+                    "text": "handle SIGSEGV SIGBUS SIGSYS SIGPIPE nostop noprint pass",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Stay in the browser process, the helper processes run on their own",
+                    "text": "set follow-fork-mode parent",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "Atoll (Release)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/release/atoll",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "cargo build --release",
+            "environment": [
+                {
+                    "name": "RUST_LOG",
+                    "value": "info"
+                }
+            ],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "${env:HOME}/.cargo/bin/rust-gdb",
+            "setupCommands": [
+                {
+                    "description": "Show Rust types readably, rust-gdb brings the printers along",
+                    "text": "python import gdb_lookup; gdb_lookup.register_printers(gdb)",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Chromium uses these signals itself, do not break on them",
+                    "text": "handle SIGSEGV SIGBUS SIGSYS SIGPIPE nostop noprint pass",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Stay in the browser process, the helper processes run on their own",
+                    "text": "set follow-fork-mode parent",
+                    "ignoreFailures": true
+                }
+            ]
+        }
+    ]
+}
