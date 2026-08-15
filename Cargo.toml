@@ -16,6 +16,7 @@ atoll-engine = { path = "crates/atoll-engine" }
 atoll-adblock = { path = "crates/atoll-adblock" }
 atoll-onepassword = { path = "crates/atoll-onepassword" }
 atoll-video = { path = "crates/atoll-video" }
+atoll-plugin = { path = "crates/atoll-plugin" }
 adblock = { version = "0.13", default-features = false, features = ["embedded-domain-resolver", "full-regex-handling"] }
 
 ash = "0.38"
@@ -26,6 +27,7 @@ anyhow = "1"
 arboard = { version = "3.6", features = ["wayland-data-control"] }
 image = { version = "0.25", default-features = false, features = ["png"] }
 libc = "0.2"
+mlua = { version = "0.12", features = ["luau", "vendored", "serialize"] }
 pollster = "1"
 rfd = "0.17"
 rusqlite = { version = "0.40", features = ["bundled"] }
@@ -42,6 +44,7 @@ slint = { version = "1.18", default-features = false, features = [
 ] }
 slint-build = "1.18"
 thiserror = "2"
+toml = { version = "0.9", default-features = false, features = ["parse", "serde"] }
 tracing = "0.1"
 ureq = "3.4"
 tungstenite = { version = "0.28", default-features = false, features = ["handshake"] }
