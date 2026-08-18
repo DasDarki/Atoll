@@ -75,6 +75,36 @@ impl Shortcut {
     }
 }
 
+/// The key combination of `event` written the way extensions write it in their manifest, for
+/// example `Ctrl+Shift+G`. Only combinations with Control or Alt are named, plain typing is not.
+pub fn describe(event: &KeyEvent, modifiers: ModifiersState) -> Option<String> {
+    if event.state != ElementState::Pressed {
+        return None;
+    }
+    let control = modifiers.control_key();
+    let alt = modifiers.alt_key();
+    if !control && !alt {
+        return None;
+    }
+    let key = match &event.logical_key {
+        Key::Named(named) => format!("{named:?}"),
+        Key::Character(_) => event.key_without_modifiers().to_text()?.to_uppercase(),
+        _ => return None,
+    };
+    let mut keys = Vec::new();
+    if control {
+        keys.push("Ctrl");
+    }
+    if modifiers.shift_key() {
+        keys.push("Shift");
+    }
+    if alt {
+        keys.push("Alt");
+    }
+    keys.push(&key);
+    Some(keys.join("+"))
+}
+
 pub fn detect(event: &KeyEvent, modifiers: ModifiersState) -> Option<Shortcut> {
     if event.state != ElementState::Pressed {
         return None;

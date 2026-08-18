@@ -494,6 +494,7 @@ dependencies = [
  "atoll-core",
  "atoll-engine",
  "atoll-onepassword",
+ "atoll-plugin",
  "atoll-storage",
  "atoll-transfer",
  "atoll-video",
@@ -505,6 +506,7 @@ dependencies = [
  "slint-build",
  "tracing",
  "tracing-subscriber",
+ "ureq",
  "url",
 ]
 

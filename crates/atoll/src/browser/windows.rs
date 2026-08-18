@@ -348,7 +348,7 @@ impl WindowManager {
         self.focused.set(Some(id));
     }
 
-    fn focused_browser(&self) -> Option<Rc<Browser>> {
+    pub(super) fn focused_browser(&self) -> Option<Rc<Browser>> {
         let browsers = self.browsers();
         let focused = self.focused.get();
         browsers
@@ -374,6 +374,10 @@ impl WindowManager {
     pub fn start_engine(&self, frame_rate: u32) {
         if self.is_engine_running() {
             return;
+        }
+        self.shared.plugins.attach(self.this.clone());
+        if let Some(browser) = self.focused_browser() {
+            browser.load_plugins();
         }
         let started = Instant::now();
         let preferences = self.shared.preferences.borrow().clone();

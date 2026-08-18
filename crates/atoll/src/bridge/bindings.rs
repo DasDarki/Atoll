@@ -349,6 +349,11 @@ fn connect_settings(window: &AppWindow, browser: &Rc<Browser>) {
         .update_filter_lists());
     on!(state, on_clear_adblock_exceptions, browser, |target| target
         .clear_adblock_exceptions());
+    on!(state, on_plugin_action, browser, |target, id, action| {
+        target.plugin_action(&id, &action)
+    });
+    on!(state, on_open_plugin_folder, browser, |target| target
+        .open_plugin_folder());
     on!(state, on_close, browser, |target| target.close_settings());
 }
 

@@ -82,6 +82,7 @@ impl Browser {
             }
             EngineEvent::MainFrameLoaded { view, .. } => {
                 self.restore_scroll(view);
+                self.page_loaded(view);
                 Effect::NONE
             }
             EngineEvent::CursorChanged { view, cursor } => {
@@ -137,7 +138,7 @@ impl Browser {
             } => {
                 let source = self.tab_of(view);
                 let activate = disposition != OpenDisposition::BackgroundTab;
-                self.open_in_new_tab(source, &url, activate);
+                let _ = self.open_in_new_tab(source, &url, activate);
                 Effect::NONE
             }
             EngineEvent::PopupOpened { view, opener, url } => {
@@ -285,7 +286,7 @@ impl Browser {
         }
     }
 
-    fn tab_of(&self, view: ViewId) -> Option<TabId> {
+    pub(super) fn tab_of(&self, view: ViewId) -> Option<TabId> {
         self.views.borrow().tab_of(view)
     }
 

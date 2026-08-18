@@ -57,6 +57,23 @@ impl Browser {
         });
     }
 
+    /// Shows a message with nothing to decide, for example a log.
+    pub(super) fn inform(&self, title: &str, message: &str) {
+        self.enqueue_dialog(Dialog {
+            data: DialogData {
+                kind: DialogKind::Alert,
+                title: title.into(),
+                message: message.into(),
+                input: "".into(),
+                accept_label: "Schließen".into(),
+                cancel_label: "".into(),
+                destructive: false,
+            },
+            on_close: Box::new(|_, _, _| {}),
+            origin: None,
+        });
+    }
+
     pub(super) fn confirm(
         &self,
         title: &str,

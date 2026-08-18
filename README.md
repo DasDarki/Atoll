@@ -58,6 +58,14 @@ saved tabs therefore cost nothing at startup.
   pieces (HLS, DASH, for example on Reddit or YouTube) are downloaded by `yt-dlp` (package
   `yt-dlp`, merging with `ffmpeg`) and show up in the same list with progress and cancel.
   Copy-protected videos cannot be saved.
+- **Extensions** written in Luau: a folder with a `plugin.toml` and Luau files under
+  `~/.local/share/Atoll/plugins/`. An extension reacts to events (pages, tabs, downloads), adds
+  commands with their own shortcuts to the palette, opens tabs, keeps its own data and fetches
+  from the sites it named. It only runs once the user allowed what its manifest asks for, and it
+  is listed in the settings with its permissions, its log and switches to reload or remove it.
+  Every extension runs in a sandboxed Luau state of its own with a memory limit and a time
+  budget; one that keeps running too long is switched off. Waiting for the browser (`atoll.sleep`,
+  `atoll.http`) pauses the script without blocking the window.
 - **Site information**: the symbol in the address bar shows whether the connection is secure,
   the certificate and the zoom level, and deletes cookies and stored data of the site.
 - **Developer tools** docked below or next to the page, see *Architecture*.
@@ -170,6 +178,7 @@ crates/
   atoll-adblock    ad blocking: filter lists, their updates and the per-site switch
   atoll-onepassword  logins from the 1Password CLI and matching them to sites
   atoll-video      video downloads through yt-dlp with progress and cancel
+  atoll-plugin     the Luau runtime for extensions, their manifests and permissions
   atoll-engine     CEF integration: off-screen browsers, rendering, input, clipboard bridge
   atoll            the application: Slint user interface and the controller
 ```
@@ -221,6 +230,7 @@ Known limitations:
 - Input method composition (for example for CJK input) is forwarded but not positioned.
 - 1Password fills logins in but does not offer to save new ones.
 - yt-dlp does not get Atoll's cookies, so streamed videos that need a login may fail to download.
+- Extensions cannot touch pages yet: styles, scripts and their own panels are the next step.
 - Passkeys and security keys are not supported. Chromium asks for them with a window of its own
   that an off-screen browser cannot show, so the Web Authentication API is hidden and requests are
   refused, which makes pages offer another way to sign in.

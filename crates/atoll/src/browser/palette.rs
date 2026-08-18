@@ -20,7 +20,7 @@ const MAX_BOOKMARKS: usize = 10;
 const MAX_PAGES: usize = 10;
 const HISTORY_SOURCE: usize = 2000;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 enum Command {
     NewWindow,
     CloseWindow,
@@ -67,6 +67,8 @@ enum Command {
     ToggleSiteAdblock,
     ToggleAdblock,
     UpdateFilterLists,
+    /// A command an extension added: the extension and the command inside it.
+    Plugin(String, String),
 }
 
 #[derive(Debug, Clone)]
@@ -327,15 +329,22 @@ impl Browser {
 
     fn command_results(&self, query: &str) -> (Vec<PaletteItem>, Vec<Entry>) {
         let matcher = Matcher::new(query);
-        let mut commands: Vec<(i64, PaletteItem, Entry)> = self
+        let entries: Vec<(Command, String, String, String)> = self
             .commands()
+            .into_iter()
+            .map(|(command, title, shortcut, keywords)| {
+                (command, title, shortcut.to_owned(), keywords.to_owned())
+            })
+            .chain(self.plugin_commands())
+            .collect();
+        let mut commands: Vec<(i64, PaletteItem, Entry)> = entries
             .into_iter()
             .enumerate()
             .filter_map(|(index, (command, title, shortcut, keywords))| {
                 let score = if matcher.is_empty() {
                     -(index as i64)
                 } else {
-                    matcher.score(&[&title, keywords])?
+                    matcher.score(&[&title, &keywords])?
                 };
                 Some((
                     score,
@@ -354,6 +363,22 @@ impl Browser {
             .into_iter()
             .map(|(_, item, entry)| (item, entry))
             .unzip()
+    }
+
+    /// The commands extensions added, in the order they registered them.
+    fn plugin_commands(&self) -> Vec<(Command, String, String, String)> {
+        self.plugins
+            .commands()
+            .into_iter()
+            .map(|(plugin, command)| {
+                (
+                    Command::Plugin(plugin, command.id),
+                    command.title,
+                    command.shortcut.unwrap_or_default(),
+                    "erweiterung plugin".to_owned(),
+                )
+            })
+            .collect()
     }
 
     fn commands(&self) -> Vec<(Command, String, &'static str, &'static str)> {
@@ -768,6 +793,7 @@ impl Browser {
                 self.set_adblock_enabled(enabled);
             }
             Command::UpdateFilterLists => self.update_filter_lists(),
+            Command::Plugin(plugin, command) => self.plugins.run_command(&plugin, &command),
             Command::SearchEngine(index) => {
                 if let Some(engine) = SEARCH_ENGINES.get(index) {
                     self.set_search_url(engine.url);

@@ -141,6 +141,12 @@ impl Browser {
             }
             return EventResult::PreventDefault;
         }
+        if !event.repeat
+            && let Some(keys) = shortcuts::describe(event, modifiers)
+            && self.run_plugin_shortcut(&keys)
+        {
+            return EventResult::PreventDefault;
+        }
         if !focus.page && !focus.dev_tools {
             return EventResult::Propagate;
         }

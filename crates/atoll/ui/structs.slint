@@ -163,6 +163,17 @@ export struct SiteInfoDetail {
 
 export enum DownloadItemStatus { running, paused, complete, missing, canceled, failed }
 
+export struct PluginItem {
+    id: string,
+    name: string,
+    version: string,
+    detail: string,
+    permissions: string,
+    status: string,
+    enabled: bool,
+    failed: bool,
+}
+
 export struct DownloadItem {
     id: int,
     file-name: string,

@@ -4,6 +4,7 @@ pub mod downloads;
 pub mod favicons;
 pub mod history;
 pub mod islands;
+pub mod plugins;
 pub mod settings;
 pub mod tabs;
 pub mod windows;

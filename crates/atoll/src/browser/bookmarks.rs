@@ -172,7 +172,7 @@ impl Browser {
         self.close_folder_popup();
         if new_tab {
             let active = self.session.borrow().active_tab;
-            self.open_in_new_tab(active, &url, false);
+            let _ = self.open_in_new_tab(active, &url, false);
         } else {
             self.navigate(&url);
         }
@@ -256,7 +256,7 @@ impl Browser {
                     .collect();
                 let active = self.session.borrow().active_tab;
                 for url in urls {
-                    self.open_in_new_tab(active, &url, false);
+                    let _ = self.open_in_new_tab(active, &url, false);
                 }
             }
             "edit" => self.edit_bookmark(id),

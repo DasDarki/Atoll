@@ -15,7 +15,7 @@ impl Browser {
         };
         let active = self.session.borrow().active_tab;
         let Some(tab) = active else {
-            self.open_in_new_tab(None, &url, true);
+            let _ = self.open_in_new_tab(None, &url, true);
             return;
         };
 

@@ -6,6 +6,7 @@ import { ActionButton, ButtonKind } from "../widgets/button.slint";
 import { TextField } from "../widgets/text-field.slint";
 import { FieldLabel } from "../widgets/field-label.slint";
 import { Toggle } from "../widgets/toggle.slint";
+import { PluginItem } from "../structs.slint";
 
 component SectionButton inherits Rectangle {
     in property <string> text;
@@ -131,6 +132,12 @@ export component SettingsPage inherits Modal {
                 icon: @image-url("../icons/shield.svg");
                 selected: SettingsState.section == 4;
                 clicked => { SettingsState.section = 4; }
+            }
+            SectionButton {
+                text: "Erweiterungen";
+                icon: @image-url("../icons/layers.svg");
+                selected: SettingsState.section == 5;
+                clicked => { SettingsState.section = 5; }
             }
         }
 
@@ -398,6 +405,64 @@ export component SettingsPage inherits Modal {
                         ActionButton {
                             text: "Löschen";
                             clicked => { SettingsState.clear-cookies(); }
+                        }
+                    }
+                }
+
+                if SettingsState.section == 5 : VerticalLayout {
+                    SectionTitle { text: "ERWEITERUNGEN"; }
+                    if SettingsState.plugins.length == 0 : SettingRow {
+                        title: "Keine Erweiterungen installiert";
+                        description: "Lege einen Ordner mit einer plugin.toml an, dann fragt Atoll beim nächsten Start nach.";
+                    }
+                    for plugin[index] in SettingsState.plugins : VerticalLayout {
+                        if index > 0 : Divider { }
+                        SettingRow {
+                            title: plugin.name + " " + plugin.version;
+                            description: plugin.detail;
+                            Toggle {
+                                checked: plugin.enabled;
+                                toggled => { SettingsState.plugin-action(plugin.id, self.checked ? "enable" : "disable"); }
+                            }
+                        }
+                        if plugin.permissions != "" : Text {
+                            text: plugin.permissions;
+                            color: Theme.text-faint;
+                            font-size: Theme.font-small + 1px;
+                            wrap: word-wrap;
+                        }
+                        if plugin.status != "" : Text {
+                            text: plugin.status;
+                            color: plugin.failed ? Theme.danger : Theme.text-faint;
+                            font-size: Theme.font-small + 1px;
+                            wrap: word-wrap;
+                        }
+                        HorizontalLayout {
+                            padding-top: 6px;
+                            padding-bottom: 6px;
+                            spacing: 8px;
+                            alignment: start;
+                            ActionButton {
+                                text: "Neu laden";
+                                clicked => { SettingsState.plugin-action(plugin.id, "reload"); }
+                            }
+                            ActionButton {
+                                text: "Protokoll";
+                                clicked => { SettingsState.plugin-action(plugin.id, "log"); }
+                            }
+                            ActionButton {
+                                text: "Entfernen";
+                                clicked => { SettingsState.plugin-action(plugin.id, "remove"); }
+                            }
+                        }
+                    }
+                    Divider { }
+                    SettingRow {
+                        title: "Ordner der Erweiterungen";
+                        description: SettingsState.plugin-directory;
+                        ActionButton {
+                            text: "Öffnen";
+                            clicked => { SettingsState.open-plugin-folder(); }
                         }
                     }
                 }

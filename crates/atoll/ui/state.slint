@@ -1,4 +1,4 @@
-import { WorkspaceItem, SidebarRow, IslandTarget, MenuItemData, ArchiveItem, ExportIslandItem, DialogData, WebCursor, WebPointer, WebScroll, SuggestionItem, Completion, PaletteItem, BookmarkItem, PageSecurity, SiteInfoDetail, DownloadItem, UploadFile, PasswordItem } from "structs.slint";
+import { WorkspaceItem, SidebarRow, IslandTarget, MenuItemData, ArchiveItem, ExportIslandItem, DialogData, WebCursor, WebPointer, WebScroll, SuggestionItem, Completion, PaletteItem, BookmarkItem, PageSecurity, SiteInfoDetail, DownloadItem, UploadFile, PasswordItem, PluginItem } from "structs.slint";
 
 export global SidebarState {
     in property <bool> visible: true;
@@ -295,6 +295,11 @@ export global SettingsState {
     in property <string> adblock-exceptions;
     callback update-filter-lists();
     callback clear-adblock-exceptions();
+
+    in property <[PluginItem]> plugins;
+    in property <string> plugin-directory;
+    callback plugin-action(string, string);
+    callback open-plugin-folder();
 
     callback changed(string);
     callback use-current-page();

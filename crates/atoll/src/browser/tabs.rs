@@ -17,6 +17,7 @@ pub struct ClosedTab {
 impl Browser {
     /// Shows `tab`, waking its engine instance if it was sleeping.
     pub fn activate_tab(&self, tab: TabId) {
+        let already_active = self.session.borrow().active_tab == Some(tab);
         let (blank, workspace) = {
             let mut session = self.session.borrow_mut();
             let Some(record) = session.tab(tab) else {
@@ -47,6 +48,9 @@ impl Browser {
         self.sync_page();
         self.refresh_sidebar();
         self.focus_content();
+        if !already_active {
+            self.plugin_tab_activated(tab);
+        }
     }
 
     /// Creates a tab in `island` at `index` and optionally shows it.
@@ -73,6 +77,7 @@ impl Browser {
                 } else {
                     self.refresh_sidebar();
                 }
+                self.plugin_tab_opened(tab.id);
                 Some(tab.id)
             }
             Err(error) => {
@@ -112,18 +117,20 @@ impl Browser {
     }
 
     /// Opens `url` in a new tab next to `source`.
-    pub(super) fn open_in_new_tab(&self, source: Option<TabId>, url: &str, activate: bool) {
+    pub(super) fn open_in_new_tab(
+        &self,
+        source: Option<TabId>,
+        url: &str,
+        activate: bool,
+    ) -> Option<TabId> {
         let target = source
             .and_then(|tab| self.insertion_point_after(tab))
             .or_else(|| self.insertion_point_after_active());
         let island = match target {
             Some((island, _)) => island,
-            None => match self.ensure_island() {
-                Some(island) => island,
-                None => return,
-            },
+            None => self.ensure_island()?,
         };
-        self.create_tab(island, target.map(|(_, index)| index), url, None, activate);
+        self.create_tab(island, target.map(|(_, index)| index), url, None, activate)
     }
 
     pub fn close_tab(&self, tab: TabId) {
@@ -171,6 +178,7 @@ impl Browser {
         } else {
             self.refresh_sidebar();
         }
+        self.plugin_tab_closed(tab);
     }
 
     pub fn close_active_tab(&self) {

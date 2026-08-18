@@ -144,6 +144,13 @@ impl Browser {
             }
         }
         if finished && was_running {
+            if status == DownloadStatus::Complete {
+                self.notify_plugins(atoll_plugin::Event::DownloadFinished {
+                    file_name: entry.file_name.clone(),
+                    url: entry.url.clone(),
+                    path: entry.path.clone(),
+                });
+            }
             match status {
                 DownloadStatus::Complete => {
                     self.show_toast(&format!("Download abgeschlossen: {}", entry.file_name))

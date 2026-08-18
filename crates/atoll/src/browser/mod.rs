@@ -18,6 +18,7 @@ mod overlays;
 mod page;
 mod palette;
 mod passwords;
+mod plugins;
 mod preferences;
 mod session;
 mod settings;
@@ -59,6 +60,7 @@ use overlays::DialogQueue;
 use page::PageState;
 use palette::PaletteState;
 use passwords::{PasswordPopup, PasswordVault, PendingFill};
+use plugins::Plugins;
 use preferences::Preferences;
 use session::Session;
 use sidebar::SidebarModels;
@@ -91,6 +93,7 @@ struct Shared {
     memory: Rc<MemoryWatcher>,
     vault: Rc<PasswordVault>,
     yt_dlp: YtDlp,
+    plugins: Rc<Plugins>,
 }
 
 impl Shared {
@@ -102,8 +105,10 @@ impl Shared {
             storage.adblock_allowed_sites().unwrap_or_default(),
             paths.adblock.clone(),
         );
+        let storage = Rc::new(storage);
+        let plugins = Plugins::new(storage.clone(), paths.plugins.clone());
         Self {
-            storage: Rc::new(storage),
+            storage,
             gpu,
             paths,
             preferences: Rc::new(RefCell::new(preferences)),
@@ -121,6 +126,7 @@ impl Shared {
             yt_dlp: std::env::var_os("ATOLL_YTDLP")
                 .map(YtDlp::new)
                 .unwrap_or_default(),
+            plugins,
         }
     }
 }
@@ -163,6 +169,7 @@ pub struct Browser {
     pending_fill: RefCell<Option<PendingFill>>,
     yt_dlp: YtDlp,
     video_search: RefCell<Option<VideoSearch>>,
+    plugins: Rc<Plugins>,
     suggestions: RefCell<SuggestionState>,
     palette: RefCell<PaletteState>,
     bookmarks: RefCell<BookmarkState>,
@@ -220,6 +227,7 @@ impl Browser {
             pending_fill: RefCell::default(),
             yt_dlp: shared.yt_dlp.clone(),
             video_search: RefCell::default(),
+            plugins: shared.plugins.clone(),
             suggestions: RefCell::default(),
             palette: RefCell::default(),
             bookmarks: RefCell::default(),
