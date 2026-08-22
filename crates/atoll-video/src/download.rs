@@ -265,17 +265,17 @@ fn workspace_name() -> String {
 }
 
 /// Stops yt-dlp together with the ffmpeg it may have started, which shares its process group.
+/// The group only exists once the child has set it up, so the child itself is stopped as well.
 #[cfg(unix)]
 fn stop(child: &mut Child) {
-    let Ok(group) = libc::pid_t::try_from(child.id()) else {
-        let _ = child.kill();
-        return;
-    };
-    // SAFETY: `kill` only sends a signal. The group was created for this child with
-    // `process_group(0)` and is still alive, because the child has not been waited for.
-    unsafe {
-        libc::kill(-group, libc::SIGTERM);
+    if let Ok(group) = libc::pid_t::try_from(child.id()) {
+        // SAFETY: `kill` only sends a signal, and the child has not been waited for, so its
+        // process id still belongs to it.
+        unsafe {
+            libc::kill(-group, libc::SIGTERM);
+        }
     }
+    let _ = child.kill();
 }
 
 #[cfg(not(unix))]
