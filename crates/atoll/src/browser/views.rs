@@ -89,6 +89,11 @@ impl ViewRegistry {
         self.views.get_mut(&tab)
     }
 
+    /// Every engine instance of this window, awake or not.
+    pub fn entries(&self) -> impl Iterator<Item = &TabView> {
+        self.views.values()
+    }
+
     pub fn contains(&self, tab: TabId) -> bool {
         self.views.contains_key(&tab)
     }

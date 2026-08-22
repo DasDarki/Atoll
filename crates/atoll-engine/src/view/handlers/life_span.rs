@@ -9,6 +9,7 @@ use cef::{
 use super::text;
 use crate::events::{EngineEvent, OpenDisposition};
 use crate::registry;
+use crate::view::bridge;
 use crate::view::{ViewId, build_client};
 
 wrap_life_span_handler! {
@@ -78,6 +79,8 @@ wrap_life_span_handler! {
                 if slot.is_none() {
                     *slot = Some(browser.clone());
                 }
+                drop(slot);
+                bridge::browser_ready(view);
             });
         }
 

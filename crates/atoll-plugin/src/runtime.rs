@@ -11,7 +11,10 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::time::{Duration, Instant};
 
-use mlua::{Function, Lua, LuaSerdeExt, MultiValue, Table, Thread, Value, VmState};
+use mlua::{Function, Lua, LuaSerdeExt, MultiValue, Table, Thread, VmState};
+use serde_json::Value;
+
+use mlua::Value as LuaValue;
 
 use crate::api::{self, Command, PluginContext};
 use crate::event::Event;
@@ -50,6 +53,16 @@ pub enum PluginError {
     Failed(String),
 }
 
+/// A message a page sent with `window.atoll.send`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PageMessage {
+    pub frame_url: String,
+    pub channel: String,
+    pub payload: Value,
+    /// What the browser needs to answer the page.
+    pub reply: u64,
+}
+
 /// What the browser shows about a loaded extension.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PluginInfo {
@@ -63,16 +76,39 @@ pub struct PluginInfo {
     pub failure: Option<String>,
 }
 
+/// Why a coroutine is running, which decides what happens when it finishes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Purpose {
+    /// Nothing is waiting for the result.
+    Plain,
+    /// A page is waiting for an answer.
+    Message(u64),
+}
+
+/// What driving a coroutine ended in.
+enum Outcome {
+    Finished(Option<Value>),
+    Waiting,
+    Failed(String),
+}
+
 struct Plugin {
     context: Rc<PluginContext>,
     lua: Lua,
     deadline: Rc<Cell<Option<Instant>>>,
-    waiting: HashMap<PendingId, Thread>,
+    waiting: HashMap<PendingId, (Thread, Purpose)>,
     strikes: u32,
     failure: Option<String>,
 }
 
 impl Plugin {
+    /// Whether the extension may put scripts into `url` and read what they find.
+    fn sees_page(&self, url: &str) -> bool {
+        self.failure.is_none()
+            && self.context.allows(Permission::Pages)
+            && self.context.manifest.covers(url)
+    }
+
     /// Whether the extension may see `event`.
     fn receives(&self, event: &Event) -> bool {
         if self.failure.is_some() || !self.context.allows(event.permission()) {
@@ -104,6 +140,8 @@ pub struct PluginRuntime {
     plugins: BTreeMap<PluginId, Plugin>,
     waiting: HashMap<PendingId, PluginId>,
     next_pending: Rc<Cell<u64>>,
+    /// How many handlers still have to finish before a page message is answered.
+    open_messages: HashMap<u64, usize>,
 }
 
 impl PluginRuntime {
@@ -113,6 +151,7 @@ impl PluginRuntime {
             plugins: BTreeMap::new(),
             waiting: HashMap::new(),
             next_pending: Rc::default(),
+            open_messages: HashMap::new(),
         }
     }
 
@@ -146,6 +185,7 @@ impl PluginRuntime {
             host: self.host.clone(),
             next_pending: self.next_pending.clone(),
             commands: RefCell::default(),
+            scripts: RefCell::default(),
         });
         let deadline = Rc::new(Cell::new(None));
         let lua = Self::prepare(&context, &deadline, directory)
@@ -167,7 +207,7 @@ impl PluginRuntime {
             .into_function()
             .and_then(|function| self.plugins[&id].lua.create_thread(function));
         let failure = match start {
-            Ok(thread) => self.drive(&id, thread, MultiValue::new(), LOAD_BUDGET),
+            Ok(thread) => self.drive(&id, thread, MultiValue::new(), LOAD_BUDGET, Purpose::Plain),
             Err(error) => Some(message_of(&error)),
         };
         match failure {
@@ -195,7 +235,7 @@ impl PluginRuntime {
         lua.set_named_registry_value(MODULES_KEY, lua.create_table()?)?;
         let native = api::native_table(&lua, context)?;
         api::install_require(&lua, directory)?;
-        let (api, dispatch): (Value, Table) = lua
+        let (api, dispatch): (LuaValue, Table) = lua
             .load(include_str!("prelude.luau"))
             .set_name("@atoll")
             .call(native)?;
@@ -205,9 +245,12 @@ impl PluginRuntime {
         Ok(lua)
     }
 
-    /// Forgets the extension and everything it was waiting for.
+    /// Forgets the extension, its scripts in pages and everything it was waiting for.
     pub fn unload(&mut self, id: &PluginId) {
-        if self.plugins.remove(id).is_some() {
+        if let Some(plugin) = self.plugins.remove(id) {
+            for name in plugin.context.scripts.borrow().iter() {
+                self.host.remove_content_script(id, name);
+            }
             self.waiting.retain(|_, waiting| waiting != id);
             self.host.commands_changed(id);
         }
@@ -259,7 +302,9 @@ impl PluginRuntime {
             };
             match prepared {
                 Ok((thread, arguments)) => {
-                    if let Some(failure) = self.drive(&id, thread, arguments, CALL_BUDGET) {
+                    if let Some(failure) =
+                        self.drive(&id, thread, arguments, CALL_BUDGET, Purpose::Plain)
+                    {
                         self.failed(&id, &failure);
                     }
                 }
@@ -275,7 +320,9 @@ impl PluginRuntime {
         };
         match thread_for(&plugin.lua, "command") {
             Ok(thread) => {
-                if let Some(failure) = self.drive(id, thread, command.to_owned(), CALL_BUDGET) {
+                if let Some(failure) =
+                    self.drive(id, thread, command.to_owned(), CALL_BUDGET, Purpose::Plain)
+                {
                     self.failed(id, &failure);
                 }
             }
@@ -291,7 +338,7 @@ impl PluginRuntime {
         let Some(plugin) = self.plugins.get_mut(&id) else {
             return;
         };
-        let Some(thread) = plugin.waiting.remove(&pending) else {
+        let Some((thread, purpose)) = plugin.waiting.remove(&pending) else {
             return;
         };
         let arguments = match result {
@@ -303,7 +350,7 @@ impl PluginRuntime {
         };
         match arguments {
             Ok(arguments) => {
-                if let Some(failure) = self.drive(&id, thread, arguments, CALL_BUDGET) {
+                if let Some(failure) = self.drive(&id, thread, arguments, CALL_BUDGET, purpose) {
                     self.failed(&id, &failure);
                 }
             }
@@ -324,24 +371,101 @@ impl PluginRuntime {
         thread: Thread,
         arguments: impl mlua::IntoLuaMulti,
         budget: Duration,
+        purpose: Purpose,
     ) -> Option<String> {
         let plugin = self.plugins.get_mut(id)?;
         plugin.deadline.set(Some(Instant::now() + budget));
-        let outcome = thread.resume::<MultiValue>(arguments);
+        let resumed = thread.resume::<MultiValue>(arguments);
         plugin.deadline.set(None);
-        match outcome {
+        let outcome = match resumed {
             Ok(values) if thread.is_resumable() => match pending_of(&values) {
                 Some(pending) => {
-                    plugin.waiting.insert(pending, thread);
+                    plugin.waiting.insert(pending, (thread, purpose));
                     self.waiting.insert(pending, id.clone());
-                    None
+                    Outcome::Waiting
                 }
-                None => Some(
+                None => Outcome::Failed(
                     "ein Skript hat coroutine.yield ohne einen Atoll-Aufruf benutzt".to_owned(),
                 ),
             },
-            Ok(_) => None,
-            Err(error) => Some(message_of(&error)),
+            Ok(values) => Outcome::Finished(returned(&plugin.lua, &values)),
+            Err(error) => Outcome::Failed(message_of(&error)),
+        };
+        match outcome {
+            Outcome::Waiting => None,
+            Outcome::Finished(value) => {
+                self.handler_finished(id, purpose, value);
+                None
+            }
+            Outcome::Failed(message) => {
+                self.handler_finished(id, purpose, None);
+                Some(message)
+            }
+        }
+    }
+
+    /// A handler is done. If a page waits for an answer, it gets the first one a handler gave.
+    fn handler_finished(&mut self, id: &PluginId, purpose: Purpose, value: Option<Value>) {
+        let Purpose::Message(reply) = purpose else {
+            return;
+        };
+        let answered = value.is_some();
+        if answered {
+            self.open_messages.remove(&reply);
+            self.host
+                .answer_page(id, reply, Ok(value.unwrap_or(Value::Null)));
+            return;
+        }
+        let Some(open) = self.open_messages.get_mut(&reply) else {
+            return;
+        };
+        *open = open.saturating_sub(1);
+        if *open == 0 {
+            self.open_messages.remove(&reply);
+            self.host.answer_page(id, reply, Ok(Value::Null));
+        }
+    }
+
+    /// Hands a message of a page to every extension that may see that page. The first answer a
+    /// handler gives is sent back, even when it had to wait for something first.
+    pub fn dispatch_message(&mut self, message: PageMessage) {
+        let listeners: Vec<PluginId> = self
+            .plugins
+            .iter()
+            .filter(|(_, plugin)| plugin.sees_page(&message.frame_url))
+            .map(|(id, _)| id.clone())
+            .collect();
+        if listeners.is_empty() {
+            self.host
+                .answer_page(&String::new(), message.reply, Ok(Value::Null));
+            return;
+        }
+        self.open_messages.insert(message.reply, listeners.len());
+        for id in listeners {
+            let prepared = {
+                let plugin = &self.plugins[&id];
+                thread_for(&plugin.lua, "message").and_then(|thread| {
+                    let payload = plugin.lua.to_value(&message.payload)?;
+                    Ok((
+                        thread,
+                        (message.channel.clone(), payload, message.frame_url.clone()),
+                    ))
+                })
+            };
+            match prepared {
+                Ok((thread, arguments)) => {
+                    if let Some(failure) = self.drive(
+                        &id,
+                        thread,
+                        arguments,
+                        CALL_BUDGET,
+                        Purpose::Message(message.reply),
+                    ) {
+                        self.failed(&id, &failure);
+                    }
+                }
+                Err(error) => self.host.report(&id, &message_of(&error)),
+            }
         }
     }
 
@@ -366,6 +490,15 @@ impl PluginRuntime {
     }
 }
 
+/// The value a handler returned, `None` when it returned nothing.
+fn returned(lua: &Lua, values: &MultiValue) -> Option<Value> {
+    let first = values.front()?;
+    if matches!(first, LuaValue::Nil) {
+        return None;
+    }
+    lua.from_value(first.clone()).ok()
+}
+
 /// A fresh coroutine for `dispatch.<name>` of the prelude.
 fn thread_for(lua: &Lua, name: &str) -> mlua::Result<Thread> {
     let dispatch: Table = lua.named_registry_value(DISPATCH_KEY)?;
@@ -375,7 +508,7 @@ fn thread_for(lua: &Lua, name: &str) -> mlua::Result<Thread> {
 
 /// The work a coroutine waits for, if that is what it yielded.
 fn pending_of(values: &MultiValue) -> Option<PendingId> {
-    let Some(Value::Table(table)) = values.front() else {
+    let Some(LuaValue::Table(table)) = values.front() else {
         return None;
     };
     table.get::<u64>("__atoll_pending").ok().map(PendingId)

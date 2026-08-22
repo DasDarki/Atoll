@@ -2,15 +2,18 @@
 //! them checks what the extension is allowed to do before it asks the browser.
 
 use std::cell::{Cell, RefCell};
+use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 use mlua::{Lua, LuaSerdeExt, Table, Value};
 
+use crate::content::{self, RunAt, ScriptWorld};
 use crate::host::{
     HttpRequest, LogLevel, PendingId, PluginHost, PluginId, missing_host, missing_permission,
 };
 use crate::manifest::{Manifest, Permission};
+use crate::pattern::UrlPattern;
 
 /// How long an extension may sleep in one call.
 const MAX_SLEEP: u64 = 5 * 60 * 1000;
@@ -32,6 +35,8 @@ pub(crate) struct PluginContext {
     pub(crate) host: Rc<dyn PluginHost>,
     pub(crate) next_pending: Rc<Cell<u64>>,
     pub(crate) commands: RefCell<Vec<Command>>,
+    /// The scripts the extension put into pages, by the name the browser knows them by.
+    pub(crate) scripts: RefCell<BTreeSet<String>>,
 }
 
 impl PluginContext {
@@ -54,6 +59,17 @@ impl PluginContext {
         } else {
             Err(mlua::Error::runtime(missing_host(url)))
         }
+    }
+
+    /// The page the user is looking at, if the extension may see it.
+    fn page(&self) -> mlua::Result<String> {
+        self.require(Permission::Pages)?;
+        let url = self
+            .host
+            .current_page_url(&self.id)
+            .ok_or_else(|| mlua::Error::runtime("gerade ist keine Seite offen"))?;
+        self.require_site(&url)?;
+        Ok(url)
     }
 
     fn pending(&self) -> PendingId {
@@ -216,6 +232,108 @@ pub(crate) fn native_table(lua: &Lua, context: &Rc<PluginContext>) -> mlua::Resu
             held.host
                 .sleep(&held.id, pending, milliseconds.min(MAX_SLEEP));
             Ok(pending.0)
+        })?,
+    )?;
+
+    let held = context.clone();
+    native.set(
+        "page_url",
+        lua.create_function(move |_, ()| held.page().map(Some))?,
+    )?;
+
+    let held = context.clone();
+    native.set(
+        "evaluate",
+        lua.create_function(move |_, (code, world): (String, Option<String>)| {
+            held.page()?;
+            let world = world
+                .as_deref()
+                .map_or(Some(ScriptWorld::Isolated), ScriptWorld::parse)
+                .ok_or_else(|| mlua::Error::runtime("world ist \"isolated\" oder \"page\""))?;
+            let pending = held.pending();
+            held.host.evaluate(&held.id, pending, code, world);
+            Ok(pending.0)
+        })?,
+    )?;
+
+    let held = context.clone();
+    native.set(
+        "inject_css",
+        lua.create_function(move |_, (css, world): (String, Option<String>)| {
+            held.page()?;
+            let world = world
+                .as_deref()
+                .map_or(Some(ScriptWorld::Isolated), ScriptWorld::parse)
+                .ok_or_else(|| mlua::Error::runtime("world ist \"isolated\" oder \"page\""))?;
+            let pending = held.pending();
+            held.host
+                .evaluate(&held.id, pending, content::stylesheet(&css), world);
+            Ok(pending.0)
+        })?,
+    )?;
+
+    let held = context.clone();
+    native.set(
+        "content_register",
+        lua.create_function(
+            move |_,
+                  (id, matches, css, js, world, run_at): (
+                String,
+                Vec<String>,
+                String,
+                String,
+                Option<String>,
+                Option<String>,
+            )| {
+                held.require(Permission::Pages)?;
+                let wanted = matches
+                    .iter()
+                    .map(|pattern| {
+                        UrlPattern::parse(pattern).map_err(|error| {
+                            mlua::Error::runtime(format!("\"{pattern}\": {error}"))
+                        })
+                    })
+                    .collect::<mlua::Result<Vec<_>>>()?;
+                if wanted.is_empty() {
+                    return Err(mlua::Error::runtime(
+                        "ein Seiten-Skript braucht mindestens ein Muster unter \"matches\"",
+                    ));
+                }
+                let world = world
+                    .as_deref()
+                    .map_or(Some(ScriptWorld::Isolated), ScriptWorld::parse)
+                    .ok_or_else(|| mlua::Error::runtime("world ist \"isolated\" oder \"page\""))?;
+                let run_at = run_at
+                    .as_deref()
+                    .map_or(Some(RunAt::DocumentStart), RunAt::parse)
+                    .ok_or_else(|| {
+                        mlua::Error::runtime("runAt ist \"documentStart\" oder \"documentEnd\"")
+                    })?;
+                let script = content::build(content::Request {
+                    plugin: &held.id,
+                    id: &id,
+                    allowed: &held.manifest.hosts,
+                    wanted: &wanted,
+                    css: &css,
+                    js: &js,
+                    run_at,
+                    world,
+                });
+                held.scripts.borrow_mut().insert(script.name.clone());
+                held.host.set_content_script(&held.id, script);
+                Ok(())
+            },
+        )?,
+    )?;
+
+    let held = context.clone();
+    native.set(
+        "content_unregister",
+        lua.create_function(move |_, id: String| {
+            let name = format!("{}/{id}", held.id);
+            held.scripts.borrow_mut().remove(&name);
+            held.host.remove_content_script(&held.id, &name);
+            Ok(())
         })?,
     )?;
 

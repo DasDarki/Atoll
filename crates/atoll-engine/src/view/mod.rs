@@ -1,3 +1,4 @@
+mod bridge;
 mod client;
 mod handlers;
 mod security;
@@ -22,6 +23,7 @@ pub(crate) use state::{DragSession, ViewState};
 
 use crate::autofill::{self, LoginFill};
 use crate::input::{EditCommand, KeyInput, Modifiers, MouseButton, ZoomCommand};
+use crate::page_bridge::{ReplyId, ScriptId, ScriptWorld};
 use crate::render::{SurfaceFrame, SurfaceLayer};
 use crate::video;
 
@@ -374,6 +376,27 @@ impl BrowserView {
             }
         }
         asked
+    }
+
+    /// Runs `code` in the page and answers with [`crate::EngineEvent::ScriptResult`]. In the
+    /// isolated world the page can neither see nor change what runs.
+    pub fn evaluate(&self, code: &str, world: ScriptWorld) -> Option<ScriptId> {
+        bridge::evaluate(&self.state, code, world)
+    }
+
+    /// Adds a script that runs in every page of this view before the page's own scripts, and
+    /// replaces the one registered under `name`.
+    pub fn add_document_script(&self, name: &str, source: &str, world: ScriptWorld) {
+        bridge::add_document_script(&self.state, name, source, world);
+    }
+
+    pub fn remove_document_script(&self, name: &str) {
+        bridge::remove_document_script(&self.state, name);
+    }
+
+    /// Answers a [`crate::EngineEvent::PageMessage`].
+    pub fn answer_page(&self, reply: ReplyId, answer: Result<serde_json::Value, String>) {
+        bridge::answer_page(&self.state, reply, answer);
     }
 
     pub fn execute_script(&self, code: &str) {

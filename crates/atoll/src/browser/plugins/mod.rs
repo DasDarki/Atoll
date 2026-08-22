@@ -3,18 +3,20 @@
 
 mod bridge;
 
-use std::cell::RefCell;
-use std::collections::BTreeSet;
+use std::cell::{Cell, RefCell};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
 use std::rc::{Rc, Weak};
 
 use atoll_core::Timestamp;
+use atoll_engine::{ReplyId, ScriptId, ViewId};
 use atoll_plugin::{
-    Command, Event, HostError, Manifest, PendingId, PendingResult, Permission, PluginHost,
-    PluginId, PluginInfo, PluginRuntime, TabInfo,
+    Command, ContentScript, Event, HostError, Manifest, PageMessage, PendingId, PendingResult,
+    Permission, PluginHost, PluginId, PluginInfo, PluginRuntime, ScriptWorld, TabInfo,
 };
 use atoll_storage::prelude::*;
 use atoll_storage::{PluginRecord, Storage};
+use serde_json::Value;
 use slint::{ComponentHandle, ModelRc, VecModel};
 
 use self::bridge::Bridge;
@@ -31,6 +33,14 @@ pub struct Plugins {
     directory: PathBuf,
     /// Extensions that asked the user and are waiting for the answer.
     asking: RefCell<BTreeSet<PluginId>>,
+    /// The styles and scripts that go into every page, by the name the browser knows them by.
+    scripts: RefCell<BTreeMap<String, ContentScript>>,
+    /// Scripts that are running in a page and the extension call that waits for the value.
+    running: RefCell<HashMap<(ViewId, ScriptId), PendingId>>,
+    /// Messages of pages that wait for an answer.
+    replies: RefCell<HashMap<u64, (ViewId, ReplyId)>>,
+    next_reply: Cell<u64>,
+    manager: RefCell<Weak<WindowManager>>,
 }
 
 impl Plugins {
@@ -42,12 +52,22 @@ impl Plugins {
             storage,
             directory,
             asking: RefCell::default(),
+            scripts: RefCell::default(),
+            running: RefCell::default(),
+            replies: RefCell::default(),
+            next_reply: Cell::default(),
+            manager: RefCell::default(),
         })
     }
 
     /// Hands the extensions the window manager, once it exists.
     pub fn attach(self: &Rc<Self>, manager: Weak<WindowManager>) {
+        *self.manager.borrow_mut() = manager.clone();
         self.bridge.attach(manager, Rc::downgrade(self));
+    }
+
+    fn manager(&self) -> Option<Rc<WindowManager>> {
+        self.manager.borrow().upgrade()
     }
 
     /// The folder extensions are installed in.
@@ -77,6 +97,40 @@ impl Plugins {
         self.commands().into_iter().find_map(|(plugin, command)| {
             (command.shortcut.as_deref() == Some(keys)).then_some((plugin, command.id))
         })
+    }
+
+    /// Everything extensions want in pages, for a view that is new or was reloaded.
+    pub fn content_scripts(&self) -> Vec<ContentScript> {
+        self.scripts.borrow().values().cloned().collect()
+    }
+
+    /// Remembers which extension call waits for a script in a page.
+    fn expect_script(&self, view: ViewId, script: ScriptId, pending: PendingId) {
+        self.running.borrow_mut().insert((view, script), pending);
+    }
+
+    /// A script in a page finished, so the extension that waits for it can go on.
+    pub fn script_finished(&self, view: ViewId, script: ScriptId, result: Result<Value, String>) {
+        let pending = self.running.borrow_mut().remove(&(view, script));
+        if let Some(pending) = pending {
+            self.resume(pending, result);
+        }
+    }
+
+    /// Hands a message of a page to the extensions and remembers where the answer goes.
+    pub fn page_message(&self, view: ViewId, message: EnginePageMessage) {
+        tracing::debug!(frame = %message.frame_url, channel = %message.channel, "PAGEMSG");
+        let token = self.next_reply.get() + 1;
+        self.next_reply.set(token);
+        self.replies
+            .borrow_mut()
+            .insert(token, (view, message.reply));
+        self.runtime.borrow_mut().dispatch_message(PageMessage {
+            frame_url: message.frame_url,
+            channel: message.channel,
+            payload: message.payload,
+            reply: token,
+        });
     }
 
     pub fn loaded(&self) -> Vec<PluginInfo> {
@@ -119,6 +173,30 @@ impl Plugins {
         }
         if let Err(error) = std::fs::remove_dir_all(folder) {
             tracing::warn!(%error, plugin = %id, "the extension folder could not be removed");
+        }
+    }
+
+    fn remember_script(&self, script: ContentScript) {
+        self.scripts
+            .borrow_mut()
+            .insert(script.name.clone(), script);
+    }
+
+    fn forget_script(&self, name: &str) {
+        self.scripts.borrow_mut().remove(name);
+    }
+
+    /// Sends the answer of an extension back into the page that asked.
+    fn answer_page(&self, reply: u64, answer: PendingResult) {
+        let Some((view, waiting)) = self.replies.borrow_mut().remove(&reply) else {
+            return;
+        };
+        if let Some(manager) = self.manager() {
+            for browser in manager.browsers() {
+                if browser.plugin_answer_page(view, waiting, &answer) {
+                    return;
+                }
+            }
         }
     }
 
@@ -171,6 +249,14 @@ impl Plugins {
     }
 }
 
+/// A message a page sent, the way the engine hands it over.
+pub struct EnginePageMessage {
+    pub frame_url: String,
+    pub channel: String,
+    pub payload: Value,
+    pub reply: ReplyId,
+}
+
 /// An extension folder together with what Atoll knows about it.
 pub struct InstalledPlugin {
     pub manifest: Manifest,
@@ -189,7 +275,7 @@ impl Browser {
     }
 
     /// A page finished loading, which extensions of that site want to know.
-    pub(super) fn page_loaded(&self, view: atoll_engine::ViewId) {
+    pub(super) fn page_loaded(&self, view: ViewId) {
         let Some(tab) = self.tab_of(view) else { return };
         let session = self.session.borrow();
         let Some(record) = session.tab(tab) else {
@@ -312,6 +398,67 @@ impl Browser {
         // The palette reads the commands when it opens, so nothing has to be pushed anywhere yet.
     }
 
+    /// Runs `code` in the page of the active tab for an extension.
+    pub(super) fn plugin_evaluate(
+        &self,
+        pending: PendingId,
+        code: &str,
+        world: ScriptWorld,
+    ) -> bool {
+        let mut started = None;
+        self.with_live_view(|view| {
+            started = view
+                .evaluate(code, engine_world(world))
+                .map(|script| (view.id(), script));
+        });
+        match started {
+            Some((view, script)) => {
+                self.plugins.expect_script(view, script, pending);
+                true
+            }
+            None => false,
+        }
+    }
+
+    /// Puts a script of an extension into every page of this window from now on.
+    pub(super) fn plugin_add_script(&self, script: &ContentScript) {
+        for entry in self.views.borrow().entries() {
+            entry.view.add_document_script(
+                &script.name,
+                &script.source,
+                engine_world(script.world),
+            );
+        }
+    }
+
+    pub(super) fn plugin_remove_script(&self, name: &str) {
+        for entry in self.views.borrow().entries() {
+            entry.view.remove_document_script(name);
+        }
+    }
+
+    /// Answers a message of a page, and says whether the view belongs to this window.
+    pub(super) fn plugin_answer_page(
+        &self,
+        view: ViewId,
+        reply: ReplyId,
+        answer: &PendingResult,
+    ) -> bool {
+        let views = self.views.borrow();
+        let Some(entry) = views.entries().find(|entry| entry.view.id() == view) else {
+            return false;
+        };
+        entry.view.answer_page(reply, answer.clone());
+        true
+    }
+
+    /// Gives a new engine instance the scripts extensions want in every page.
+    pub(super) fn plugin_prepare_view(&self, view: &atoll_engine::BrowserView) {
+        for script in self.plugins.content_scripts() {
+            view.add_document_script(&script.name, &script.source, engine_world(script.world));
+        }
+    }
+
     /// The tabs of this window as extensions see them.
     pub(super) fn plugin_tabs(&self) -> Vec<TabInfo> {
         let session = self.session.borrow();
@@ -354,6 +501,13 @@ impl Browser {
             .tab(id)
             .map(|tab| tab.id)
             .ok_or(HostError::UnknownTab(tab))
+    }
+}
+
+fn engine_world(world: ScriptWorld) -> atoll_engine::ScriptWorld {
+    match world {
+        ScriptWorld::Isolated => atoll_engine::ScriptWorld::Isolated,
+        ScriptWorld::Page => atoll_engine::ScriptWorld::Page,
     }
 }
 

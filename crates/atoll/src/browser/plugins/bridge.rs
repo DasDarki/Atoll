@@ -4,7 +4,8 @@ use std::rc::{Rc, Weak};
 use std::time::Duration;
 
 use atoll_plugin::{
-    HostError, HttpRequest, LogLevel, PendingId, PendingResult, PluginHost, PluginId, TabInfo,
+    ContentScript, HostError, HttpRequest, LogLevel, PendingId, PendingResult, PluginHost,
+    PluginId, ScriptWorld, TabInfo,
 };
 use atoll_storage::Storage;
 use atoll_storage::prelude::*;
@@ -62,6 +63,13 @@ impl Bridge {
 
     fn browser(&self) -> Option<Rc<Browser>> {
         self.manager.borrow().upgrade()?.focused_browser()
+    }
+
+    /// Hands an answer to the script that waits for it.
+    fn answer(&self, pending: PendingId, result: PendingResult) {
+        if let Some(plugins) = self.plugins.borrow().upgrade() {
+            plugins.resume(pending, result);
+        }
     }
 
     fn note(&self, plugin: &PluginId, line: String) {
@@ -177,6 +185,49 @@ impl PluginHost for Bridge {
         self.note(plugin, format!("Fehler: {message}"));
         if let Some(browser) = self.browser() {
             browser.show_toast(&format!("Erweiterung {plugin}: {message}"));
+        }
+    }
+
+    fn current_page_url(&self, _plugin: &PluginId) -> Option<String> {
+        self.browser()?.current_page_url()
+    }
+
+    fn evaluate(&self, plugin: &PluginId, pending: PendingId, code: String, world: ScriptWorld) {
+        let Some(browser) = self.browser() else {
+            self.answer(pending, Err("kein Fenster offen".to_owned()));
+            return;
+        };
+        if !browser.plugin_evaluate(pending, &code, world) {
+            self.answer(pending, Err("gerade ist keine Seite offen".to_owned()));
+        }
+        tracing::debug!(plugin = %plugin, "an extension reads a page");
+    }
+
+    fn set_content_script(&self, _plugin: &PluginId, script: ContentScript) {
+        if let Some(plugins) = self.plugins.borrow().upgrade() {
+            plugins.remember_script(script.clone());
+        }
+        if let Some(manager) = self.manager.borrow().upgrade() {
+            for browser in manager.browsers() {
+                browser.plugin_add_script(&script);
+            }
+        }
+    }
+
+    fn remove_content_script(&self, _plugin: &PluginId, name: &str) {
+        if let Some(plugins) = self.plugins.borrow().upgrade() {
+            plugins.forget_script(name);
+        }
+        if let Some(manager) = self.manager.borrow().upgrade() {
+            for browser in manager.browsers() {
+                browser.plugin_remove_script(name);
+            }
+        }
+    }
+
+    fn answer_page(&self, _plugin: &PluginId, reply: u64, answer: PendingResult) {
+        if let Some(plugins) = self.plugins.borrow().upgrade() {
+            plugins.answer_page(reply, answer);
         }
     }
 

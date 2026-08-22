@@ -76,6 +76,7 @@ impl Browser {
         };
         match engine.create_view(&record.url, self.geometry.get(), false) {
             Ok(view) => {
+                self.plugin_prepare_view(&view);
                 let pending_scroll = record.scroll_y.filter(|offset| *offset > 0);
                 self.views
                     .borrow_mut()

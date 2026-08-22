@@ -66,6 +66,12 @@ saved tabs therefore cost nothing at startup.
   Every extension runs in a sandboxed Luau state of its own with a memory limit and a time
   budget; one that keeps running too long is switched off. Waiting for the browser (`atoll.sleep`,
   `atoll.http`) pauses the script without blocking the window.
+- **Extensions in pages**: an extension puts styles and scripts into the sites of its manifest
+  (`atoll.content.register`), by default into a world of its own that the page can neither see nor
+  change, and before the page's own scripts run. It reads a page with `atoll.page.eval`, which
+  answers with the value. Page scripts reach the extension through `window.atoll.send(channel,
+  data)`, which answers with whatever the extension's `page.message` handler returns. All of this
+  goes through Chromium's own protocol, so nothing depends on an open developer tools window.
 - **Site information**: the symbol in the address bar shows whether the connection is secure,
   the certificate and the zoom level, and deletes cookies and stored data of the site.
 - **Developer tools** docked below or next to the page, see *Architecture*.
@@ -230,7 +236,9 @@ Known limitations:
 - Input method composition (for example for CJK input) is forwarded but not positioned.
 - 1Password fills logins in but does not offer to save new ones.
 - yt-dlp does not get Atoll's cookies, so streamed videos that need a login may fail to download.
-- Extensions cannot touch pages yet: styles, scripts and their own panels are the next step.
+- Extensions have no windows of their own yet, and they cannot filter requests yet.
+- `window.atoll` is there for the scripts of a page as well, so an extension has to check the
+  messages it gets just like any other input from the web.
 - Passkeys and security keys are not supported. Chromium asks for them with a window of its own
   that an off-screen browser cannot show, so the Web Authentication API is hidden and requests are
   refused, which makes pages offer another way to sign in.

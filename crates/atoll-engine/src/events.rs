@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use crate::autofill::FilledFields;
+use crate::page_bridge::{ReplyId, ScriptId};
 use crate::video::FrameVideos;
 use crate::view::ViewId;
 
@@ -136,6 +137,20 @@ pub enum EngineEvent {
         view: ViewId,
         present: bool,
     },
+    /// A script of [`crate::BrowserView::evaluate`] finished.
+    ScriptResult {
+        view: ViewId,
+        request: ScriptId,
+        result: Result<serde_json::Value, String>,
+    },
+    /// A page called `window.atoll.send`. It waits for [`crate::BrowserView::answer_page`].
+    PageMessage {
+        view: ViewId,
+        frame_url: String,
+        channel: String,
+        payload: serde_json::Value,
+        reply: ReplyId,
+    },
     /// A frame answered [`crate::BrowserView::find_videos`].
     VideosFound {
         view: ViewId,
@@ -176,7 +191,9 @@ impl EngineEvent {
             | EngineEvent::LoginFormChanged { view, .. }
             | EngineEvent::LoginFilled { view, .. }
             | EngineEvent::VideoChanged { view, .. }
-            | EngineEvent::VideosFound { view, .. } => Some(*view),
+            | EngineEvent::VideosFound { view, .. }
+            | EngineEvent::ScriptResult { view, .. }
+            | EngineEvent::PageMessage { view, .. } => Some(*view),
             EngineEvent::PopupOpened { opener, .. } => Some(*opener),
             EngineEvent::Download(_)
             | EngineEvent::CopyText(_)

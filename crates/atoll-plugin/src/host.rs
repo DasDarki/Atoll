@@ -3,6 +3,7 @@
 
 use serde_json::Value;
 
+use crate::content::{ContentScript, ScriptWorld};
 use crate::manifest::Permission;
 
 /// Identifies a loaded extension, which is the `id` of its manifest.
@@ -79,6 +80,20 @@ pub trait PluginHost {
 
     /// Answers with nothing after `milliseconds`.
     fn sleep(&self, plugin: &PluginId, pending: PendingId, milliseconds: u64);
+
+    /// The address of the page the user is looking at.
+    fn current_page_url(&self, plugin: &PluginId) -> Option<String>;
+
+    /// Runs `code` in the current page and answers with its value.
+    fn evaluate(&self, plugin: &PluginId, pending: PendingId, code: String, world: ScriptWorld);
+
+    /// Puts `script` into every page from now on, replacing the one of the same name.
+    fn set_content_script(&self, plugin: &PluginId, script: ContentScript);
+
+    fn remove_content_script(&self, plugin: &PluginId, name: &str);
+
+    /// Answers a message a page sent with `window.atoll.send`.
+    fn answer_page(&self, plugin: &PluginId, reply: u64, answer: PendingResult);
 
     /// The extension ran into an error Atoll should show, for example a failed handler.
     fn report(&self, plugin: &PluginId, message: &str);

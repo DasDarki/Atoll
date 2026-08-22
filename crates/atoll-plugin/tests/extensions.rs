@@ -5,8 +5,8 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 use atoll_plugin::{
-    Event, HostError, HttpRequest, LogLevel, PendingId, Permission, PluginHost, PluginId,
-    PluginRuntime, TabInfo,
+    ContentScript, Event, HostError, HttpRequest, LogLevel, PageMessage, PendingId, PendingResult,
+    Permission, PluginHost, PluginId, PluginRuntime, ScriptWorld, TabInfo,
 };
 use serde_json::json;
 
@@ -20,6 +20,10 @@ struct FakeBrowser {
     sleeping: RefCell<Vec<PendingId>>,
     fetched: RefCell<Vec<(PendingId, HttpRequest)>>,
     disabled: RefCell<Vec<String>>,
+    page: RefCell<Option<String>>,
+    scripts: RefCell<BTreeMap<String, ContentScript>>,
+    evaluated: RefCell<Vec<(PendingId, String, ScriptWorld)>>,
+    answers: RefCell<Vec<(u64, PendingResult)>>,
 }
 
 impl FakeBrowser {
@@ -100,6 +104,28 @@ impl PluginHost for FakeBrowser {
 
     fn disabled(&self, _plugin: &PluginId, reason: &str) {
         self.disabled.borrow_mut().push(reason.to_owned());
+    }
+
+    fn current_page_url(&self, _plugin: &PluginId) -> Option<String> {
+        self.page.borrow().clone()
+    }
+
+    fn evaluate(&self, _plugin: &PluginId, pending: PendingId, code: String, world: ScriptWorld) {
+        self.evaluated.borrow_mut().push((pending, code, world));
+    }
+
+    fn set_content_script(&self, _plugin: &PluginId, script: ContentScript) {
+        self.scripts
+            .borrow_mut()
+            .insert(script.name.clone(), script);
+    }
+
+    fn remove_content_script(&self, _plugin: &PluginId, name: &str) {
+        self.scripts.borrow_mut().remove(name);
+    }
+
+    fn answer_page(&self, _plugin: &PluginId, reply: u64, answer: PendingResult) {
+        self.answers.borrow_mut().push((reply, answer));
     }
 }
 
@@ -433,4 +459,140 @@ fn unloading_forgets_everything_the_extension_waited_for() {
     assert_eq!(runtime.waiting(), 0);
     assert!(runtime.commands().is_empty());
     assert!(runtime.loaded().is_empty());
+}
+
+#[test]
+fn page_scripts_only_run_where_the_manifest_allows() {
+    let extension = Extension::new(
+        "content",
+        &manifest("\"pages\"", "\"*://*.example.org/*\""),
+        r#"
+        local atoll = require("@atoll")
+        atoll.content.register{
+            id = "clean",
+            matches = { "*://*.example.org/shop/*" },
+            css = ".ad { display: none }",
+            js = "window.cleaned = true",
+        }
+        "#,
+    );
+    let (mut runtime, browser) = runtime();
+    runtime.load(extension.path(), ALL).unwrap();
+
+    let scripts = browser.scripts.borrow();
+    let script = scripts.get("demo/clean").expect("the script is registered");
+    assert_eq!(script.world, ScriptWorld::Isolated);
+    assert!(
+        script.source.contains(r"example\\.org"),
+        "{}",
+        script.source
+    );
+    assert!(script.source.contains("shop"));
+    assert!(script.source.contains("adoptedStyleSheets"));
+    assert!(script.source.contains("window.cleaned = true"));
+    drop(scripts);
+
+    runtime.unload(&"demo".to_owned());
+    assert!(
+        browser.scripts.borrow().is_empty(),
+        "unloading takes the scripts out of pages again"
+    );
+}
+
+#[test]
+fn reading_a_page_needs_the_permission_and_the_site() {
+    let extension = Extension::new(
+        "eval",
+        &manifest("\"pages\"", "\"*://*.example.org/*\""),
+        r#"
+        local atoll = require("@atoll")
+        atoll.commands.register{ id = "read", run = function()
+            atoll.ui.toast("Titel: " .. tostring(atoll.page.eval("document.title")))
+        end }
+        "#,
+    );
+    let (mut runtime, browser) = runtime();
+    runtime.load(extension.path(), ALL).unwrap();
+
+    *browser.page.borrow_mut() = Some("https://other.test/".to_owned());
+    runtime.run_command(&"demo".to_owned(), "read");
+    assert!(
+        browser.reports()[0].contains("other.test"),
+        "reported: {:?}",
+        browser.reports()
+    );
+    assert!(browser.evaluated.borrow().is_empty());
+
+    *browser.page.borrow_mut() = Some("https://www.example.org/a".to_owned());
+    runtime.run_command(&"demo".to_owned(), "read");
+    let (pending, code, world) = browser.evaluated.borrow()[0].clone();
+    assert_eq!(code, "document.title");
+    assert_eq!(world, ScriptWorld::Isolated);
+    runtime.resume(pending, Ok(json!("Beispiel")));
+    assert!(
+        browser
+            .calls()
+            .contains(&"toast Titel: Beispiel".to_owned())
+    );
+}
+
+#[test]
+fn a_page_message_is_answered_even_when_the_handler_waits() {
+    let extension = Extension::new(
+        "message",
+        &manifest("\"pages\"", "\"*://*.example.org/*\""),
+        r#"
+        local atoll = require("@atoll")
+        atoll.on("page.message", function(message)
+            if message.channel ~= "frage" then return nil end
+            atoll.sleep(5)
+            return { antwort = message.payload.zahl * 2, von = message.url }
+        end)
+        "#,
+    );
+    let (mut runtime, browser) = runtime();
+    runtime.load(extension.path(), ALL).unwrap();
+
+    runtime.dispatch_message(PageMessage {
+        frame_url: "https://www.example.org/a".to_owned(),
+        channel: "frage".to_owned(),
+        payload: json!({ "zahl": 21 }),
+        reply: 99,
+    });
+    assert!(
+        browser.answers.borrow().is_empty(),
+        "the handler still waits"
+    );
+    let pending = browser.sleeping.borrow()[0];
+    runtime.resume(pending, Ok(json!(null)));
+
+    let answers = browser.answers.borrow();
+    assert_eq!(answers.len(), 1);
+    assert_eq!(answers[0].0, 99);
+    assert_eq!(
+        answers[0].1,
+        Ok(json!({ "antwort": 42, "von": "https://www.example.org/a" }))
+    );
+}
+
+#[test]
+fn messages_of_other_sites_are_answered_with_nothing() {
+    let extension = Extension::new(
+        "message-other",
+        &manifest("\"pages\"", "\"*://*.example.org/*\""),
+        r#"
+        local atoll = require("@atoll")
+        atoll.on("page.message", function() return "hallo" end)
+        "#,
+    );
+    let (mut runtime, browser) = runtime();
+    runtime.load(extension.path(), ALL).unwrap();
+    runtime.dispatch_message(PageMessage {
+        frame_url: "https://evil.test/".to_owned(),
+        channel: "frage".to_owned(),
+        payload: json!(null),
+        reply: 7,
+    });
+    let answers = browser.answers.borrow();
+    assert_eq!(answers[0], (7, Ok(json!(null))));
 }

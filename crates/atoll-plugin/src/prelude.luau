@@ -131,6 +131,42 @@ atoll.commands = {
 	end,
 }
 
+atoll.page = {
+	url = function()
+		return native.page_url()
+	end,
+	eval = function(code, options)
+		local world = if type(options) == "table" then options.world else nil
+		return await(native.evaluate(tostring(code), world))
+	end,
+	injectJs = function(code, options)
+		local world = if type(options) == "table" then options.world else nil
+		return await(native.evaluate(tostring(code), world))
+	end,
+	injectCss = function(css, options)
+		local world = if type(options) == "table" then options.world else nil
+		return await(native.inject_css(tostring(css), world))
+	end,
+}
+
+atoll.content = {
+	register = function(script)
+		assert(type(script) == "table", "atoll.content.register braucht eine Tabelle")
+		assert(type(script.id) == "string", "ein Seiten-Skript braucht eine id")
+		native.content_register(
+			script.id,
+			script.matches or {},
+			script.css or "",
+			script.js or "",
+			script.world,
+			script.runAt
+		)
+	end,
+	unregister = function(id)
+		native.content_unregister(tostring(id))
+	end,
+}
+
 local function fetch(method, url, options)
 	options = if type(options) == "table" then options else {}
 	return await(native.fetch(method, tostring(url), options.headers, options.body))
@@ -160,6 +196,23 @@ function dispatch.event(event, payload)
 			native.report(tostring(problem))
 		end
 	end
+end
+
+-- A page called window.atoll.send. The first handler that returns something answers it.
+function dispatch.message(channel, payload, url)
+	local list = handlers["page.message"]
+	if not list then
+		return nil
+	end
+	for _, handler in ipairs(table.clone(list)) do
+		local ok, result = pcall(handler, { channel = channel, payload = payload, url = url })
+		if not ok then
+			native.report(tostring(result))
+		elseif result ~= nil then
+			return result
+		end
+	end
+	return nil
 end
 
 function dispatch.command(id)

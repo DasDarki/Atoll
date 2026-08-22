@@ -15,6 +15,7 @@ mod error;
 mod events;
 mod filter;
 mod input;
+mod page_bridge;
 mod passkeys;
 mod process;
 mod pump;
@@ -35,6 +36,7 @@ pub use events::{
 };
 pub use filter::{ContentFilter, DocumentRules, ResourceKind, ResourceRequest};
 pub use input::{EditCommand, KeyInput, KeyInputKind, Modifiers, MouseButton, ZoomCommand};
+pub use page_bridge::{ReplyId, ScriptId, ScriptWorld};
 pub use process::run_subprocess;
 pub use render::{GpuContext, GpuError, SurfaceFrame, prune_unusable_vulkan_drivers};
 pub use video::{FrameVideos, PageVideo};

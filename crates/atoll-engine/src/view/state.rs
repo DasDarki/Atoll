@@ -6,6 +6,7 @@ use cef::{Browser, BrowserHost, ImplBrowser};
 
 use super::{ViewGeometry, ViewId, ViewRect};
 use crate::activity::PageActivity;
+use crate::page_bridge::PageBridge;
 use crate::render::ViewSurface;
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -42,6 +43,9 @@ pub(crate) struct ViewState {
     /// network thread.
     pub(crate) blocked_requests: Arc<AtomicU32>,
     pub(crate) activity: RefCell<PageActivity>,
+    /// Talking to the page through Chromium's protocol.
+    pub(crate) bridge: RefCell<PageBridge>,
+    pub(crate) bridge_registration: RefCell<Option<cef::Registration>>,
 }
 
 impl ViewState {
@@ -63,6 +67,8 @@ impl ViewState {
             dev_tools_frontend: Cell::new(false),
             blocked_requests: Arc::default(),
             activity: RefCell::default(),
+            bridge: RefCell::default(),
+            bridge_registration: RefCell::default(),
         }
     }
 

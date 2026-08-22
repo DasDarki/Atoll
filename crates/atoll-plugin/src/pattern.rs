@@ -115,6 +115,39 @@ impl UrlPattern {
     pub fn as_str(&self) -> &str {
         &self.source
     }
+
+    /// The pattern as a regular expression for JavaScript, which is how a script injected into a
+    /// page checks where it landed. It matches exactly what [`UrlPattern::matches`] matches.
+    pub fn as_regex(&self) -> String {
+        let scheme = match &self.scheme {
+            SchemeMatch::Web => "https?".to_owned(),
+            SchemeMatch::Exact(scheme) => escape(scheme),
+        };
+        let host = match &self.host {
+            HostMatch::Any => "[^/]+".to_owned(),
+            HostMatch::Exact(host) => format!("(?:[^/@]*@)?{}(?::\\d+)?", escape(host)),
+            HostMatch::Suffix(host) => {
+                format!("(?:[^/@]*@)?(?:[^/]+\\.)?{}(?::\\d+)?", escape(host))
+            }
+        };
+        let path: String = self
+            .path
+            .split('*')
+            .map(escape)
+            .collect::<Vec<_>>()
+            .join("[\\s\\S]*");
+        format!("^{scheme}://{host}{path}$")
+    }
+}
+
+/// Escapes everything a regular expression would read as a special character.
+fn escape(text: &str) -> String {
+    text.chars()
+        .flat_map(|character| {
+            let special = r"\^$.|?*+()[]{}/".contains(character);
+            special.then_some('\\').into_iter().chain([character])
+        })
+        .collect()
 }
 
 impl TryFrom<String> for UrlPattern {
@@ -227,6 +260,37 @@ mod tests {
             UrlPattern::parse("https://ex*ample.org/*"),
             Err(PatternError::InvalidHost("ex*ample.org".to_owned()))
         );
+    }
+
+    #[test]
+    fn the_regular_expression_matches_what_the_pattern_matches() {
+        let addresses = [
+            "https://example.org/",
+            "http://example.org/a/b?c=d",
+            "https://www.example.org/shop/x",
+            "https://example.org.evil.test/",
+            "https://example.org:8443/shop/",
+            "http://kim@example.org/shop/",
+            "ftp://example.org/",
+            "https://other.test/shop/",
+        ];
+        for source in [
+            "*://example.org/*",
+            "*://*.example.org/*",
+            "https://example.org/shop/*",
+            "*://*/*",
+            "https://example.org/",
+        ] {
+            let pattern = pattern(source);
+            let expression = regex::Regex::new(&pattern.as_regex()).expect(source);
+            for address in addresses {
+                assert_eq!(
+                    expression.is_match(address),
+                    pattern.matches(address),
+                    "{source} and its regular expression disagree about {address}"
+                );
+            }
+        }
     }
 
     #[test]

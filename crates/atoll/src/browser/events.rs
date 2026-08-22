@@ -6,6 +6,7 @@ use slint::ComponentHandle;
 
 use super::Browser;
 use super::page::web_cursor;
+use super::plugins::EnginePageMessage;
 use super::views::TabView;
 use crate::ui::BrowserState;
 
@@ -258,6 +259,32 @@ impl Browser {
                     sidebar: false,
                     page: self.is_live_view(view),
                 }
+            }
+            EngineEvent::ScriptResult {
+                view,
+                request,
+                result,
+            } => {
+                self.plugins.script_finished(view, request, result);
+                Effect::NONE
+            }
+            EngineEvent::PageMessage {
+                view,
+                frame_url,
+                channel,
+                payload,
+                reply,
+            } => {
+                self.plugins.page_message(
+                    view,
+                    EnginePageMessage {
+                        frame_url,
+                        channel,
+                        payload,
+                        reply,
+                    },
+                );
+                Effect::NONE
             }
             EngineEvent::VideosFound { view, frame } => {
                 self.videos_found(view, frame);
