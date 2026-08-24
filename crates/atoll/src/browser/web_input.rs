@@ -23,6 +23,8 @@ pub(super) enum InputTarget {
     #[default]
     Page,
     DevTools,
+    /// A panel an extension brought along.
+    Panel,
 }
 
 pub(super) fn modifiers_of(shift: bool, control: bool, alt: bool, meta: bool) -> Modifiers {
@@ -78,6 +80,7 @@ impl Browser {
         match self.input_target.get() {
             InputTarget::Page => self.with_live_view(action),
             InputTarget::DevTools => self.with_live_dev_tools(action),
+            InputTarget::Panel => self.with_live_panel(action),
         }
     }
 

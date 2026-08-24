@@ -2,6 +2,9 @@
 //! window. The Luau side lives in `atoll-plugin`, this is the browser side of its [`PluginHost`].
 
 mod bridge;
+mod panel;
+
+pub use panel::OpenPanel;
 
 use std::cell::{Cell, RefCell};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -11,8 +14,9 @@ use std::rc::{Rc, Weak};
 use atoll_core::Timestamp;
 use atoll_engine::{ReplyId, ScriptId, ViewId};
 use atoll_plugin::{
-    Command, ContentScript, Event, HostError, Manifest, PageMessage, PendingId, PendingResult,
-    Permission, PluginHost, PluginId, PluginInfo, PluginRuntime, ScriptWorld, TabInfo,
+    Command, ContentScript, Event, HostError, Manifest, PageMessage, Panel, PendingId,
+    PendingResult, Permission, PluginHost, PluginId, PluginInfo, PluginRuntime, ScriptWorld,
+    TabInfo,
 };
 use atoll_storage::prelude::*;
 use atoll_storage::{PluginRecord, Storage};
@@ -39,6 +43,8 @@ pub struct Plugins {
     running: RefCell<HashMap<(ViewId, ScriptId), PendingId>>,
     /// Messages of pages that wait for an answer.
     replies: RefCell<HashMap<u64, (ViewId, ReplyId)>>,
+    /// The engine instances that show a panel, and whose panel they show.
+    panels: RefCell<HashMap<ViewId, (PluginId, String)>>,
     next_reply: Cell<u64>,
     manager: RefCell<Weak<WindowManager>>,
 }
@@ -55,6 +61,7 @@ impl Plugins {
             scripts: RefCell::default(),
             running: RefCell::default(),
             replies: RefCell::default(),
+            panels: RefCell::default(),
             next_reply: Cell::default(),
             manager: RefCell::default(),
         })
@@ -117,20 +124,87 @@ impl Plugins {
         }
     }
 
-    /// Hands a message of a page to the extensions and remembers where the answer goes.
+    /// Hands a message of a page to the extensions and remembers where the answer goes. A panel
+    /// only ever talks to the extension it belongs to.
     pub fn page_message(&self, view: ViewId, message: EnginePageMessage) {
-        tracing::debug!(frame = %message.frame_url, channel = %message.channel, "PAGEMSG");
         let token = self.next_reply.get() + 1;
         self.next_reply.set(token);
         self.replies
             .borrow_mut()
             .insert(token, (view, message.reply));
+        let target = self
+            .panels
+            .borrow()
+            .get(&view)
+            .map(|(plugin, _)| plugin.clone());
         self.runtime.borrow_mut().dispatch_message(PageMessage {
             frame_url: message.frame_url,
             channel: message.channel,
             payload: message.payload,
             reply: token,
+            target,
         });
+    }
+
+    fn remember_panel(&self, view: ViewId, plugin: &PluginId, panel: &str) {
+        self.panels
+            .borrow_mut()
+            .insert(view, (plugin.clone(), panel.to_owned()));
+    }
+
+    fn forget_panel(&self, view: ViewId) {
+        self.panels.borrow_mut().remove(&view);
+    }
+
+    /// Where an extension is installed, for the files it brings along. This reads the folders
+    /// instead of asking the runtime, because extensions call it while their own code runs.
+    fn folder_of(&self, plugin: &PluginId) -> Option<PathBuf> {
+        atoll_plugin::installed(&self.directory)
+            .into_iter()
+            .find(|folder| {
+                PluginRuntime::read_manifest(folder)
+                    .map(|manifest| manifest.id == *plugin)
+                    .unwrap_or(false)
+            })
+    }
+
+    /// The panels of every loaded extension, for the palette. Not for use while extension code
+    /// runs, because it asks the runtime.
+    pub fn panels(&self) -> Vec<(PluginId, Panel)> {
+        self.loaded()
+            .into_iter()
+            .flat_map(|info| {
+                let id = info.id.clone();
+                info.panels
+                    .into_iter()
+                    .map(move |panel| (id.clone(), panel))
+            })
+            .collect()
+    }
+
+    /// Opens a panel from the palette.
+    pub fn show_panel(&self, plugin: &PluginId, panel: &str) {
+        let Some(folder) = self.folder_of(plugin) else {
+            return;
+        };
+        let Some(found) = PluginRuntime::read_manifest(&folder)
+            .ok()
+            .and_then(|manifest| {
+                manifest
+                    .panels
+                    .into_iter()
+                    .find(|candidate| candidate.id == panel)
+            })
+            .map(|panel| (plugin.clone(), panel))
+        else {
+            return;
+        };
+        if let Some(manager) = self.manager()
+            && let Some(browser) = manager.focused_browser()
+            && let Err(error) = browser.open_panel(plugin, &folder, &found.1)
+        {
+            browser.show_toast(&format!("Panel konnte nicht geöffnet werden: {error}"));
+        }
     }
 
     pub fn loaded(&self) -> Vec<PluginInfo> {
@@ -437,13 +511,18 @@ impl Browser {
         }
     }
 
-    /// Answers a message of a page, and says whether the view belongs to this window.
+    /// Answers a message of a page or of a panel, and says whether that view belongs to this
+    /// window.
     pub(super) fn plugin_answer_page(
         &self,
         view: ViewId,
         reply: ReplyId,
         answer: &PendingResult,
     ) -> bool {
+        if self.is_live_panel(view) {
+            self.with_live_panel(|panel| panel.answer_page(reply, answer.clone()));
+            return true;
+        }
         let views = self.views.borrow();
         let Some(entry) = views.entries().find(|entry| entry.view.id() == view) else {
             return false;

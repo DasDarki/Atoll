@@ -4,12 +4,12 @@ use std::rc::{Rc, Weak};
 use std::time::Duration;
 
 use atoll_plugin::{
-    ContentScript, HostError, HttpRequest, LogLevel, PendingId, PendingResult, PluginHost,
+    ContentScript, HostError, HttpRequest, LogLevel, Panel, PendingId, PendingResult, PluginHost,
     PluginId, ScriptWorld, TabInfo,
 };
 use atoll_storage::Storage;
 use atoll_storage::prelude::*;
-use serde_json::json;
+use serde_json::{Value, json};
 use slint::{Timer, TimerMode};
 
 use super::Plugins;
@@ -228,6 +228,37 @@ impl PluginHost for Bridge {
     fn answer_page(&self, _plugin: &PluginId, reply: u64, answer: PendingResult) {
         if let Some(plugins) = self.plugins.borrow().upgrade() {
             plugins.answer_page(reply, answer);
+        }
+    }
+
+    fn show_panel(&self, plugin: &PluginId, panel: &Panel) -> Result<(), HostError> {
+        let browser = self
+            .browser()
+            .ok_or_else(|| HostError::Refused("kein Fenster offen".to_owned()))?;
+        let plugins = self
+            .plugins
+            .borrow()
+            .upgrade()
+            .ok_or_else(|| HostError::Refused("die Erweiterungen sind beendet".to_owned()))?;
+        let folder = plugins.folder_of(plugin).ok_or_else(|| {
+            HostError::Refused("die Erweiterung ist nicht installiert".to_owned())
+        })?;
+        browser.open_panel(plugin, &folder, panel)
+    }
+
+    fn hide_panel(&self, plugin: &PluginId, panel: &str) {
+        if let Some(manager) = self.manager.borrow().upgrade() {
+            for browser in manager.browsers() {
+                browser.close_panel_of(plugin, panel);
+            }
+        }
+    }
+
+    fn post_to_panel(&self, plugin: &PluginId, panel: &str, channel: &str, payload: Value) {
+        if let Some(manager) = self.manager.borrow().upgrade() {
+            for browser in manager.browsers() {
+                browser.post_to_panel(plugin, panel, channel, &payload);
+            }
         }
     }
 

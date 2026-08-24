@@ -12,7 +12,7 @@ use crate::content::{self, RunAt, ScriptWorld};
 use crate::host::{
     HttpRequest, LogLevel, PendingId, PluginHost, PluginId, missing_host, missing_permission,
 };
-use crate::manifest::{Manifest, Permission};
+use crate::manifest::{Manifest, Panel, Permission};
 use crate::pattern::UrlPattern;
 
 /// How long an extension may sleep in one call.
@@ -59,6 +59,20 @@ impl PluginContext {
         } else {
             Err(mlua::Error::runtime(missing_host(url)))
         }
+    }
+
+    /// The panel of the manifest, if the extension has one under that name.
+    fn panel(&self, id: &str) -> mlua::Result<Panel> {
+        self.manifest
+            .panels
+            .iter()
+            .find(|panel| panel.id == id)
+            .cloned()
+            .ok_or_else(|| {
+                mlua::Error::runtime(format!(
+                    "diese Erweiterung hat kein Panel namens \"{id}\", es fehlt im Manifest"
+                ))
+            })
     }
 
     /// The page the user is looking at, if the extension may see it.
@@ -335,6 +349,40 @@ pub(crate) fn native_table(lua: &Lua, context: &Rc<PluginContext>) -> mlua::Resu
             held.host.remove_content_script(&held.id, &name);
             Ok(())
         })?,
+    )?;
+
+    let held = context.clone();
+    native.set(
+        "show_panel",
+        lua.create_function(move |_, id: String| {
+            let panel = held.panel(&id)?;
+            held.host
+                .show_panel(&held.id, &panel)
+                .map_err(mlua::Error::external)
+        })?,
+    )?;
+
+    let held = context.clone();
+    native.set(
+        "hide_panel",
+        lua.create_function(move |_, id: String| {
+            held.panel(&id)?;
+            held.host.hide_panel(&held.id, &id);
+            Ok(())
+        })?,
+    )?;
+
+    let held = context.clone();
+    native.set(
+        "post_to_panel",
+        lua.create_function(
+            move |lua, (id, channel, payload): (String, String, Value)| {
+                held.panel(&id)?;
+                let payload: serde_json::Value = lua.from_value(payload)?;
+                held.host.post_to_panel(&held.id, &id, &channel, payload);
+                Ok(())
+            },
+        )?,
     )?;
 
     let held = context.clone();

@@ -167,6 +167,18 @@ atoll.content = {
 	end,
 }
 
+atoll.panels = {
+	show = function(id)
+		native.show_panel(tostring(id))
+	end,
+	hide = function(id)
+		native.hide_panel(tostring(id))
+	end,
+	post = function(id, channel, payload)
+		native.post_to_panel(tostring(id), tostring(channel), payload)
+	end,
+}
+
 local function fetch(method, url, options)
 	options = if type(options) == "table" then options else {}
 	return await(native.fetch(method, tostring(url), options.headers, options.body))

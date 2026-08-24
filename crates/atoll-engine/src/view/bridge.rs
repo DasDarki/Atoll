@@ -89,7 +89,7 @@ pub(crate) fn browser_ready(state: &ViewState) {
 }
 
 /// Sets the page side up, once per browser.
-fn ensure_started(state: &ViewState) {
+pub(crate) fn ensure_started(state: &ViewState) {
     if state.bridge.borrow().is_started() {
         return;
     }

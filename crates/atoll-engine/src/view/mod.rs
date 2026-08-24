@@ -378,6 +378,12 @@ impl BrowserView {
         asked
     }
 
+    /// Prepares the page side before anything loads, so `window.atoll` is there for the first
+    /// script of the first page.
+    pub fn start_bridge(&self) {
+        bridge::ensure_started(&self.state);
+    }
+
     /// Runs `code` in the page and answers with [`crate::EngineEvent::ScriptResult`]. In the
     /// isolated world the page can neither see nor change what runs.
     pub fn evaluate(&self, code: &str, world: ScriptWorld) -> Option<ScriptId> {

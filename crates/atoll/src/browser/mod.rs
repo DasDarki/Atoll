@@ -60,7 +60,7 @@ use overlays::DialogQueue;
 use page::PageState;
 use palette::PaletteState;
 use passwords::{PasswordPopup, PasswordVault, PendingFill};
-use plugins::Plugins;
+use plugins::{OpenPanel, Plugins};
 use preferences::Preferences;
 use session::Session;
 use sidebar::SidebarModels;
@@ -170,6 +170,9 @@ pub struct Browser {
     yt_dlp: YtDlp,
     video_search: RefCell<Option<VideoSearch>>,
     plugins: Rc<Plugins>,
+    /// The panel of an extension this window shows.
+    panel: RefCell<Option<OpenPanel>>,
+    panel_geometry: Cell<ViewGeometry>,
     suggestions: RefCell<SuggestionState>,
     palette: RefCell<PaletteState>,
     bookmarks: RefCell<BookmarkState>,
@@ -228,6 +231,12 @@ impl Browser {
             yt_dlp: shared.yt_dlp.clone(),
             video_search: RefCell::default(),
             plugins: shared.plugins.clone(),
+            panel: RefCell::default(),
+            panel_geometry: Cell::new(ViewGeometry {
+                width: 360,
+                height: 768,
+                scale: geometry.scale,
+            }),
             suggestions: RefCell::default(),
             palette: RefCell::default(),
             bookmarks: RefCell::default(),

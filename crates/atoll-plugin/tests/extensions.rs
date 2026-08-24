@@ -5,10 +5,10 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 use atoll_plugin::{
-    ContentScript, Event, HostError, HttpRequest, LogLevel, PageMessage, PendingId, PendingResult,
-    Permission, PluginHost, PluginId, PluginRuntime, ScriptWorld, TabInfo,
+    ContentScript, Event, HostError, HttpRequest, LogLevel, PageMessage, Panel, PendingId,
+    PendingResult, Permission, PluginHost, PluginId, PluginRuntime, ScriptWorld, TabInfo,
 };
-use serde_json::json;
+use serde_json::{Value, json};
 
 /// A browser that only writes down what it was asked to do.
 #[derive(Default)]
@@ -126,6 +126,19 @@ impl PluginHost for FakeBrowser {
 
     fn answer_page(&self, _plugin: &PluginId, reply: u64, answer: PendingResult) {
         self.answers.borrow_mut().push((reply, answer));
+    }
+
+    fn show_panel(&self, _plugin: &PluginId, panel: &Panel) -> Result<(), HostError> {
+        self.note(format!("show panel {}", panel.id));
+        Ok(())
+    }
+
+    fn hide_panel(&self, _plugin: &PluginId, panel: &str) {
+        self.note(format!("hide panel {panel}"));
+    }
+
+    fn post_to_panel(&self, _plugin: &PluginId, panel: &str, channel: &str, payload: Value) {
+        self.note(format!("post {channel} to {panel}: {payload}"));
     }
 }
 
@@ -558,6 +571,7 @@ fn a_page_message_is_answered_even_when_the_handler_waits() {
         channel: "frage".to_owned(),
         payload: json!({ "zahl": 21 }),
         reply: 99,
+        target: None,
     });
     assert!(
         browser.answers.borrow().is_empty(),
@@ -592,7 +606,51 @@ fn messages_of_other_sites_are_answered_with_nothing() {
         channel: "frage".to_owned(),
         payload: json!(null),
         reply: 7,
+        target: None,
     });
     let answers = browser.answers.borrow();
     assert_eq!(answers[0], (7, Ok(json!(null))));
+}
+
+#[test]
+fn a_panel_only_talks_to_its_own_extension() {
+    let manifest = format!(
+        "{}\n[[panel]]\nid = \"notes\"\ntitle = \"Notizen\"\npage = \"panel.html\"",
+        manifest("\"pages\"", "\"*://*.example.org/*\"")
+    );
+    let extension = Extension::new(
+        "panel",
+        &manifest,
+        r#"
+        local atoll = require("@atoll")
+        atoll.on("page.message", function(message) return "von " .. message.channel end)
+        atoll.commands.register{ id = "open", run = function()
+            atoll.panels.show("notes")
+            atoll.panels.post("notes", "hinweis", { a = 1 })
+            local ok, problem = pcall(function() atoll.panels.show("gibtsnicht") end)
+            atoll.ui.toast(tostring(ok) .. " " .. tostring(problem))
+        end }
+        "#,
+    );
+    let (mut runtime, browser) = runtime();
+    runtime.load(extension.path(), ALL).unwrap();
+    runtime.run_command(&"demo".to_owned(), "open");
+
+    let calls = browser.calls();
+    assert!(calls.contains(&"show panel notes".to_owned()));
+    assert!(calls.contains(&"post hinweis to notes: {\"a\":1}".to_owned()));
+    assert!(
+        calls.iter().any(|call| call.contains("kein Panel namens")),
+        "a panel that is not in the manifest is refused: {calls:?}"
+    );
+
+    // A panel page is not one of the sites of the manifest, but its own extension still hears it.
+    runtime.dispatch_message(PageMessage {
+        frame_url: "file:///home/kim/plugins/demo/panel.html".to_owned(),
+        channel: "hallo".to_owned(),
+        payload: json!(null),
+        reply: 5,
+        target: Some("demo".to_owned()),
+    });
+    assert_eq!(browser.answers.borrow()[0], (5, Ok(json!("von hallo"))));
 }

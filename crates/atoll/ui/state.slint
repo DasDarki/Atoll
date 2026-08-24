@@ -308,6 +308,25 @@ export global SettingsState {
     callback close();
 }
 
+export global PanelState {
+    in property <bool> visible;
+    in property <string> title;
+    in-out property <length> size: 360px;
+    in property <image> frame;
+    in property <image> popup-frame;
+    in property <bool> popup-visible;
+    in property <length> popup-x;
+    in property <length> popup-y;
+    in property <WebCursor> cursor;
+
+    callback pointer(WebPointer);
+    callback scroll(WebScroll) -> bool;
+    callback hover(bool, length, length);
+    callback resized(length, length);
+    callback focus-changed(bool);
+    callback close();
+}
+
 export global DevToolsState {
     in property <bool> visible;
     in property <bool> docked-right;

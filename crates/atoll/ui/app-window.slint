@@ -1,5 +1,5 @@
 import { Theme } from "theme.slint";
-import { SidebarState, BrowserState, OverlayState, SettingsState, DevToolsState } from "state.slint";
+import { SidebarState, BrowserState, OverlayState, SettingsState, DevToolsState, PanelState } from "state.slint";
 import { DialogKind } from "structs.slint";
 import { Sidebar } from "sidebar/sidebar.slint";
 import { Toolbar } from "toolbar/toolbar.slint";
@@ -7,6 +7,7 @@ import { WebView } from "content/web-view.slint";
 import { NewTabPage } from "content/new-tab-page.slint";
 import { FindBar } from "content/find-bar.slint";
 import { DevToolsPanel } from "content/dev-tools-panel.slint";
+import { PluginPanel } from "content/plugin-panel.slint";
 import { PopupMenu } from "overlays/popup-menu.slint";
 import { PromptDialog } from "overlays/prompt-dialog.slint";
 import { ImportDialog } from "overlays/import-dialog.slint";
@@ -28,7 +29,8 @@ import { DownloadsPanel } from "overlays/downloads-panel.slint";
 import { BookmarksBar } from "toolbar/bookmarks-bar.slint";
 import { ResizeFrame } from "window/resize-frame.slint";
 
-export { SidebarState, BrowserState, OverlayState, SettingsState, DevToolsState }
+export { SidebarState, BrowserState, OverlayState, SettingsState, DevToolsState, PanelState }
+export { PluginItem } from "structs.slint";
 export { WorkspaceItem, SidebarRow, IslandTarget, MenuItemData, ArchiveItem, ExportIslandItem, DialogData, DialogKind, RowKind, TabLoadState, PointerAction, PointerButton, WebCursor, WebPointer, WebScroll, SuggestionKind, SuggestionItem, Completion, PaletteKind, PaletteItem, BookmarkItem, PageSecurity, SiteInfoDetail, DownloadItem, DownloadItemStatus } from "structs.slint";
 
 export component AppWindow inherits Window {
@@ -44,6 +46,9 @@ export component AppWindow inherits Window {
     no-frame: true;
 
     out property <bool> web-focused: web.focused;
+    out property <bool> panel-focused: panel.focused;
+    out property <length> panel-x: panel.surface-x;
+    out property <length> panel-y: panel.surface-y;
     out property <bool> dev-tools-focused: dev-tools.focused;
     out property <length> dev-tools-x: dev-tools.surface-x;
     out property <length> dev-tools-y: dev-tools.surface-y;
@@ -81,6 +86,10 @@ export component AppWindow inherits Window {
         find-bar.focus-input();
     }
 
+    public function focus-panel() {
+        panel.focus-panel();
+    }
+
     public function focus-dev-tools() {
         dev-tools.focus-dev-tools();
     }
@@ -111,20 +120,35 @@ export component AppWindow inherits Window {
             if BrowserState.bookmarks-bar-visible && !BrowserState.fullscreen : BookmarksBar { }
 
             content := Rectangle {
+                property <bool> panel-shown: PanelState.visible;
+                property <length> panel-extent: !self.panel-shown ? 0px
+                    : clamp(PanelState.size, 240px, max(240px, self.width - 320px));
                 property <bool> dev-tools-shown: DevToolsState.visible && BrowserState.has-page;
                 property <length> dev-tools-extent: !self.dev-tools-shown ? 0px
                     : DevToolsState.docked-right ? clamp(DevToolsState.size, 260px, max(260px, self.width - 240px))
                     : clamp(DevToolsState.size, 140px, max(140px, self.height - 140px));
 
+                property <length> page-width: parent.width - self.panel-extent;
+
                 web := WebView {
                     x: 0;
                     y: 0;
-                    width: DevToolsState.docked-right ? parent.width - parent.dev-tools-extent : parent.width;
+                    width: DevToolsState.docked-right ? parent.page-width - parent.dev-tools-extent : parent.page-width;
                     height: DevToolsState.docked-right ? parent.height : parent.height - parent.dev-tools-extent;
                     visible: BrowserState.has-page;
                 }
 
+                panel := PluginPanel {
+                    x: parent.page-width;
+                    y: 0;
+                    width: parent.panel-extent;
+                    height: parent.height;
+                    visible: parent.panel-shown;
+                }
+
                 new-tab := NewTabPage {
+                    width: parent.page-width;
+                    height: parent.height;
                     visible: !BrowserState.has-page;
                 }
 
@@ -137,7 +161,7 @@ export component AppWindow inherits Window {
                 dev-tools := DevToolsPanel {
                     x: DevToolsState.docked-right ? web.width : 0;
                     y: DevToolsState.docked-right ? 0 : web.height;
-                    width: DevToolsState.docked-right ? parent.dev-tools-extent : parent.width;
+                    width: DevToolsState.docked-right ? parent.dev-tools-extent : parent.page-width;
                     height: DevToolsState.docked-right ? parent.height : parent.dev-tools-extent;
                     visible: parent.dev-tools-shown;
                 }

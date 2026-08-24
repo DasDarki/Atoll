@@ -69,6 +69,8 @@ enum Command {
     UpdateFilterLists,
     /// A command an extension added: the extension and the command inside it.
     Plugin(String, String),
+    /// A panel an extension brings along: the extension and the panel.
+    PluginPanel(String, String),
 }
 
 #[derive(Debug, Clone)]
@@ -365,9 +367,10 @@ impl Browser {
             .unzip()
     }
 
-    /// The commands extensions added, in the order they registered them.
+    /// The commands and panels extensions added, in the order they registered them.
     fn plugin_commands(&self) -> Vec<(Command, String, String, String)> {
-        self.plugins
+        let commands = self
+            .plugins
             .commands()
             .into_iter()
             .map(|(plugin, command)| {
@@ -377,8 +380,16 @@ impl Browser {
                     command.shortcut.unwrap_or_default(),
                     "erweiterung plugin".to_owned(),
                 )
-            })
-            .collect()
+            });
+        let panels = self.plugins.panels().into_iter().map(|(plugin, panel)| {
+            (
+                Command::PluginPanel(plugin, panel.id),
+                panel.title,
+                String::new(),
+                "erweiterung plugin panel fenster".to_owned(),
+            )
+        });
+        commands.chain(panels).collect()
     }
 
     fn commands(&self) -> Vec<(Command, String, &'static str, &'static str)> {
@@ -794,6 +805,7 @@ impl Browser {
             }
             Command::UpdateFilterLists => self.update_filter_lists(),
             Command::Plugin(plugin, command) => self.plugins.run_command(&plugin, &command),
+            Command::PluginPanel(plugin, panel) => self.plugins.show_panel(&plugin, &panel),
             Command::SearchEngine(index) => {
                 if let Some(engine) = SEARCH_ENGINES.get(index) {
                     self.set_search_url(engine.url);

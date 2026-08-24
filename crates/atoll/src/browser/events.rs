@@ -35,6 +35,8 @@ impl Browser {
                     self.present_frame();
                 } else if self.is_live_dev_tools(view) {
                     self.present_dev_tools_frame();
+                } else if self.is_live_panel(view) {
+                    self.present_panel_frame();
                 }
                 Effect::NONE
             }
@@ -43,6 +45,8 @@ impl Browser {
                     self.present_popup();
                 } else if self.is_live_dev_tools(view) {
                     self.present_dev_tools_popup();
+                } else if self.is_live_panel(view) {
+                    self.present_panel_popup();
                 }
                 Effect::NONE
             }
@@ -89,6 +93,10 @@ impl Browser {
             EngineEvent::CursorChanged { view, cursor } => {
                 if let Some(owner) = self.dev_tools_owner(view) {
                     self.set_dev_tools_cursor(owner, view, cursor);
+                    return Effect::NONE;
+                }
+                if self.is_live_panel(view) {
+                    self.set_panel_cursor(cursor);
                     return Effect::NONE;
                 }
                 if let Some(tab) = self.tab_of(view)
@@ -205,6 +213,10 @@ impl Browser {
                     self.close_dev_tools(owner);
                     return Effect::NONE;
                 }
+                if self.is_live_panel(view) {
+                    self.panel_closed(view);
+                    return Effect::NONE;
+                }
                 if let Some(tab) = self.tab_of(view) {
                     self.close_tab(tab);
                 }
@@ -213,6 +225,10 @@ impl Browser {
             EngineEvent::Closed(view) => {
                 if let Some(owner) = self.dev_tools_owner(view) {
                     self.dev_tools_closed(owner);
+                    return Effect::NONE;
+                }
+                if self.is_live_panel(view) {
+                    self.panel_closed(view);
                     return Effect::NONE;
                 }
                 self.view_closed(view)

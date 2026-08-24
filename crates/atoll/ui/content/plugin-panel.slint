@@ -1,0 +1,74 @@
+import { Theme } from "../theme.slint";
+import { PanelState } from "../state.slint";
+import { IconButton } from "../widgets/icon-button.slint";
+import { WebSurface } from "web-surface.slint";
+
+export component PluginPanel inherits Rectangle {
+    out property <bool> focused: surface.focused;
+    out property <length> surface-x: surface.absolute-position.x;
+    out property <length> surface-y: surface.absolute-position.y;
+
+    public function focus-panel() {
+        surface.focus-surface();
+    }
+
+    background: Theme.chrome;
+
+    VerticalLayout {
+        Rectangle {
+            height: 30px;
+
+            HorizontalLayout {
+                padding-left: 10px;
+                padding-right: 4px;
+                spacing: 4px;
+
+                Image {
+                    width: 13px;
+                    height: 13px;
+                    y: (parent.height - self.height) / 2;
+                    source: @image-url("../icons/layers.svg");
+                    colorize: Theme.text-faint;
+                }
+                Text {
+                    text: PanelState.title;
+                    color: Theme.text-muted;
+                    font-size: Theme.font-small + 1px;
+                    font-weight: 600;
+                    vertical-alignment: center;
+                    horizontal-stretch: 1;
+                    overflow: elide;
+                }
+                IconButton {
+                    width: 24px;
+                    height: 24px;
+                    y: (parent.height - self.height) / 2;
+                    icon-size: 14px;
+                    icon: @image-url("../icons/close.svg");
+                    clicked => { PanelState.close(); }
+                }
+            }
+
+            Rectangle {
+                y: parent.height - 1px;
+                height: 1px;
+                background: Theme.border;
+            }
+        }
+
+        surface := WebSurface {
+            vertical-stretch: 1;
+            frame: PanelState.frame;
+            popup-frame: PanelState.popup-frame;
+            popup-visible: PanelState.popup-visible;
+            popup-x: PanelState.popup-x;
+            popup-y: PanelState.popup-y;
+            cursor: PanelState.cursor;
+            pointer(pointer) => { PanelState.pointer(pointer); }
+            scroll(scroll) => { return PanelState.scroll(scroll); }
+            hover(inside, x, y) => { PanelState.hover(inside, x, y); }
+            resized(width, height) => { PanelState.resized(width, height); }
+            focus-changed(focused) => { PanelState.focus-changed(focused); }
+        }
+    }
+}

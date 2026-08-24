@@ -19,7 +19,7 @@ use mlua::Value as LuaValue;
 use crate::api::{self, Command, PluginContext};
 use crate::event::Event;
 use crate::host::{PendingId, PendingResult, PluginHost, PluginId};
-use crate::manifest::{MANIFEST_NAME, Manifest, ManifestError, Permission};
+use crate::manifest::{MANIFEST_NAME, Manifest, ManifestError, Panel, Permission};
 
 /// How much memory one extension may use.
 const MEMORY_LIMIT: usize = 64 * 1024 * 1024;
@@ -61,6 +61,9 @@ pub struct PageMessage {
     pub payload: Value,
     /// What the browser needs to answer the page.
     pub reply: u64,
+    /// The extension the message belongs to, for messages from its own panel. Without it the
+    /// message goes to every extension that may see the page.
+    pub target: Option<PluginId>,
 }
 
 /// What the browser shows about a loaded extension.
@@ -72,6 +75,7 @@ pub struct PluginInfo {
     pub description: String,
     pub permissions: Vec<Permission>,
     pub commands: Vec<Command>,
+    pub panels: Vec<Panel>,
     /// Why the extension was switched off, if it was.
     pub failure: Option<String>,
 }
@@ -129,6 +133,7 @@ impl Plugin {
             description: manifest.description.clone(),
             permissions: manifest.listed_permissions(),
             commands: self.context.commands.borrow().clone(),
+            panels: manifest.panels.clone(),
             failure: self.failure.clone(),
         }
     }
@@ -429,12 +434,20 @@ impl PluginRuntime {
     /// Hands a message of a page to every extension that may see that page. The first answer a
     /// handler gives is sent back, even when it had to wait for something first.
     pub fn dispatch_message(&mut self, message: PageMessage) {
-        let listeners: Vec<PluginId> = self
-            .plugins
-            .iter()
-            .filter(|(_, plugin)| plugin.sees_page(&message.frame_url))
-            .map(|(id, _)| id.clone())
-            .collect();
+        let listeners: Vec<PluginId> = match &message.target {
+            Some(target) => self
+                .plugins
+                .keys()
+                .filter(|id| *id == target)
+                .cloned()
+                .collect(),
+            None => self
+                .plugins
+                .iter()
+                .filter(|(_, plugin)| plugin.sees_page(&message.frame_url))
+                .map(|(id, _)| id.clone())
+                .collect(),
+        };
         if listeners.is_empty() {
             self.host
                 .answer_page(&String::new(), message.reply, Ok(Value::Null));

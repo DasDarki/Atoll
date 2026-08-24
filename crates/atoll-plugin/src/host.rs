@@ -4,7 +4,7 @@
 use serde_json::Value;
 
 use crate::content::{ContentScript, ScriptWorld};
-use crate::manifest::Permission;
+use crate::manifest::{Panel, Permission};
 
 /// Identifies a loaded extension, which is the `id` of its manifest.
 pub type PluginId = String;
@@ -94,6 +94,14 @@ pub trait PluginHost {
 
     /// Answers a message a page sent with `window.atoll.send`.
     fn answer_page(&self, plugin: &PluginId, reply: u64, answer: PendingResult);
+
+    /// Shows the panel `panel` of the extension.
+    fn show_panel(&self, plugin: &PluginId, panel: &Panel) -> Result<(), HostError>;
+
+    fn hide_panel(&self, plugin: &PluginId, panel: &str);
+
+    /// Sends a message to the panel, where `window.atoll.on` picks it up.
+    fn post_to_panel(&self, plugin: &PluginId, panel: &str, channel: &str, payload: Value);
 
     /// The extension ran into an error Atoll should show, for example a failed handler.
     fn report(&self, plugin: &PluginId, message: &str);
