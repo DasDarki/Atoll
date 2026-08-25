@@ -4,7 +4,7 @@ use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
 use atoll_adblock::{Blocker, FILTER_LISTS, ListState, ListStatus, Updater, site_of};
-use atoll_engine::{ContentFilter, DocumentRules, ResourceKind, ResourceRequest};
+use atoll_engine::{ContentFilter, DocumentRules, ResourceKind, ResourceRequest, Verdict};
 use atoll_storage::prelude::*;
 use slint::ComponentHandle;
 
@@ -64,13 +64,18 @@ struct AdblockFilter {
 }
 
 impl ContentFilter for AdblockFilter {
-    fn blocks(&self, request: &ResourceRequest<'_>) -> bool {
-        self.blocker.blocks(
+    fn verdict(&self, request: &ResourceRequest<'_>) -> Verdict {
+        let blocked = self.blocker.blocks(
             request.url,
             request.source_url,
             request.page_url,
             request_type(request.kind),
-        )
+        );
+        if blocked {
+            Verdict::Block
+        } else {
+            Verdict::Allow
+        }
     }
 
     fn document_rules(&self, url: &str) -> DocumentRules {

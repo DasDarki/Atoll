@@ -7,7 +7,7 @@ use cef::{
     WrapResourceRequestHandler, rc::Rc as _, wrap_resource_request_handler,
 };
 
-use crate::filter::{ContentFilter, ResourceKind, ResourceRequest};
+use crate::filter::{ContentFilter, ResourceKind, ResourceRequest, Verdict};
 
 wrap_resource_request_handler! {
     pub(crate) struct FilteringResourceHandler {
@@ -42,17 +42,22 @@ wrap_resource_request_handler! {
                 .map(|frame| CefString::from(&frame.url()).to_string())
                 .filter(|url| !url.is_empty())
                 .unwrap_or_else(|| source_url.clone());
-            let blocked = self.filter.blocks(&ResourceRequest {
+            let verdict = self.filter.verdict(&ResourceRequest {
                 url: &url,
                 source_url: &source_url,
                 page_url: &page_url,
                 kind,
             });
-            if blocked {
-                self.blocked.fetch_add(1, Ordering::Relaxed);
-                ReturnValue::CANCEL
-            } else {
-                ReturnValue::CONTINUE
+            match verdict {
+                Verdict::Allow => ReturnValue::CONTINUE,
+                Verdict::Block => {
+                    self.blocked.fetch_add(1, Ordering::Relaxed);
+                    ReturnValue::CANCEL
+                }
+                Verdict::Redirect(target) => {
+                    request.set_url(Some(&target.as_str().into()));
+                    ReturnValue::CONTINUE
+                }
             }
         }
     }

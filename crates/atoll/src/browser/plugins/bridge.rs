@@ -5,7 +5,7 @@ use std::time::Duration;
 
 use atoll_plugin::{
     ContentScript, HostError, HttpRequest, LogLevel, Panel, PendingId, PendingResult, PluginHost,
-    PluginId, ScriptWorld, TabInfo,
+    PluginId, RequestRule, ScriptWorld, TabInfo,
 };
 use atoll_storage::Storage;
 use atoll_storage::prelude::*;
@@ -259,6 +259,18 @@ impl PluginHost for Bridge {
             for browser in manager.browsers() {
                 browser.post_to_panel(plugin, panel, channel, &payload);
             }
+        }
+    }
+
+    fn set_request_rule(&self, plugin: &PluginId, rule: RequestRule) {
+        if let Some(plugins) = self.plugins.borrow().upgrade() {
+            plugins.rules().set_rule(plugin, rule);
+        }
+    }
+
+    fn remove_request_rules(&self, plugin: &PluginId, id: Option<&str>) {
+        if let Some(plugins) = self.plugins.borrow().upgrade() {
+            plugins.rules().remove(plugin, id);
         }
     }
 

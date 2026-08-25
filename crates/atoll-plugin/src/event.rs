@@ -24,6 +24,14 @@ pub enum Event {
         url: String,
         path: Option<String>,
     },
+    /// A rule of the extension caught a request.
+    RequestCaught {
+        rule: String,
+        url: String,
+        kind: String,
+        /// `block` or the address the request was sent to instead.
+        action: String,
+    },
 }
 
 impl Event {
@@ -35,6 +43,7 @@ impl Event {
             Event::TabActivated(_) => "tab.activated",
             Event::PageLoaded { .. } => "page.loaded",
             Event::DownloadFinished { .. } => "download.finished",
+            Event::RequestCaught { .. } => "request.caught",
         }
     }
 
@@ -51,6 +60,12 @@ impl Event {
                 url,
                 path,
             } => json!({ "fileName": file_name, "url": url, "path": path }),
+            Event::RequestCaught {
+                rule,
+                url,
+                kind,
+                action,
+            } => json!({ "rule": rule, "url": url, "kind": kind, "action": action }),
         }
     }
 
@@ -61,6 +76,7 @@ impl Event {
                 Permission::Tabs
             }
             Event::PageLoaded { .. } => Permission::Pages,
+            Event::RequestCaught { .. } => Permission::Requests,
             Event::DownloadFinished { .. } => Permission::Downloads,
         }
     }
@@ -70,7 +86,9 @@ impl Event {
         match self {
             Event::TabOpened(tab) | Event::TabActivated(tab) => Some(&tab.url),
             Event::PageLoaded { url, .. } => Some(url),
-            Event::TabClosed { .. } | Event::DownloadFinished { .. } => None,
+            Event::TabClosed { .. }
+            | Event::DownloadFinished { .. }
+            | Event::RequestCaught { .. } => None,
         }
     }
 }

@@ -167,6 +167,21 @@ atoll.content = {
 	end,
 }
 
+atoll.requests = {
+	block = function(rule)
+		assert(type(rule) == "table", "atoll.requests.block braucht eine Tabelle")
+		native.request_rule(tostring(rule.id or "block"), rule.patterns or {}, rule.types or {}, nil)
+	end,
+	redirect = function(rule)
+		assert(type(rule) == "table", "atoll.requests.redirect braucht eine Tabelle")
+		assert(type(rule.to) == "string", "eine Umleitung braucht ein Ziel unter \"to\"")
+		native.request_rule(tostring(rule.id or "redirect"), rule.patterns or {}, rule.types or {}, rule.to)
+	end,
+	clear = function(id)
+		native.clear_request_rules(if id ~= nil then tostring(id) else nil)
+	end,
+}
+
 atoll.panels = {
 	show = function(id)
 		native.show_panel(tostring(id))

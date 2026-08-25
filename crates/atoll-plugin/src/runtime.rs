@@ -256,6 +256,7 @@ impl PluginRuntime {
             for name in plugin.context.scripts.borrow().iter() {
                 self.host.remove_content_script(id, name);
             }
+            self.host.remove_request_rules(id, None);
             self.waiting.retain(|_, waiting| waiting != id);
             self.host.commands_changed(id);
         }
@@ -287,6 +288,17 @@ impl PluginRuntime {
             .collect()
     }
 
+    /// Tells one extension what happened, if it may hear it.
+    pub fn dispatch_to(&mut self, plugin: &PluginId, event: &Event) {
+        if self
+            .plugins
+            .get(plugin)
+            .is_some_and(|loaded| loaded.receives(event))
+        {
+            self.deliver(std::slice::from_ref(plugin), event);
+        }
+    }
+
     /// Tells every extension that may see it what happened.
     pub fn dispatch(&mut self, event: &Event) {
         let listeners: Vec<PluginId> = self
@@ -295,10 +307,14 @@ impl PluginRuntime {
             .filter(|(_, plugin)| plugin.receives(event))
             .map(|(id, _)| id.clone())
             .collect();
+        self.deliver(&listeners, event);
+    }
+
+    fn deliver(&mut self, listeners: &[PluginId], event: &Event) {
         let payload = event.payload();
         for id in listeners {
             let prepared = {
-                let plugin = &self.plugins[&id];
+                let plugin = &self.plugins[id];
                 let name = event.name().to_owned();
                 thread_for(&plugin.lua, "event").and_then(|thread| {
                     let payload = plugin.lua.to_value(&payload)?;
@@ -308,12 +324,12 @@ impl PluginRuntime {
             match prepared {
                 Ok((thread, arguments)) => {
                     if let Some(failure) =
-                        self.drive(&id, thread, arguments, CALL_BUDGET, Purpose::Plain)
+                        self.drive(id, thread, arguments, CALL_BUDGET, Purpose::Plain)
                     {
-                        self.failed(&id, &failure);
+                        self.failed(id, &failure);
                     }
                 }
-                Err(error) => self.host.report(&id, &message_of(&error)),
+                Err(error) => self.host.report(id, &message_of(&error)),
             }
         }
     }

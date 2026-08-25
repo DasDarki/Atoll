@@ -5,6 +5,7 @@ use serde_json::Value;
 
 use crate::content::{ContentScript, ScriptWorld};
 use crate::manifest::{Panel, Permission};
+use crate::rules::RequestRule;
 
 /// Identifies a loaded extension, which is the `id` of its manifest.
 pub type PluginId = String;
@@ -102,6 +103,12 @@ pub trait PluginHost {
 
     /// Sends a message to the panel, where `window.atoll.on` picks it up.
     fn post_to_panel(&self, plugin: &PluginId, panel: &str, channel: &str, payload: Value);
+
+    /// Adds or replaces a rule for requests.
+    fn set_request_rule(&self, plugin: &PluginId, rule: RequestRule);
+
+    /// Removes one rule, or every rule of the extension when `id` is `None`.
+    fn remove_request_rules(&self, plugin: &PluginId, id: Option<&str>);
 
     /// The extension ran into an error Atoll should show, for example a failed handler.
     fn report(&self, plugin: &PluginId, message: &str);

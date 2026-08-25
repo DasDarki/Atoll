@@ -1,5 +1,6 @@
 use std::cell::{Cell, RefCell};
 use std::rc::{Rc, Weak};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use anyhow::Result;
@@ -10,6 +11,7 @@ use atoll_storage::prelude::*;
 use slint::winit_030::WinitWindowAccessor;
 use slint::{CloseRequestResponse, ComponentHandle, LogicalPosition, LogicalSize};
 
+use super::filter::FilterChain;
 use super::memory::exceeds_budget;
 use super::{Browser, Shared};
 use crate::bridge::{bindings, window_events};
@@ -404,7 +406,10 @@ impl WindowManager {
             sandbox: std::env::var_os("ATOLL_NO_SANDBOX").is_none(),
             extra_switches: chromium_switches(),
             schedule_work: MessagePump::scheduler(),
-            content_filter: Some(content_filter),
+            content_filter: Some(Arc::new(FilterChain::new(
+                content_filter,
+                self.shared.plugins.rules(),
+            ))),
         };
         match Engine::initialize(config, self.shared.gpu.clone()) {
             Ok(engine) => {
@@ -479,6 +484,7 @@ impl WindowManager {
             engine.do_message_loop_work();
             engine.drain_events()
         };
+        self.shared.plugins.report_rule_hits();
         if events.is_empty() {
             return;
         }

@@ -8,6 +8,7 @@ mod dev_tools;
 mod downloads;
 mod events;
 mod favicons;
+mod filter;
 mod layout;
 mod lifecycle;
 mod memory;

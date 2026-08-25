@@ -75,10 +75,22 @@ pub struct DocumentRules {
 
 /// Decides which requests are blocked and which elements are hidden, see
 /// [`crate::EngineConfig::content_filter`].
+/// What happens to a request.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub enum Verdict {
+    /// Let it through.
+    #[default]
+    Allow,
+    /// Stop it.
+    Block,
+    /// Fetch this address instead.
+    Redirect(String),
+}
+
 pub trait ContentFilter: Send + Sync {
     /// Whether `request` is blocked. Called on the network thread for every request except
     /// navigations of the top level document, so it has to be fast.
-    fn blocks(&self, request: &ResourceRequest<'_>) -> bool;
+    fn verdict(&self, request: &ResourceRequest<'_>) -> Verdict;
 
     /// The rules for a document starting to load at `url`, called on the main thread.
     fn document_rules(&self, url: &str) -> DocumentRules;

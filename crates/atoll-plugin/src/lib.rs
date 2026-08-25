@@ -11,6 +11,7 @@ mod event;
 mod host;
 mod manifest;
 mod pattern;
+mod rules;
 mod runtime;
 
 pub use api::Command;
@@ -23,4 +24,5 @@ pub use manifest::{
     API_VERSION, MANIFEST_NAME, Manifest, ManifestError, Panel, PanelLocation, Permission,
 };
 pub use pattern::{PatternError, UrlPattern, matches_glob};
+pub use rules::{RequestRule, RuleAction, RuleHit, RuleSet};
 pub use runtime::{PageMessage, PluginError, PluginInfo, PluginRuntime, installed};

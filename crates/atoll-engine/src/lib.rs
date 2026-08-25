@@ -34,7 +34,7 @@ pub use events::{
     ContextMenuRequest, CursorKind, DownloadState, EngineEvent, FileDialogMode, FileDialogRequest,
     JsDialogKind, JsDialogRequest, MenuEntry, MenuEntryKind, OpenDisposition, RequestId,
 };
-pub use filter::{ContentFilter, DocumentRules, ResourceKind, ResourceRequest};
+pub use filter::{ContentFilter, DocumentRules, ResourceKind, ResourceRequest, Verdict};
 pub use input::{EditCommand, KeyInput, KeyInputKind, Modifiers, MouseButton, ZoomCommand};
 pub use page_bridge::{ReplyId, ScriptId, ScriptWorld};
 pub use process::run_subprocess;

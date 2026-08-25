@@ -6,7 +6,8 @@ use std::rc::Rc;
 
 use atoll_plugin::{
     ContentScript, Event, HostError, HttpRequest, LogLevel, PageMessage, Panel, PendingId,
-    PendingResult, Permission, PluginHost, PluginId, PluginRuntime, ScriptWorld, TabInfo,
+    PendingResult, Permission, PluginHost, PluginId, PluginRuntime, RequestRule, RuleAction,
+    RuleSet, ScriptWorld, TabInfo,
 };
 use serde_json::{Value, json};
 
@@ -21,6 +22,7 @@ struct FakeBrowser {
     fetched: RefCell<Vec<(PendingId, HttpRequest)>>,
     disabled: RefCell<Vec<String>>,
     page: RefCell<Option<String>>,
+    rules: RuleSet,
     scripts: RefCell<BTreeMap<String, ContentScript>>,
     evaluated: RefCell<Vec<(PendingId, String, ScriptWorld)>>,
     answers: RefCell<Vec<(u64, PendingResult)>>,
@@ -140,6 +142,14 @@ impl PluginHost for FakeBrowser {
     fn post_to_panel(&self, _plugin: &PluginId, panel: &str, channel: &str, payload: Value) {
         self.note(format!("post {channel} to {panel}: {payload}"));
     }
+
+    fn set_request_rule(&self, plugin: &PluginId, rule: RequestRule) {
+        self.rules.set(plugin, vec![rule]);
+    }
+
+    fn remove_request_rules(&self, plugin: &PluginId, id: Option<&str>) {
+        self.rules.remove(plugin, id);
+    }
 }
 
 /// An extension folder that is removed when the test ends.
@@ -198,6 +208,7 @@ fn runtime() -> (PluginRuntime, Rc<FakeBrowser>) {
 const ALL: &[Permission] = &[
     Permission::Tabs,
     Permission::Pages,
+    Permission::Requests,
     Permission::Storage,
     Permission::Network,
     Permission::Downloads,
@@ -653,4 +664,51 @@ fn a_panel_only_talks_to_its_own_extension() {
         target: Some("demo".to_owned()),
     });
     assert_eq!(browser.answers.borrow()[0], (5, Ok(json!("von hallo"))));
+}
+
+#[test]
+fn request_rules_need_the_permission_and_stay_inside_the_sites() {
+    let extension = Extension::new(
+        "rules",
+        &manifest("\"requests\"", "\"*://cdn.example.org/*\""),
+        r#"
+        local atoll = require("@atoll")
+        atoll.requests.block{ id = "ads", patterns = { "*://ads.test/*" }, types = { "script" } }
+        atoll.commands.register{ id = "bad", run = function()
+            atoll.requests.redirect{ id = "weg", patterns = { "*://slow.test/*" }, to = "https://evil.test/x" }
+        end }
+        atoll.commands.register{ id = "good", run = function()
+            atoll.requests.redirect{ id = "cdn", patterns = { "*://slow.test/*" }, to = "https://cdn.example.org/x" }
+        end }
+        "#,
+    );
+    let (mut runtime, browser) = runtime();
+    runtime.load(extension.path(), ALL).unwrap();
+    assert_eq!(
+        browser.rules.verdict("https://ads.test/a.js", "script"),
+        Some(RuleAction::Block)
+    );
+    assert_eq!(
+        browser.rules.verdict("https://ads.test/a.png", "image"),
+        None
+    );
+
+    runtime.run_command(&"demo".to_owned(), "bad");
+    assert!(
+        browser.reports()[0].contains("evil.test"),
+        "a redirect has to stay inside the sites of the manifest: {:?}",
+        browser.reports()
+    );
+
+    runtime.run_command(&"demo".to_owned(), "good");
+    assert_eq!(
+        browser.rules.verdict("https://slow.test/a.png", "image"),
+        Some(RuleAction::Redirect("https://cdn.example.org/x".to_owned()))
+    );
+
+    runtime.unload(&"demo".to_owned());
+    assert!(
+        browser.rules.is_empty(),
+        "an extension that is gone stops filtering"
+    );
 }

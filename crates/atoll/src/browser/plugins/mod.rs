@@ -10,13 +10,14 @@ use std::cell::{Cell, RefCell};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
 use std::rc::{Rc, Weak};
+use std::sync::Arc;
 
 use atoll_core::Timestamp;
 use atoll_engine::{ReplyId, ScriptId, ViewId};
 use atoll_plugin::{
     Command, ContentScript, Event, HostError, Manifest, PageMessage, Panel, PendingId,
-    PendingResult, Permission, PluginHost, PluginId, PluginInfo, PluginRuntime, ScriptWorld,
-    TabInfo,
+    PendingResult, Permission, PluginHost, PluginId, PluginInfo, PluginRuntime, RuleAction,
+    RuleSet, ScriptWorld, TabInfo,
 };
 use atoll_storage::prelude::*;
 use atoll_storage::{PluginRecord, Storage};
@@ -45,6 +46,8 @@ pub struct Plugins {
     replies: RefCell<HashMap<u64, (ViewId, ReplyId)>>,
     /// The engine instances that show a panel, and whose panel they show.
     panels: RefCell<HashMap<ViewId, (PluginId, String)>>,
+    /// What extensions want done with requests, read on the network thread.
+    rules: Arc<RuleSet>,
     next_reply: Cell<u64>,
     manager: RefCell<Weak<WindowManager>>,
 }
@@ -62,6 +65,7 @@ impl Plugins {
             running: RefCell::default(),
             replies: RefCell::default(),
             panels: RefCell::default(),
+            rules: Arc::default(),
             next_reply: Cell::default(),
             manager: RefCell::default(),
         })
@@ -104,6 +108,31 @@ impl Plugins {
         self.commands().into_iter().find_map(|(plugin, command)| {
             (command.shortcut.as_deref() == Some(keys)).then_some((plugin, command.id))
         })
+    }
+
+    /// The rules for requests, for the filter chain of the engine.
+    pub fn rules(&self) -> Arc<RuleSet> {
+        self.rules.clone()
+    }
+
+    /// Tells extensions about the requests their rules caught, in one go.
+    pub fn report_rule_hits(&self) {
+        let hits = self.rules.take_hits();
+        for hit in hits {
+            let action = match hit.action {
+                RuleAction::Block => "block".to_owned(),
+                RuleAction::Redirect(target) => target,
+            };
+            self.runtime.borrow_mut().dispatch_to(
+                &hit.plugin,
+                &Event::RequestCaught {
+                    rule: hit.rule,
+                    url: hit.url,
+                    kind: hit.kind,
+                    action,
+                },
+            );
+        }
     }
 
     /// Everything extensions want in pages, for a view that is new or was reloaded.

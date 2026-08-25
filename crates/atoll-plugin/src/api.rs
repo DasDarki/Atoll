@@ -14,6 +14,7 @@ use crate::host::{
 };
 use crate::manifest::{Manifest, Panel, Permission};
 use crate::pattern::UrlPattern;
+use crate::rules::{RequestRule, RuleAction};
 
 /// How long an extension may sleep in one call.
 const MAX_SLEEP: u64 = 5 * 60 * 1000;
@@ -347,6 +348,64 @@ pub(crate) fn native_table(lua: &Lua, context: &Rc<PluginContext>) -> mlua::Resu
             let name = format!("{}/{id}", held.id);
             held.scripts.borrow_mut().remove(&name);
             held.host.remove_content_script(&held.id, &name);
+            Ok(())
+        })?,
+    )?;
+
+    let held = context.clone();
+    native.set(
+        "request_rule",
+        lua.create_function(
+            move |_,
+                  (id, patterns, kinds, target): (
+                String,
+                Vec<String>,
+                Vec<String>,
+                Option<String>,
+            )| {
+                held.require(Permission::Requests)?;
+                let patterns = patterns
+                    .iter()
+                    .map(|pattern| {
+                        UrlPattern::parse(pattern).map_err(|error| {
+                            mlua::Error::runtime(format!("\"{pattern}\": {error}"))
+                        })
+                    })
+                    .collect::<mlua::Result<Vec<_>>>()?;
+                if patterns.is_empty() {
+                    return Err(mlua::Error::runtime(
+                        "eine Regel braucht mindestens ein Muster unter \"patterns\"",
+                    ));
+                }
+                let action = match target {
+                    Some(target) => {
+                        if !held.manifest.covers(&target) {
+                            return Err(mlua::Error::runtime(missing_host(&target)));
+                        }
+                        RuleAction::Redirect(target)
+                    }
+                    None => RuleAction::Block,
+                };
+                held.host.set_request_rule(
+                    &held.id,
+                    RequestRule {
+                        plugin: held.id.clone(),
+                        id,
+                        patterns,
+                        kinds,
+                        action,
+                    },
+                );
+                Ok(())
+            },
+        )?,
+    )?;
+
+    let held = context.clone();
+    native.set(
+        "clear_request_rules",
+        lua.create_function(move |_, id: Option<String>| {
+            held.host.remove_request_rules(&held.id, id.as_deref());
             Ok(())
         })?,
     )?;

@@ -76,6 +76,11 @@ saved tabs therefore cost nothing at startup.
   manifest). Atoll shows it next to the page in an engine instance of its own, opened from the
   command palette or with `atoll.panels.show`. The panel talks to its extension through the same
   `window.atoll`, and only ever to the extension it belongs to.
+- **Extension request rules**: with the `requests` permission an extension blocks or redirects
+  requests (`atoll.requests.block`, `atoll.requests.redirect`) and hears about every hit through
+  `request.caught`. The browser asks for every request on its network thread, where no script may
+  run, so extensions hand in rules instead of a function. A redirect has to point at a site of the
+  manifest. The ad blocker is asked first, the rules after it.
 - **Site information**: the symbol in the address bar shows whether the connection is secure,
   the certificate and the zoom level, and deletes cookies and stored data of the site.
 - **Developer tools** docked below or next to the page, see *Architecture*.
@@ -240,7 +245,7 @@ Known limitations:
 - Input method composition (for example for CJK input) is forwarded but not positioned.
 - 1Password fills logins in but does not offer to save new ones.
 - yt-dlp does not get Atoll's cookies, so streamed videos that need a login may fail to download.
-- Extensions cannot filter requests yet, and they are only installed by putting a folder in place.
+- Extensions are installed by putting a folder in place, there is no import for archives yet.
 - `window.atoll` is there for the scripts of a page as well, so an extension has to check the
   messages it gets just like any other input from the web.
 - Passkeys and security keys are not supported. Chromium asks for them with a window of its own
