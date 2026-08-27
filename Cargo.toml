@@ -29,6 +29,7 @@ image = { version = "0.25", default-features = false, features = ["png"] }
 libc = "0.2"
 mlua = { version = "0.12", features = ["luau", "vendored", "serialize"] }
 pollster = "1"
+regex = "1"
 rfd = "0.17"
 rusqlite = { version = "0.40", features = ["bundled"] }
 serde = { version = "1", features = ["derive"] }
@@ -51,6 +52,7 @@ tungstenite = { version = "0.28", default-features = false, features = ["handsha
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 url = "2.5"
 wgpu = "30"
+zip = { version = "8", default-features = false, features = ["deflate"] }
 
 [workspace.lints.rust]
 unsafe_op_in_unsafe_fn = "deny"

@@ -299,6 +299,7 @@ export global SettingsState {
     in property <[PluginItem]> plugins;
     in property <string> plugin-directory;
     callback plugin-action(string, string);
+    callback install-plugin(string);
     callback open-plugin-folder();
 
     callback changed(string);

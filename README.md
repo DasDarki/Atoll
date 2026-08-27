@@ -66,6 +66,12 @@ saved tabs therefore cost nothing at startup.
   Every extension runs in a sandboxed Luau state of its own with a memory limit and a time
   budget; one that keeps running too long is switched off. Waiting for the browser (`atoll.sleep`,
   `atoll.http`) pauses the script without blocking the window.
+- **Installing extensions**: the settings take a zip archive or a git address next to the folder
+  under `~/.local/share/Atoll/plugins/`. Both land in a staging folder first, and only a package
+  with a readable `plugin.toml` moves to its place, named after the extension in the manifest.
+  What came from git is fetched again with one button (`git pull --ff-only`), and an extension
+  that then asks for more than before is put before the user again. The git ways need the `git`
+  command in the search path.
 - **Extensions in pages**: an extension puts styles and scripts into the sites of its manifest
   (`atoll.content.register`), by default into a world of its own that the page can neither see nor
   change, and before the page's own scripts run. It reads a page with `atoll.page.eval`, which
@@ -193,7 +199,7 @@ crates/
   atoll-adblock    ad blocking: filter lists, their updates and the per-site switch
   atoll-onepassword  logins from the 1Password CLI and matching them to sites
   atoll-video      video downloads through yt-dlp with progress and cancel
-  atoll-plugin     the Luau runtime for extensions, their manifests and permissions
+  atoll-plugin     the Luau runtime for extensions, their manifests, permissions and installation
   atoll-engine     CEF integration: off-screen browsers, rendering, input, clipboard bridge
   atoll            the application: Slint user interface and the controller
 ```
@@ -245,7 +251,7 @@ Known limitations:
 - Input method composition (for example for CJK input) is forwarded but not positioned.
 - 1Password fills logins in but does not offer to save new ones.
 - yt-dlp does not get Atoll's cookies, so streamed videos that need a login may fail to download.
-- Extensions are installed by putting a folder in place, there is no import for archives yet.
+- Extensions are not checked for a signature, and there is no directory to find them in.
 - `window.atoll` is there for the scripts of a page as well, so an extension has to check the
   messages it gets just like any other input from the web.
 - Passkeys and security keys are not supported. Chromium asks for them with a window of its own

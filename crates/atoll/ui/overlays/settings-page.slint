@@ -413,7 +413,7 @@ export component SettingsPage inherits Modal {
                     SectionTitle { text: "ERWEITERUNGEN"; }
                     if SettingsState.plugins.length == 0 : SettingRow {
                         title: "Keine Erweiterungen installiert";
-                        description: "Lege einen Ordner mit einer plugin.toml an, dann fragt Atoll beim nächsten Start nach.";
+                        description: "Installiere eine aus einem Archiv oder aus Git, oder lege einen Ordner mit einer plugin.toml an.";
                     }
                     for plugin[index] in SettingsState.plugins : VerticalLayout {
                         if index > 0 : Divider { }
@@ -437,6 +437,12 @@ export component SettingsPage inherits Modal {
                             font-size: Theme.font-small + 1px;
                             wrap: word-wrap;
                         }
+                        if plugin.source != "" : Text {
+                            text: plugin.source;
+                            color: Theme.text-faint;
+                            font-size: Theme.font-small;
+                            wrap: word-wrap;
+                        }
                         HorizontalLayout {
                             padding-top: 6px;
                             padding-bottom: 6px;
@@ -446,6 +452,10 @@ export component SettingsPage inherits Modal {
                                 text: "Neu laden";
                                 clicked => { SettingsState.plugin-action(plugin.id, "reload"); }
                             }
+                            if plugin.from-git : ActionButton {
+                                text: "Aktualisieren";
+                                clicked => { SettingsState.plugin-action(plugin.id, "update"); }
+                            }
                             ActionButton {
                                 text: "Protokoll";
                                 clicked => { SettingsState.plugin-action(plugin.id, "log"); }
@@ -454,6 +464,19 @@ export component SettingsPage inherits Modal {
                                 text: "Entfernen";
                                 clicked => { SettingsState.plugin-action(plugin.id, "remove"); }
                             }
+                        }
+                    }
+                    Divider { }
+                    SettingRow {
+                        title: "Erweiterung installieren";
+                        description: "Aus einem Zip-Archiv oder aus einem Git-Repository. Atoll fragt danach, was die Erweiterung darf.";
+                        ActionButton {
+                            text: "Aus Archiv";
+                            clicked => { SettingsState.install-plugin("archive"); }
+                        }
+                        ActionButton {
+                            text: "Aus Git";
+                            clicked => { SettingsState.install-plugin("git"); }
                         }
                     }
                     Divider { }

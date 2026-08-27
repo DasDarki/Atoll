@@ -2,6 +2,7 @@
 //! window. The Luau side lives in `atoll-plugin`, this is the browser side of its [`PluginHost`].
 
 mod bridge;
+mod install;
 mod panel;
 
 pub use panel::OpenPanel;
@@ -17,7 +18,7 @@ use atoll_engine::{ReplyId, ScriptId, ViewId};
 use atoll_plugin::{
     Command, ContentScript, Event, HostError, Manifest, PageMessage, Panel, PendingId,
     PendingResult, Permission, PluginHost, PluginId, PluginInfo, PluginRuntime, RuleAction,
-    RuleSet, ScriptWorld, TabInfo,
+    RuleSet, ScriptWorld, Source, TabInfo,
 };
 use atoll_storage::prelude::*;
 use atoll_storage::{PluginRecord, Storage};
@@ -262,6 +263,9 @@ impl Plugins {
                     folder,
                     enabled: record.as_ref().is_some_and(|record| record.enabled),
                     known: record.is_some(),
+                    source: record
+                        .as_ref()
+                        .map_or(Source::Folder, |record| Source::parse(&record.source)),
                     info,
                 })
             })
@@ -367,6 +371,8 @@ pub struct InstalledPlugin {
     pub enabled: bool,
     /// Whether the user has already been asked about it.
     pub known: bool,
+    /// Where it came from, for updating it later.
+    pub source: Source,
     /// What the runtime knows, as long as it is loaded.
     pub info: Option<PluginInfo>,
 }
@@ -458,17 +464,15 @@ impl Browser {
 
     /// Asks whether a new extension, or one that wants more than before, may run.
     fn ask_about_plugin(&self, installed: InstalledPlugin) {
-        if !self
-            .plugins
-            .asking
-            .borrow_mut()
-            .insert(installed.manifest.id.clone())
-        {
+        self.ask_about(installed.manifest, installed.folder, installed.source);
+    }
+
+    /// Asks the user and starts the extension if they agree.
+    fn ask_about(&self, manifest: Manifest, folder: PathBuf, source: Source) {
+        if !self.plugins.asking.borrow_mut().insert(manifest.id.clone()) {
             return;
         }
         let this = self.this();
-        let manifest = installed.manifest;
-        let folder = installed.folder;
         let message = permission_request(&manifest);
         self.confirm(
             &format!("Erweiterung „{}“ zulassen?", manifest.name),
@@ -477,10 +481,11 @@ impl Browser {
             move || {
                 if let Some(browser) = this.upgrade() {
                     browser.plugins.asking.borrow_mut().remove(&manifest.id);
-                    browser.plugins.grant(&manifest, "folder");
+                    browser.plugins.grant(&manifest, source.as_str());
                     let granted = manifest.listed_permissions();
                     browser.plugins.start(&folder, &manifest, &granted);
                     browser.refresh_plugin_shortcuts();
+                    browser.show_plugin_settings();
                 }
             },
         );
@@ -714,6 +719,7 @@ impl Browser {
                     &text,
                 );
             }
+            "update" => self.update_plugin(installed),
             "remove" => self.remove_plugin(installed),
             other => tracing::warn!(action = other, "unknown extension action"),
         }
@@ -740,12 +746,30 @@ impl Browser {
         );
     }
 
+    /// Settings: the two ways to install an extension.
+    pub fn install_plugin(&self, kind: &str) {
+        match kind {
+            "archive" => self.install_plugin_archive(),
+            "git" => self.install_plugin_git(),
+            other => tracing::warn!(kind = other, "unknown way to install an extension"),
+        }
+    }
+
     pub fn open_plugin_folder(&self) {
         let directory = self.plugins.directory().to_path_buf();
         let result = std::fs::create_dir_all(&directory).and_then(|()| opener::open(&directory));
         if let Err(error) = result {
             self.show_toast(&format!("Ordner kann nicht geöffnet werden: {error}"));
         }
+    }
+}
+
+/// Where an extension came from, as the settings show it.
+fn source_name(source: &Source) -> String {
+    match source {
+        Source::Folder => "Aus dem Erweiterungsordner".to_owned(),
+        Source::Archive => "Aus einem Archiv installiert".to_owned(),
+        Source::Git(url) => format!("Aus {url}"),
     }
 }
 
@@ -768,6 +792,8 @@ fn plugin_item(installed: &InstalledPlugin) -> PluginItem {
     };
     PluginItem {
         id: manifest.id.as_str().into(),
+        source: source_name(&installed.source).into(),
+        from_git: installed.source.git_url().is_some(),
         name: manifest.name.as_str().into(),
         version: manifest.version.as_str().into(),
         detail: manifest.description.as_str().into(),

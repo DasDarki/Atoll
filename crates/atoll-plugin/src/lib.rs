@@ -9,6 +9,7 @@ mod api;
 mod content;
 mod event;
 mod host;
+mod install;
 mod manifest;
 mod pattern;
 mod rules;
@@ -20,6 +21,7 @@ pub use event::Event;
 pub use host::{
     HostError, HttpRequest, LogLevel, PendingId, PendingResult, PluginHost, PluginId, TabInfo,
 };
+pub use install::{InstallError, Installed, Source, install_archive, install_git, update_git};
 pub use manifest::{
     API_VERSION, MANIFEST_NAME, Manifest, ManifestError, Panel, PanelLocation, Permission,
 };
