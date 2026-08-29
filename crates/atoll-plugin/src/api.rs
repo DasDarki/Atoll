@@ -15,6 +15,7 @@ use crate::host::{
 use crate::manifest::{Manifest, Panel, Permission};
 use crate::pattern::UrlPattern;
 use crate::rules::{RequestRule, RuleAction};
+use crate::worker::{Waker, Workers};
 
 /// How long an extension may sleep in one call.
 const MAX_SLEEP: u64 = 5 * 60 * 1000;
@@ -38,6 +39,12 @@ pub(crate) struct PluginContext {
     pub(crate) commands: RefCell<Vec<Command>>,
     /// The scripts the extension put into pages, by the name the browser knows them by.
     pub(crate) scripts: RefCell<BTreeSet<String>>,
+    /// The threads of the extension, which run Luau of their own.
+    pub(crate) workers: RefCell<Workers>,
+    /// Scripts that waited for a worker that was stopped, for the runtime to wake with an error.
+    pub(crate) abandoned: RefCell<Vec<PendingId>>,
+    /// How a worker asks the browser to look at it.
+    pub(crate) waker: Waker,
 }
 
 impl PluginContext {
@@ -472,6 +479,41 @@ pub(crate) fn native_table(lua: &Lua, context: &Rc<PluginContext>) -> mlua::Resu
                 Ok(pending.0)
             },
         )?,
+    )?;
+
+    let held = context.clone();
+    native.set(
+        "worker_spawn",
+        lua.create_function(move |_, source: String| {
+            held.workers
+                .borrow_mut()
+                .spawn(&held.id, source, held.waker.clone())
+        })?,
+    )?;
+
+    let held = context.clone();
+    native.set(
+        "worker_call",
+        lua.create_function(move |lua, (worker, name, args): (u64, String, Value)| {
+            let args = lua.from_value(args)?;
+            let pending = held.pending();
+            let mut workers = held.workers.borrow_mut();
+            let running = workers
+                .get_mut(worker)
+                .ok_or_else(|| mlua::Error::runtime("dieser Worker läuft nicht mehr"))?;
+            running.call(name, args, pending);
+            Ok(pending.0)
+        })?,
+    )?;
+
+    let held = context.clone();
+    native.set(
+        "worker_stop",
+        lua.create_function(move |_, worker: u64| {
+            let waiting = held.workers.borrow_mut().remove(worker);
+            held.abandoned.borrow_mut().extend(waiting);
+            Ok(())
+        })?,
     )?;
 
     Ok(native)

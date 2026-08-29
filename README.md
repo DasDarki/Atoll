@@ -82,6 +82,12 @@ saved tabs therefore cost nothing at startup.
   manifest). Atoll shows it next to the page in an engine instance of its own, opened from the
   command palette or with `atoll.panels.show`. The panel talks to its extension through the same
   `window.atoll`, and only ever to the extension it belongs to.
+- **Extension workers**: `atoll.worker.spawn(source, calls)` starts a Luau state on a thread of
+  its own for work that would hold up the window. It shares nothing with the extension: jobs go in
+  as values (`worker:call(name, value)`, which pauses the script but not the window) and answers
+  come back as values. From inside a worker, `host.call(name, value)` asks the extension for
+  something and waits for it, so a worker can reach the browser without the browser ever waiting
+  for a worker. A worker that runs too long, or one the extension stops, is cut short.
 - **Extension request rules**: with the `requests` permission an extension blocks or redirects
   requests (`atoll.requests.block`, `atoll.requests.redirect`) and hears about every hit through
   `request.caught`. The browser asks for every request on its network thread, where no script may

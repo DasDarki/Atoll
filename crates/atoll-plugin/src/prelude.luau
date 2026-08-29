@@ -5,6 +5,7 @@ local native = ...
 local atoll = {}
 local handlers = {}
 local commands = {}
+local workers = {}
 
 atoll.id = native.id
 atoll.version = native.version
@@ -194,6 +195,27 @@ atoll.panels = {
 	end,
 }
 
+local worker = {}
+worker.__index = worker
+
+function worker:call(name, args)
+	return await(native.worker_call(self.id, tostring(name), args))
+end
+
+function worker:stop()
+	workers[self.id] = nil
+	native.worker_stop(self.id)
+end
+
+atoll.worker = {
+	spawn = function(source, calls)
+		assert(type(source) == "string", "atoll.worker.spawn braucht den Quelltext des Workers")
+		local id = native.worker_spawn(source)
+		workers[id] = if type(calls) == "table" then calls else {}
+		return setmetatable({ id = id }, worker)
+	end,
+}
+
 local function fetch(method, url, options)
 	options = if type(options) == "table" then options else {}
 	return await(native.fetch(method, tostring(url), options.headers, options.body))
@@ -240,6 +262,16 @@ function dispatch.message(channel, payload, url)
 		end
 	end
 	return nil
+end
+
+-- A worker called host.call. What its handler returns goes back into the worker.
+function dispatch.worker(id, name, payload)
+	local list = workers[id]
+	local handler = if list then list[name] else nil
+	if not handler then
+		error(`dieser Worker darf "{name}" nicht rufen, die Erweiterung kennt es nicht`, 0)
+	end
+	return handler(payload)
 end
 
 function dispatch.command(id)

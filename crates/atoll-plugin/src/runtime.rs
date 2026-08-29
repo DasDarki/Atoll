@@ -9,6 +9,7 @@ use std::cell::{Cell, RefCell};
 use std::collections::{BTreeMap, HashMap};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use mlua::{Function, Lua, LuaSerdeExt, MultiValue, Table, Thread, VmState};
@@ -20,6 +21,7 @@ use crate::api::{self, Command, PluginContext};
 use crate::event::Event;
 use crate::host::{PendingId, PendingResult, PluginHost, PluginId};
 use crate::manifest::{MANIFEST_NAME, Manifest, ManifestError, Panel, Permission};
+use crate::worker::{Report, Waker, WorkerId};
 
 /// How much memory one extension may use.
 const MEMORY_LIMIT: usize = 64 * 1024 * 1024;
@@ -35,6 +37,9 @@ const MAX_STRIKES: u32 = 3;
 
 /// The message of the error that stops a script that ran too long.
 const TIMEOUT: &str = "das Skript lief zu lange und wurde angehalten";
+
+/// What a script hears when the worker it waits for is stopped.
+const WORKER_STOPPED: &str = "der Worker wurde beendet";
 
 pub(crate) const API_KEY: &str = "atoll.api";
 pub(crate) const DISPATCH_KEY: &str = "atoll.dispatch";
@@ -87,6 +92,8 @@ enum Purpose {
     Plain,
     /// A page is waiting for an answer.
     Message(u64),
+    /// A worker asked with `host.call` and waits for the answer.
+    WorkerCall(u64),
 }
 
 /// What driving a coroutine ended in.
@@ -147,6 +154,10 @@ pub struct PluginRuntime {
     next_pending: Rc<Cell<u64>>,
     /// How many handlers still have to finish before a page message is answered.
     open_messages: HashMap<u64, usize>,
+    /// The workers that wait for an answer to their `host.call`.
+    open_calls: HashMap<u64, (PluginId, WorkerId, u64)>,
+    next_call: u64,
+    waker: Waker,
 }
 
 impl PluginRuntime {
@@ -157,7 +168,16 @@ impl PluginRuntime {
             waiting: HashMap::new(),
             next_pending: Rc::default(),
             open_messages: HashMap::new(),
+            open_calls: HashMap::new(),
+            next_call: 0,
+            waker: Arc::new(|| {}),
         }
+    }
+
+    /// Sets how a worker asks the browser to look at it. Without one the browser only sees a
+    /// worker's answer the next time it looks by itself.
+    pub fn set_waker(&mut self, waker: Waker) {
+        self.waker = waker;
     }
 
     /// Reads the manifest of the extension in `directory`, without running anything.
@@ -191,6 +211,9 @@ impl PluginRuntime {
             next_pending: self.next_pending.clone(),
             commands: RefCell::default(),
             scripts: RefCell::default(),
+            workers: RefCell::default(),
+            abandoned: RefCell::default(),
+            waker: self.waker.clone(),
         });
         let deadline = Rc::new(Cell::new(None));
         let lua = Self::prepare(&context, &deadline, directory)
@@ -379,6 +402,123 @@ impl PluginRuntime {
         }
     }
 
+    /// Looks at what the workers of every extension have to say, and answers what they ask for.
+    /// The browser calls this whenever a worker wakes it.
+    pub fn poll_workers(&mut self) {
+        for id in self.plugins.keys().cloned().collect::<Vec<_>>() {
+            let (abandoned, workers) = {
+                let context = &self.plugins[&id].context;
+                (
+                    std::mem::take(&mut *context.abandoned.borrow_mut()),
+                    context.workers.borrow().ids(),
+                )
+            };
+            for pending in abandoned {
+                self.resume(pending, Err(WORKER_STOPPED.to_owned()));
+            }
+            for worker in workers {
+                let reports = match self.plugins.get(&id) {
+                    Some(plugin) => plugin
+                        .context
+                        .workers
+                        .borrow_mut()
+                        .get_mut(worker)
+                        .map(|running| running.take_reports())
+                        .unwrap_or_default(),
+                    None => Vec::new(),
+                };
+                for report in reports {
+                    self.report_of_worker(&id, worker, report);
+                }
+            }
+        }
+    }
+
+    /// One message of one worker.
+    fn report_of_worker(&mut self, id: &PluginId, worker: WorkerId, report: Report) {
+        match report {
+            Report::Log { level, text } => self.host.log(id, level, &text),
+            Report::Failed(message) => {
+                let waiting = match self.plugins.get(id) {
+                    Some(plugin) => plugin.context.workers.borrow_mut().remove(worker),
+                    None => Vec::new(),
+                };
+                for pending in waiting {
+                    self.resume(pending, Err(message.clone()));
+                }
+                self.host.report(id, &format!("Worker: {message}"));
+            }
+            Report::Done { id: job, result } => {
+                let pending = self.plugins.get(id).and_then(|plugin| {
+                    plugin
+                        .context
+                        .workers
+                        .borrow_mut()
+                        .get_mut(worker)
+                        .and_then(|running| running.finished(job))
+                });
+                if let Some(pending) = pending {
+                    self.resume(pending, result);
+                }
+            }
+            Report::Call { ticket, name, args } => {
+                self.call_from_worker(id, worker, ticket, name, args);
+            }
+        }
+    }
+
+    /// A worker asked its extension for something with `host.call`.
+    fn call_from_worker(
+        &mut self,
+        id: &PluginId,
+        worker: WorkerId,
+        ticket: u64,
+        name: String,
+        args: Value,
+    ) {
+        self.next_call += 1;
+        let call = self.next_call;
+        self.open_calls.insert(call, (id.clone(), worker, ticket));
+        let prepared = {
+            let plugin = &self.plugins[id];
+            thread_for(&plugin.lua, "worker").and_then(|thread| {
+                let payload = plugin.lua.to_value(&args)?;
+                Ok((thread, (worker, name, payload)))
+            })
+        };
+        match prepared {
+            Ok((thread, arguments)) => {
+                if let Some(failure) = self.drive(
+                    id,
+                    thread,
+                    arguments,
+                    CALL_BUDGET,
+                    Purpose::WorkerCall(call),
+                ) {
+                    self.answer_worker(call, Err(failure.clone()));
+                    self.failed(id, &failure);
+                }
+            }
+            Err(error) => {
+                let message = message_of(&error);
+                self.answer_worker(call, Err(message.clone()));
+                self.host.report(id, &message);
+            }
+        }
+    }
+
+    /// Sends the answer of the extension back into the worker that waits for it.
+    fn answer_worker(&mut self, call: u64, result: Result<Value, String>) {
+        let Some((plugin, worker, ticket)) = self.open_calls.remove(&call) else {
+            return;
+        };
+        if let Some(loaded) = self.plugins.get(&plugin)
+            && let Some(running) = loaded.context.workers.borrow_mut().get_mut(worker)
+        {
+            running.answer(ticket, result);
+        }
+    }
+
     /// Whether any script is waiting for an answer, which the tests use.
     pub fn waiting(&self) -> usize {
         self.waiting.len()
@@ -415,21 +555,36 @@ impl PluginRuntime {
         match outcome {
             Outcome::Waiting => None,
             Outcome::Finished(value) => {
-                self.handler_finished(id, purpose, value);
+                self.handler_finished(id, purpose, Ok(value));
                 None
             }
             Outcome::Failed(message) => {
-                self.handler_finished(id, purpose, None);
+                self.handler_finished(id, purpose, Err(message.clone()));
                 Some(message)
             }
         }
     }
 
-    /// A handler is done. If a page waits for an answer, it gets the first one a handler gave.
-    fn handler_finished(&mut self, id: &PluginId, purpose: Purpose, value: Option<Value>) {
-        let Purpose::Message(reply) = purpose else {
-            return;
+    /// A handler is done. If a page or a worker waits for an answer, it gets it now.
+    fn handler_finished(
+        &mut self,
+        id: &PluginId,
+        purpose: Purpose,
+        result: Result<Option<Value>, String>,
+    ) {
+        let reply = match purpose {
+            Purpose::Plain => return,
+            Purpose::Message(reply) => reply,
+            Purpose::WorkerCall(call) => {
+                let answer = match result {
+                    Ok(value) => Ok(value.unwrap_or(Value::Null)),
+                    Err(message) => Err(message),
+                };
+                self.answer_worker(call, answer);
+                return;
+            }
         };
+        let value = result.ok().flatten();
         let answered = value.is_some();
         if answered {
             self.open_messages.remove(&reply);
@@ -544,7 +699,7 @@ fn pending_of(values: &MultiValue) -> Option<PendingId> {
 }
 
 /// The message of a Lua error without the stack trace Luau appends.
-fn message_of(error: &mlua::Error) -> String {
+pub(crate) fn message_of(error: &mlua::Error) -> String {
     let text = match error {
         mlua::Error::CallbackError { cause, .. } => message_of(cause),
         other => other.to_string(),

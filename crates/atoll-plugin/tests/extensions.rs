@@ -712,3 +712,125 @@ fn request_rules_need_the_permission_and_stay_inside_the_sites() {
         "an extension that is gone stops filtering"
     );
 }
+
+/// Drives the runtime until `done` says the workers are through, or the patience runs out.
+fn until(runtime: &mut PluginRuntime, done: impl Fn(&PluginRuntime) -> bool) {
+    let until = std::time::Instant::now() + std::time::Duration::from_secs(10);
+    while std::time::Instant::now() < until {
+        runtime.poll_workers();
+        if done(runtime) {
+            return;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(5));
+    }
+    panic!("the workers did not finish in time");
+}
+
+#[test]
+fn a_worker_computes_on_its_own_thread_and_asks_the_extension_back() {
+    let extension = Extension::new(
+        "worker",
+        &manifest("\"storage\"", ""),
+        r#"
+        local atoll = require("@atoll")
+        local worker = atoll.worker.spawn([[
+            return {
+                summe = function(werte)
+                    local gesamt = 0
+                    for _, wert in werte do
+                        gesamt += wert
+                    end
+                    local faktor = host.call("faktor", nil)
+                    return gesamt * faktor
+                end,
+            }
+        ]], {
+            faktor = function()
+                return tonumber(atoll.storage.get("faktor"))
+            end,
+        })
+
+        atoll.commands.register{ id = "rechne", run = function()
+            local ergebnis = worker:call("summe", { 1, 2, 3 })
+            atoll.storage.set("ergebnis", tostring(ergebnis))
+            atoll.ui.toast("fertig " .. tostring(ergebnis))
+        end }
+        "#,
+    );
+    let (mut runtime, browser) = runtime();
+    browser
+        .storage
+        .borrow_mut()
+        .insert("faktor".to_owned(), "10".to_owned());
+    runtime.load(extension.path(), ALL).unwrap();
+
+    runtime.run_command(&"demo".to_owned(), "rechne");
+    until(&mut runtime, |runtime| runtime.waiting() == 0);
+    assert_eq!(
+        browser.storage.borrow().get("ergebnis").map(String::as_str),
+        Some("60"),
+        "the worker added up and the extension answered its host.call: {:?}",
+        browser.reports()
+    );
+}
+
+#[test]
+fn an_error_in_a_worker_reaches_the_script_that_waits() {
+    let extension = Extension::new(
+        "worker-error",
+        &manifest("\"storage\"", ""),
+        r#"
+        local atoll = require("@atoll")
+        local worker = atoll.worker.spawn([[
+            return { kaputt = function() error("nein", 0) end }
+        ]])
+        atoll.commands.register{ id = "los", run = function()
+            local ok, problem = pcall(function() return worker:call("kaputt", nil) end)
+            atoll.storage.set("problem", tostring(problem))
+        end }
+        "#,
+    );
+    let (mut runtime, browser) = runtime();
+    runtime.load(extension.path(), ALL).unwrap();
+    runtime.run_command(&"demo".to_owned(), "los");
+    until(&mut runtime, |runtime| runtime.waiting() == 0);
+    assert!(
+        browser
+            .storage
+            .borrow()
+            .get("problem")
+            .is_some_and(|problem| problem.contains("nein")),
+        "{:?}",
+        browser.storage.borrow()
+    );
+}
+
+#[test]
+fn a_worker_only_reaches_what_the_extension_handed_it() {
+    let extension = Extension::new(
+        "worker-limits",
+        &manifest("\"storage\"", ""),
+        r#"
+        local atoll = require("@atoll")
+        local worker = atoll.worker.spawn([[
+            return { frag = function()
+                local ok, problem = pcall(function() return host.call("storage", nil) end)
+                return tostring(problem)
+            end }
+        ]])
+        atoll.commands.register{ id = "los", run = function()
+            atoll.storage.set("antwort", worker:call("frag", nil))
+        end }
+        "#,
+    );
+    let (mut runtime, browser) = runtime();
+    runtime.load(extension.path(), ALL).unwrap();
+    runtime.run_command(&"demo".to_owned(), "los");
+    until(&mut runtime, |runtime| runtime.waiting() == 0);
+    let data = browser.storage.borrow();
+    let answer = data.get("antwort").expect("the worker answered");
+    assert!(
+        answer.contains("kennt es nicht"),
+        "a worker may only call what the extension handed it: {answer}"
+    );
+}

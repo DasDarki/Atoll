@@ -14,6 +14,7 @@ mod manifest;
 mod pattern;
 mod rules;
 mod runtime;
+mod worker;
 
 pub use api::Command;
 pub use content::{ContentScript, RunAt, ScriptWorld};
@@ -28,3 +29,4 @@ pub use manifest::{
 pub use pattern::{PatternError, UrlPattern, matches_glob};
 pub use rules::{RequestRule, RuleAction, RuleHit, RuleSet};
 pub use runtime::{PageMessage, PluginError, PluginInfo, PluginRuntime, installed};
+pub use worker::Waker;

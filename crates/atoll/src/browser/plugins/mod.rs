@@ -12,6 +12,7 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
 use std::rc::{Rc, Weak};
 use std::sync::Arc;
+use std::time::Duration;
 
 use atoll_core::Timestamp;
 use atoll_engine::{ReplyId, ScriptId, ViewId};
@@ -29,6 +30,7 @@ use self::bridge::Bridge;
 use super::Browser;
 use crate::browser::windows::WindowManager;
 use crate::platform::opener;
+use crate::pump::MessagePump;
 use crate::ui::{PluginItem, SettingsState};
 
 /// The extensions of this Atoll, shared by every window.
@@ -56,8 +58,11 @@ pub struct Plugins {
 impl Plugins {
     pub fn new(storage: Rc<Storage>, directory: PathBuf) -> Rc<Self> {
         let bridge = Rc::new(Bridge::new(storage.clone()));
+        let mut runtime = PluginRuntime::new(bridge.clone());
+        let schedule = MessagePump::scheduler();
+        runtime.set_waker(Arc::new(move || schedule(Duration::ZERO)));
         Rc::new(Self {
-            runtime: RefCell::new(PluginRuntime::new(bridge.clone())),
+            runtime: RefCell::new(runtime),
             bridge,
             storage,
             directory,
@@ -89,6 +94,12 @@ impl Plugins {
 
     pub fn dispatch(&self, event: &Event) {
         self.runtime.borrow_mut().dispatch(event);
+    }
+
+    /// Looks at what the workers of the extensions have to say. The workers wake the browser
+    /// when they have something, so this only has to run when the browser is awake anyway.
+    pub fn poll_workers(&self) {
+        self.runtime.borrow_mut().poll_workers();
     }
 
     pub fn resume(&self, pending: PendingId, result: PendingResult) {

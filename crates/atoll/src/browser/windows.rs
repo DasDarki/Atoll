@@ -485,6 +485,7 @@ impl WindowManager {
             engine.drain_events()
         };
         self.shared.plugins.report_rule_hits();
+        self.shared.plugins.poll_workers();
         if events.is_empty() {
             return;
         }
