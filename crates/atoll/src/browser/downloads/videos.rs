@@ -4,6 +4,7 @@ use atoll_engine::{FrameVideos, ViewId};
 use slint::{Timer, TimerMode};
 
 use crate::browser::Browser;
+use atoll_i18n::t;
 
 /// How long the frames of a page get to report their videos.
 const SEARCH_TIMEOUT: Duration = Duration::from_millis(1500);
@@ -40,13 +41,13 @@ impl Browser {
             .current_page_url()
             .filter(|url| url.starts_with("https://") || url.starts_with("http://"))
         else {
-            self.show_toast("Videos lassen sich nur von Webseiten herunterladen");
+            self.show_toast(t!("Videos lassen sich nur von Webseiten herunterladen"));
             return;
         };
         let mut asked = None;
         self.with_live_view(|view| asked = Some((view.id(), view.find_videos())));
         let Some((view, frames)) = asked.filter(|(_, frames)| *frames > 0) else {
-            self.show_toast("Auf dieser Seite wurde kein Video gefunden");
+            self.show_toast(t!("Auf dieser Seite wurde kein Video gefunden"));
             return;
         };
         let this = self.this();
@@ -97,10 +98,12 @@ impl Browser {
             return;
         }
         match choose_video(&search.frames, &search.page_url) {
-            VideoChoice::NoVideo => self.show_toast("Auf dieser Seite wurde kein Video gefunden"),
-            VideoChoice::Protected => {
-                self.show_toast("Dieses Video ist kopiergeschützt und lässt sich nicht speichern")
+            VideoChoice::NoVideo => {
+                self.show_toast(t!("Auf dieser Seite wurde kein Video gefunden"))
             }
+            VideoChoice::Protected => self.show_toast(t!(
+                "Dieses Video ist kopiergeschützt und lässt sich nicht speichern"
+            )),
             VideoChoice::File(url) => {
                 tracing::info!(url, "downloading a video file");
                 self.with_live_view(|view| view.start_download(&url));

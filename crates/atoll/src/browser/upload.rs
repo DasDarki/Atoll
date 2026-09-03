@@ -13,6 +13,7 @@ use slint::{ComponentHandle, Image, ModelRc, Rgba8Pixel, SharedPixelBuffer, VecM
 use super::Browser;
 use crate::platform::clipboard::ClipboardImage;
 use crate::ui::{OverlayState, UploadFile};
+use atoll_i18n::t;
 
 /// How many recent files are offered.
 const OFFERED_FILES: usize = 6;
@@ -80,9 +81,10 @@ impl Browser {
         if let Some(image) = &image {
             overlay.set_upload_image(preview(image));
             overlay.set_upload_image_size(
-                format!(
+                t!(
                     "{} × {} Pixel, wird als PNG hochgeladen",
-                    image.width, image.height
+                    image.width,
+                    image.height
                 )
                 .into(),
             );
@@ -119,7 +121,7 @@ impl Browser {
             Ok(path) => self.finish_upload(Some(vec![path])),
             Err(error) => {
                 tracing::error!(%error, "clipboard image could not be saved");
-                self.show_toast("Das Bild konnte nicht gespeichert werden");
+                self.show_toast(t!("Das Bild konnte nicht gespeichert werden"));
                 self.finish_upload(None);
             }
         }
@@ -244,12 +246,12 @@ fn age_text(age: Duration) -> String {
     let minutes = age.as_secs() / 60;
     match minutes {
         0 => "gerade eben".to_owned(),
-        1 => "vor einer Minute".to_owned(),
-        2..60 => format!("vor {minutes} Minuten"),
-        60..120 => "vor einer Stunde".to_owned(),
-        120..1440 => format!("vor {} Stunden", minutes / 60),
+        1 => t!("vor einer Minute").to_owned(),
+        2..60 => t!("vor {} Minuten", minutes),
+        60..120 => t!("vor einer Stunde").to_owned(),
+        120..1440 => t!("vor {} Stunden", minutes / 60),
         1440..2880 => "gestern".to_owned(),
-        _ => format!("vor {} Tagen", minutes / 1440),
+        _ => t!("vor {} Tagen", minutes / 1440),
     }
 }
 

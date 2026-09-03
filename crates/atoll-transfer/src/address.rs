@@ -1,5 +1,6 @@
 use std::fmt;
 
+use atoll_i18n::t;
 use url::{ParseError, Url};
 
 const SUPPORTED_SCHEMES: &[&str] = &[
@@ -24,9 +25,9 @@ pub enum InvalidReason {
 impl fmt::Display for InvalidReason {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            InvalidReason::NotAnAddress => formatter.write_str("keine gültige Adresse"),
+            InvalidReason::NotAnAddress => formatter.write_str(t!("keine gültige Adresse")),
             InvalidReason::UnsupportedScheme(scheme) => {
-                write!(formatter, "Schema \"{scheme}\" wird nicht unterstützt")
+                formatter.write_str(&t!("Schema \"{}\" wird nicht unterstützt", scheme))
             }
         }
     }

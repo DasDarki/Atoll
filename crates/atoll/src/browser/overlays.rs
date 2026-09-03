@@ -11,6 +11,7 @@ use slint::{ComponentHandle, ModelRc, VecModel};
 use super::Browser;
 use crate::platform::dialogs::{self, FileDialogKind, FileDialogOptions, FileFilter};
 use crate::ui::{DialogData, DialogKind, MenuItemData, OverlayState};
+use atoll_i18n::t;
 
 type DialogResult = Box<dyn FnOnce(&Browser, bool, String)>;
 
@@ -44,7 +45,7 @@ impl Browser {
                 message: message.into(),
                 input: initial.into(),
                 accept_label: accept_label.into(),
-                cancel_label: "Abbrechen".into(),
+                cancel_label: t!("Abbrechen").into(),
                 destructive: false,
             },
             on_close: Box::new(move |_, accepted, text| {
@@ -65,7 +66,7 @@ impl Browser {
                 title: title.into(),
                 message: message.into(),
                 input: "".into(),
-                accept_label: "Schließen".into(),
+                accept_label: t!("Schließen").into(),
                 cancel_label: "".into(),
                 destructive: false,
             },
@@ -88,7 +89,7 @@ impl Browser {
                 message: message.into(),
                 input: "".into(),
                 accept_label: accept_label.into(),
-                cancel_label: "Abbrechen".into(),
+                cancel_label: t!("Abbrechen").into(),
                 destructive: true,
             },
             on_close: Box::new(move |_, accepted, _| {
@@ -101,36 +102,40 @@ impl Browser {
     }
 
     pub(super) fn show_js_dialog(&self, view: ViewId, request: JsDialogRequest) {
-        let origin = display_host(&request.origin).unwrap_or_else(|| "Diese Seite".to_owned());
+        let origin = display_host(&request.origin).unwrap_or_else(|| t!("Diese Seite").to_owned());
         let (kind, title, accept, cancel) = match request.kind {
             JsDialogKind::Alert => (DialogKind::Alert, format!("{origin} meldet"), "OK", ""),
             JsDialogKind::Confirm => (
                 DialogKind::Confirm,
                 format!("{origin} fragt"),
                 "OK",
-                "Abbrechen",
+                t!("Abbrechen"),
             ),
             JsDialogKind::Prompt => (
                 DialogKind::Prompt,
                 format!("{origin} fragt"),
                 "OK",
-                "Abbrechen",
+                t!("Abbrechen"),
             ),
             JsDialogKind::BeforeUnload { is_reload } => (
                 DialogKind::Confirm,
                 if is_reload {
-                    "Seite neu laden?"
+                    t!("Seite neu laden?")
                 } else {
-                    "Seite verlassen?"
+                    t!("Seite verlassen?")
                 }
                 .to_owned(),
-                if is_reload { "Neu laden" } else { "Verlassen" },
-                "Bleiben",
+                if is_reload {
+                    t!("Neu laden")
+                } else {
+                    t!("Verlassen")
+                },
+                t!("Bleiben"),
             ),
         };
         let message = match request.kind {
             JsDialogKind::BeforeUnload { .. } => {
-                "Vorgenommene Änderungen werden möglicherweise nicht gespeichert.".to_owned()
+                t!("Vorgenommene Änderungen werden möglicherweise nicht gespeichert.").to_owned()
             }
             _ => request.message.clone(),
         };
@@ -290,7 +295,7 @@ impl Browser {
             Vec::new()
         } else {
             vec![FileFilter {
-                name: "Erlaubte Dateien".into(),
+                name: t!("Erlaubte Dateien").into(),
                 extensions,
             }]
         };
@@ -305,9 +310,9 @@ impl Browser {
         };
         let title = if request.title.is_empty() {
             match request.mode {
-                FileDialogMode::Save => "Speichern unter".to_owned(),
-                FileDialogMode::OpenFolder => "Ordner auswählen".to_owned(),
-                _ => "Datei auswählen".to_owned(),
+                FileDialogMode::Save => t!("Speichern unter").to_owned(),
+                FileDialogMode::OpenFolder => t!("Ordner auswählen").to_owned(),
+                _ => t!("Datei auswählen").to_owned(),
             }
         } else {
             request.title.clone()
@@ -349,9 +354,9 @@ impl Browser {
 
     pub(super) fn copy_text(&self, text: &str) {
         if self.clipboard.set_text(text) {
-            self.show_toast("In die Zwischenablage kopiert");
+            self.show_toast(t!("In die Zwischenablage kopiert"));
         } else {
-            self.show_toast("Zwischenablage nicht verfügbar");
+            self.show_toast(t!("Zwischenablage nicht verfügbar"));
         }
     }
 }

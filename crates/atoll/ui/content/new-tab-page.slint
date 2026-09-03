@@ -75,7 +75,7 @@ export component NewTabPage inherits Rectangle {
                         Text {
                             x: 0;
                             width: parent.width;
-                            text: "Suchen oder Adresse eingeben";
+                            text: @tr("Suchen oder Adresse eingeben");
                             visible: input.text == "";
                             color: Theme.text-faint;
                             font-size: Theme.font-large;
@@ -128,7 +128,7 @@ export component NewTabPage inherits Rectangle {
         }
 
         Text {
-            text: "Strg+L Adressleiste  ·  Strg+T neuer Tab  ·  Strg+W Tab schließen";
+            text: @tr("Strg+L Adressleiste  ·  Strg+T neuer Tab  ·  Strg+W Tab schließen");
             color: Theme.text-faint;
             font-size: Theme.font-small + 1px;
             horizontal-alignment: center;

@@ -13,6 +13,7 @@ use super::Browser;
 use super::preferences::{PreferenceKey, SEARCH_ENGINES};
 use super::suggestions::frecency;
 use crate::ui::{OverlayState, PaletteItem, PaletteKind, SidebarState};
+use atoll_i18n::t;
 
 const COMMAND_PREFIX: char = '>';
 const MAX_TABS: usize = 30;
@@ -127,11 +128,11 @@ impl Browser {
         let (items, entries, hint) = match text.strip_prefix(COMMAND_PREFIX) {
             Some(query) => {
                 let (items, entries) = self.command_results(query.trim());
-                (items, entries, "Kein passender Befehl")
+                (items, entries, t!("Kein passender Befehl"))
             }
             None => {
                 let (items, entries) = self.search_results(text.trim());
-                (items, entries, "Nichts gefunden")
+                (items, entries, t!("Nichts gefunden"))
             }
         };
         {
@@ -226,13 +227,13 @@ impl Browser {
         for (_, entry) in tabs.into_iter().take(MAX_TABS) {
             let state = lifecycle.state_of(entry.tab.id, entry.island.is_archived());
             let badge = if session.active_tab == Some(entry.tab.id) {
-                "Aktiv"
+                t!("Aktiv")
             } else {
                 match state {
-                    TabState::Live => "Aktiv",
-                    TabState::Frozen => "Eingefroren",
+                    TabState::Live => t!("Aktiv"),
+                    TabState::Frozen => t!("Eingefroren"),
                     TabState::Sleeping => "",
-                    TabState::Archived => "Archiviert",
+                    TabState::Archived => t!("Archiviert"),
                 }
             };
             let icon = favicons.image_for_tab(&self.storage, &entry.tab);
@@ -278,7 +279,7 @@ impl Browser {
                         kind: PaletteKind::Bookmark,
                         title: bookmark.title.as_str().into(),
                         detail: display_url(url).into(),
-                        badge: "Lesezeichen".into(),
+                        badge: t!("Lesezeichen").into(),
                         has_icon: icon.is_some(),
                         icon: icon.unwrap_or_default(),
                         ..PaletteItem::default()
@@ -317,7 +318,7 @@ impl Browser {
                             .unwrap_or_else(|| display_url(&page.url))
                             .into(),
                         detail: display_url(&page.url).into(),
-                        badge: "Verlauf".into(),
+                        badge: t!("Verlauf").into(),
                         has_icon: icon.is_some(),
                         icon: icon.unwrap_or_default(),
                         ..PaletteItem::default()
@@ -378,7 +379,7 @@ impl Browser {
                     Command::Plugin(plugin, command.id),
                     command.title,
                     command.shortcut.unwrap_or_default(),
-                    "erweiterung plugin".to_owned(),
+                    t!("erweiterung plugin").to_owned(),
                 )
             });
         let panels = self.plugins.panels().into_iter().map(|(plugin, panel)| {
@@ -386,7 +387,7 @@ impl Browser {
                 Command::PluginPanel(plugin, panel.id),
                 panel.title,
                 String::new(),
-                "erweiterung plugin panel fenster".to_owned(),
+                t!("erweiterung plugin panel fenster").to_owned(),
             )
         });
         commands.chain(panels).collect()
@@ -402,197 +403,212 @@ impl Browser {
         let mut commands = vec![
             (
                 Command::NewWindow,
-                "Neues Fenster".to_owned(),
-                "Strg+N",
+                t!("Neues Fenster").to_owned(),
+                t!("Strg+N"),
                 "window workspace",
             ),
             (
                 Command::CloseWindow,
-                "Fenster schließen".to_owned(),
-                "Strg+Umschalt+W",
+                t!("Fenster schließen").to_owned(),
+                t!("Strg+Umschalt+W"),
                 "window",
             ),
             (
                 Command::Quit,
-                "Atoll beenden".to_owned(),
-                "Strg+Umschalt+Q",
-                "exit schließen alle fenster",
+                t!("Atoll beenden").to_owned(),
+                t!("Strg+Umschalt+Q"),
+                t!("exit schließen alle fenster"),
             ),
             (
                 Command::NewTab,
-                "Neuer Tab".to_owned(),
-                "Strg+T",
-                "tab öffnen",
+                t!("Neuer Tab").to_owned(),
+                t!("Strg+T"),
+                t!("tab öffnen"),
             ),
             (
                 Command::CloseTab,
-                "Tab schließen".to_owned(),
-                "Strg+W",
+                t!("Tab schließen").to_owned(),
+                t!("Strg+W"),
                 "tab",
             ),
             (
                 Command::ReopenTab,
-                "Geschlossenen Tab wiederherstellen".to_owned(),
-                "Strg+Umschalt+T",
-                "rückgängig",
+                t!("Geschlossenen Tab wiederherstellen").to_owned(),
+                t!("Strg+Umschalt+T"),
+                t!("rückgängig"),
             ),
-            (Command::NewIsland, "Neue Insel".to_owned(), "", "gruppe"),
+            (
+                Command::NewIsland,
+                t!("Neue Insel").to_owned(),
+                "",
+                "gruppe",
+            ),
             (
                 Command::NewWorkspace,
-                "Neuer Workspace".to_owned(),
+                t!("Neuer Workspace").to_owned(),
                 "",
                 "kontext",
             ),
             (
                 Command::ToggleSidebar,
                 if sidebar_visible {
-                    "Sidebar ausblenden"
+                    t!("Sidebar ausblenden")
                 } else {
-                    "Sidebar einblenden"
+                    t!("Sidebar einblenden")
                 }
                 .to_owned(),
-                "Strg+B",
+                t!("Strg+B"),
                 "seitenleiste einklappen",
             ),
             (
                 Command::ToggleBookmarksBar,
                 if bar_visible {
-                    "Lesezeichenleiste ausblenden"
+                    t!("Lesezeichenleiste ausblenden")
                 } else {
-                    "Lesezeichenleiste einblenden"
+                    t!("Lesezeichenleiste einblenden")
                 }
                 .to_owned(),
-                "Strg+Umschalt+B",
+                t!("Strg+Umschalt+B"),
                 "bookmarks",
             ),
             (
                 Command::BookmarkPage,
-                "Seite als Lesezeichen speichern".to_owned(),
-                "Strg+D",
+                t!("Seite als Lesezeichen speichern").to_owned(),
+                t!("Strg+D"),
                 "bookmark stern",
             ),
             (
                 Command::ManageBookmarks,
-                "Lesezeichen verwalten".to_owned(),
-                "Strg+Umschalt+O",
+                t!("Lesezeichen verwalten").to_owned(),
+                t!("Strg+Umschalt+O"),
                 "bookmarks import",
             ),
             (
                 Command::NewBookmarkFolder,
-                "Neuer Lesezeichenordner".to_owned(),
+                t!("Neuer Lesezeichenordner").to_owned(),
                 "",
-                "bookmarks ordner folder",
+                t!("bookmarks ordner folder"),
             ),
             (
                 Command::OpenDownloads,
-                "Downloads".to_owned(),
-                "Strg+J",
-                "herunterladen dateien",
+                t!("Downloads").to_owned(),
+                t!("Strg+J"),
+                t!("herunterladen dateien"),
             ),
             (
                 Command::OpenDownloadFolder,
-                "Download-Ordner öffnen".to_owned(),
+                t!("Download-Ordner öffnen").to_owned(),
                 "",
-                "herunterladen dateien",
+                t!("herunterladen dateien"),
             ),
             (
                 Command::ImportList,
-                "URL-Liste importieren".to_owned(),
+                t!("URL-Liste importieren").to_owned(),
                 "",
                 "opera",
             ),
             (
                 Command::ExportList,
-                "URL-Liste exportieren".to_owned(),
+                t!("URL-Liste exportieren").to_owned(),
                 "",
                 "backup",
             ),
             (
                 Command::OpenArchive,
-                "Archiv öffnen".to_owned(),
+                t!("Archiv öffnen").to_owned(),
                 "",
-                "inseln",
+                t!("inseln"),
             ),
             (
                 Command::ArchiveIsland,
-                "Aktuelle Insel archivieren".to_owned(),
+                t!("Aktuelle Insel archivieren").to_owned(),
                 "",
                 "archiv",
             ),
             (
                 Command::SleepIsland,
-                "Tabs der aktuellen Insel schlafen legen".to_owned(),
+                t!("Tabs der aktuellen Insel schlafen legen").to_owned(),
                 "",
                 "speicher entladen",
             ),
             (
                 Command::Find,
-                "Auf Seite suchen".to_owned(),
-                "Strg+F",
+                t!("Auf Seite suchen").to_owned(),
+                t!("Strg+F"),
                 "finden",
             ),
             (
                 Command::Reload,
-                "Neu laden".to_owned(),
+                t!("Neu laden").to_owned(),
                 "F5",
                 "aktualisieren",
             ),
             (
                 Command::HardReload,
-                "Vollständig neu laden, ohne Cache".to_owned(),
-                "Strg+F5",
+                t!("Vollständig neu laden, ohne Cache").to_owned(),
+                t!("Strg+F5"),
                 "aktualisieren cache hard reload",
             ),
             (
                 Command::Fullscreen,
-                "Vollbild".to_owned(),
+                t!("Vollbild").to_owned(),
                 "F11",
                 "fullscreen",
             ),
-            (Command::ZoomIn, "Vergrößern".to_owned(), "Strg++", "zoom"),
-            (Command::ZoomOut, "Verkleinern".to_owned(), "Strg+-", "zoom"),
+            (
+                Command::ZoomIn,
+                t!("Vergrößern").to_owned(),
+                t!("Strg++"),
+                "zoom",
+            ),
+            (
+                Command::ZoomOut,
+                t!("Verkleinern").to_owned(),
+                t!("Strg+-"),
+                "zoom",
+            ),
             (
                 Command::ZoomReset,
-                "Zoom zurücksetzen".to_owned(),
-                "Strg+0",
+                t!("Zoom zurücksetzen").to_owned(),
+                t!("Strg+0"),
                 "zoom",
             ),
             (
                 Command::DevTools,
-                "Entwicklertools".to_owned(),
+                t!("Entwicklertools").to_owned(),
                 "F12",
                 "devtools inspect",
             ),
             (
                 Command::ClearHistory,
-                "Verlauf löschen".to_owned(),
+                t!("Verlauf löschen").to_owned(),
                 "",
                 "history datenschutz",
             ),
             (
                 Command::ClearCookies,
-                "Cookies löschen".to_owned(),
+                t!("Cookies löschen").to_owned(),
                 "",
                 "datenschutz abmelden",
             ),
             (
                 Command::OpenSettings,
-                "Einstellungen".to_owned(),
-                "Strg+,",
+                t!("Einstellungen").to_owned(),
+                t!("Strg+,"),
                 "optionen preferences",
             ),
             (
                 Command::GoHome,
-                "Startseite öffnen".to_owned(),
-                "Alt+Pos1",
+                t!("Startseite öffnen").to_owned(),
+                t!("Alt+Pos1"),
                 "home",
             ),
             (
                 Command::ToggleHomeButton,
                 if preferences.home_button {
-                    "Startseiten-Button ausblenden"
+                    t!("Startseiten-Button ausblenden")
                 } else {
-                    "Startseiten-Button einblenden"
+                    t!("Startseiten-Button einblenden")
                 }
                 .to_owned(),
                 "",
@@ -601,9 +617,9 @@ impl Browser {
             (
                 Command::ToggleBookmarksBarAutoHide,
                 if preferences.bookmarks_bar_auto_hide {
-                    "Lesezeichenleiste immer anzeigen"
+                    t!("Lesezeichenleiste immer anzeigen")
                 } else {
-                    "Lesezeichenleiste nur mit Lesezeichen anzeigen"
+                    t!("Lesezeichenleiste nur mit Lesezeichen anzeigen")
                 }
                 .to_owned(),
                 "",
@@ -613,7 +629,7 @@ impl Browser {
         if self.session.borrow().active_tab.is_some() {
             commands.push((
                 Command::MoveTabToNewWindow,
-                "Tab in neues Fenster verschieben".to_owned(),
+                t!("Tab in neues Fenster verschieben").to_owned(),
                 "",
                 "window abtrennen",
             ));
@@ -621,23 +637,23 @@ impl Browser {
         if self.current_page_url().is_some() {
             commands.push((
                 Command::FillPassword,
-                "Mit 1Password anmelden".to_owned(),
-                "Strg+Umschalt+L",
-                "passwort login zugangsdaten ausfüllen",
+                t!("Mit 1Password anmelden").to_owned(),
+                t!("Strg+Umschalt+L"),
+                t!("passwort login zugangsdaten ausfüllen"),
             ));
             commands.push((
                 Command::DownloadVideo,
-                "Video herunterladen".to_owned(),
-                "Strg+Umschalt+S",
-                "video speichern download film clip",
+                t!("Video herunterladen").to_owned(),
+                t!("Strg+Umschalt+S"),
+                t!("video speichern download film clip"),
             ));
         }
         commands.push((
             Command::ToggleAdblock,
             if preferences.adblock_enabled {
-                "Werbeblocker ausschalten"
+                t!("Werbeblocker ausschalten")
             } else {
-                "Werbeblocker einschalten"
+                t!("Werbeblocker einschalten")
             }
             .to_owned(),
             "",
@@ -645,7 +661,7 @@ impl Browser {
         ));
         commands.push((
             Command::UpdateFilterLists,
-            "Filterlisten aktualisieren".to_owned(),
+            t!("Filterlisten aktualisieren").to_owned(),
             "",
             "adblock werbeblocker easylist",
         ));
@@ -659,18 +675,18 @@ impl Browser {
             commands.push((
                 Command::ToggleSiteAdblock,
                 if self.adblock_allows_site(&site) {
-                    format!("Werbeblocker für {site} einschalten")
+                    t!("Werbeblocker für {} einschalten", site)
                 } else {
-                    format!("Werbeblocker für {site} ausschalten")
+                    t!("Werbeblocker für {} ausschalten", site)
                 },
                 "",
-                "adblock werbung seite ausnahme",
+                t!("adblock werbung seite ausnahme"),
             ));
         }
         if self.current_page_url().is_some() {
             commands.push((
                 Command::UseCurrentPageAsStartPage,
-                "Aktuelle Seite als Startseite festlegen".to_owned(),
+                t!("Aktuelle Seite als Startseite festlegen").to_owned(),
                 "",
                 "home einstellung",
             ));
@@ -679,9 +695,9 @@ impl Browser {
             commands.push((
                 Command::ToggleNewTabStartPage,
                 if preferences.new_tab_start_page {
-                    "Neue Tabs mit der Atoll-Startseite öffnen"
+                    t!("Neue Tabs mit der Atoll-Startseite öffnen")
                 } else {
-                    "Neue Tabs mit der Startseite öffnen"
+                    t!("Neue Tabs mit der Startseite öffnen")
                 }
                 .to_owned(),
                 "",
@@ -693,9 +709,9 @@ impl Browser {
             if index != current_engine {
                 commands.push((
                     Command::SearchEngine(index),
-                    format!("Suchmaschine: {}", engine.name),
+                    t!("Suchmaschine: {}", engine.name),
                     "",
-                    "suche einstellung",
+                    t!("suche einstellung"),
                 ));
             }
         }
@@ -709,7 +725,7 @@ impl Browser {
             if shown_elsewhere.contains(&workspace.id) {
                 commands.push((
                     Command::SwitchWorkspace(workspace.id),
-                    format!("Zum Fenster wechseln: {}", workspace.name),
+                    t!("Zum Fenster wechseln: {}", workspace.name),
                     "",
                     "workspace window",
                 ));
@@ -717,13 +733,13 @@ impl Browser {
             }
             commands.push((
                 Command::SwitchWorkspace(workspace.id),
-                format!("Zu Workspace wechseln: {}", workspace.name),
+                t!("Zu Workspace wechseln: {}", workspace.name),
                 "",
                 "workspace",
             ));
             commands.push((
                 Command::OpenWorkspaceWindow(workspace.id),
-                format!("In neuem Fenster öffnen: {}", workspace.name),
+                t!("In neuem Fenster öffnen: {}", workspace.name),
                 "",
                 "workspace window",
             ));
@@ -809,7 +825,7 @@ impl Browser {
             Command::SearchEngine(index) => {
                 if let Some(engine) = SEARCH_ENGINES.get(index) {
                     self.set_search_url(engine.url);
-                    self.show_toast(&format!("Suchmaschine: {}", engine.name));
+                    self.show_toast(&t!("Suchmaschine: {}", engine.name));
                 }
             }
         }

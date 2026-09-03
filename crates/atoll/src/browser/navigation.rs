@@ -5,6 +5,7 @@ use slint::ComponentHandle;
 
 use super::Browser;
 use crate::ui::{AppWindow, BrowserState};
+use atoll_i18n::t;
 
 impl Browser {
     /// Loads what the user typed into the address bar or the new tab page.
@@ -37,7 +38,7 @@ impl Browser {
                 .is_some();
         if !loaded {
             if let Err(error) = self.storage.update_tab_address(tab, &url) {
-                self.report("Navigation", Err::<(), _>(error));
+                self.report(t!("Navigation"), Err::<(), _>(error));
                 return;
             }
             if let Some(record) = self.session.borrow_mut().tab_mut(tab) {

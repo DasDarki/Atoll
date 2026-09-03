@@ -10,6 +10,7 @@ use cef::{
 use crate::events::{ContextMenuRequest, EngineEvent, MenuEntry, MenuEntryKind, OpenDisposition};
 use crate::registry::{self, PendingCallback};
 use crate::view::ViewId;
+use atoll_i18n::t;
 
 const FIRST_COMMAND: i32 = cef_menu_id_t::MENU_ID_USER_FIRST as i32;
 const OPEN_LINK_IN_TAB: i32 = FIRST_COMMAND;
@@ -38,12 +39,12 @@ wrap_context_menu_handler! {
                 index += 1;
             };
             if !link_url(params).is_empty() {
-                insert(OPEN_LINK_IN_TAB, "Link in neuem Tab öffnen");
-                insert(COPY_LINK, "Linkadresse kopieren");
+                insert(OPEN_LINK_IN_TAB, t!("Link in neuem Tab öffnen"));
+                insert(COPY_LINK, t!("Linkadresse kopieren"));
             }
             if is_image(params) {
-                insert(OPEN_IMAGE_IN_TAB, "Bild in neuem Tab öffnen");
-                insert(COPY_IMAGE_ADDRESS, "Bildadresse kopieren");
+                insert(OPEN_IMAGE_IN_TAB, t!("Bild in neuem Tab öffnen"));
+                insert(COPY_IMAGE_ADDRESS, t!("Bildadresse kopieren"));
             }
             if index > 0 && model.count() > index {
                 model.insert_separator_at(index);

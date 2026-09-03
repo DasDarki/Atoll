@@ -17,6 +17,7 @@ use crate::ui::{BrowserState, DownloadItem, DownloadItemStatus, OverlayState};
 mod streams;
 mod videos;
 
+use atoll_i18n::t;
 pub use videos::VideoSearch;
 
 const LISTED_DOWNLOADS: usize = 50;
@@ -153,10 +154,10 @@ impl Browser {
             }
             match status {
                 DownloadStatus::Complete => {
-                    self.show_toast(&format!("Download abgeschlossen: {}", entry.file_name))
+                    self.show_toast(&t!("Download abgeschlossen: {}", entry.file_name))
                 }
                 DownloadStatus::Interrupted => {
-                    self.show_toast(&format!("Download fehlgeschlagen: {}", entry.file_name))
+                    self.show_toast(&t!("Download fehlgeschlagen: {}", entry.file_name))
                 }
                 DownloadStatus::Running | DownloadStatus::Canceled => {}
             }
@@ -181,7 +182,7 @@ impl Browser {
         let id = match created {
             Ok(id) => id,
             Err(error) => {
-                self.report("Download speichern", Err::<(), _>(error));
+                self.report(t!("Download speichern"), Err::<(), _>(error));
                 return None;
             }
         };
@@ -208,7 +209,7 @@ impl Browser {
         if self.preferences.borrow().download_panel {
             self.open_downloads();
         } else {
-            self.show_toast(&format!("Download gestartet: {}", state.file_name));
+            self.show_toast(&t!("Download gestartet: {}", state.file_name));
         }
         Some(id)
     }
@@ -298,10 +299,10 @@ impl Browser {
             "open" => match entry.path.as_deref().map(Path::new) {
                 Some(path) if path.exists() => {
                     if let Err(error) = opener::open(path) {
-                        self.show_toast(&format!("Datei kann nicht geöffnet werden: {error}"));
+                        self.show_toast(&t!("Datei kann nicht geöffnet werden: {}", error));
                     }
                 }
-                _ => self.show_toast("Die Datei wurde verschoben oder gelöscht"),
+                _ => self.show_toast(t!("Die Datei wurde verschoben oder gelöscht")),
             },
             "show" => {
                 if let Some(path) = entry.path {
@@ -327,7 +328,7 @@ impl Browser {
             },
             "remove" => {
                 let result = self.storage.remove_download(id);
-                self.report("Download entfernen", result);
+                self.report(t!("Download entfernen"), result);
                 self.downloads
                     .borrow_mut()
                     .entries
@@ -340,7 +341,7 @@ impl Browser {
 
     pub fn clear_downloads(&self) {
         let result = self.storage.clear_finished_downloads();
-        self.report("Downloads leeren", result);
+        self.report(t!("Downloads leeren"), result);
         self.downloads
             .borrow_mut()
             .entries
@@ -352,7 +353,7 @@ impl Browser {
         let directory = self.download_directory();
         let result = std::fs::create_dir_all(&directory).and_then(|()| opener::open(&directory));
         if let Err(error) = result {
-            self.show_toast(&format!("Ordner kann nicht geöffnet werden: {error}"));
+            self.show_toast(&t!("Ordner kann nicht geöffnet werden: {}", error));
         }
     }
 
@@ -377,7 +378,7 @@ fn download_item(entry: &Download, transfer: Option<&Transfer>) -> DownloadItem 
     };
     DownloadItem {
         id: entry.id.0 as i32,
-        file_name: entry.file_name.as_str().into(),
+        file_name: streams::display_name(&entry.file_name).into(),
         detail: download_detail(entry, status, transfer.map_or(0, |transfer| transfer.speed))
             .into(),
         progress,
@@ -408,7 +409,7 @@ fn item_status(entry: &Download, transfer: Option<&Transfer>) -> DownloadItemSta
 
 fn download_detail(entry: &Download, status: DownloadItemStatus, speed: i64) -> String {
     let transferred = if entry.total_bytes > 0 {
-        format!(
+        t!(
             "{} von {}",
             format_bytes(entry.received_bytes),
             format_bytes(entry.total_bytes)
@@ -429,17 +430,17 @@ fn download_detail(entry: &Download, status: DownloadItemStatus, speed: i64) -> 
             }
             parts.join(" · ")
         }
-        DownloadItemStatus::Paused => format!("Pausiert · {transferred}"),
+        DownloadItemStatus::Paused => t!("Pausiert · {}", transferred),
         DownloadItemStatus::Complete => {
             let size = format_bytes(entry.total_bytes.max(entry.received_bytes));
             match display_host(&entry.url) {
-                Some(host) => format!("{size} · {host}"),
+                Some(host) => t!("{} · {}", size, host),
                 None => size,
             }
         }
-        DownloadItemStatus::Missing => "Datei wurde verschoben oder gelöscht".to_owned(),
-        DownloadItemStatus::Canceled => "Abgebrochen".to_owned(),
-        DownloadItemStatus::Failed => "Fehlgeschlagen".to_owned(),
+        DownloadItemStatus::Missing => t!("Datei wurde verschoben oder gelöscht").to_owned(),
+        DownloadItemStatus::Canceled => t!("Abgebrochen").to_owned(),
+        DownloadItemStatus::Failed => t!("Fehlgeschlagen").to_owned(),
     }
 }
 
@@ -447,7 +448,7 @@ fn download_detail(entry: &Download, status: DownloadItemStatus, speed: i64) -> 
 pub(super) fn format_bytes(bytes: i64) -> String {
     const UNITS: [&str; 4] = ["KB", "MB", "GB", "TB"];
     if bytes < 1024 {
-        return format!("{bytes} B");
+        return t!("{} B", bytes);
     }
     let mut value = bytes as f64 / 1024.0;
     let mut unit = 0;
@@ -466,9 +467,9 @@ pub(super) fn format_bytes(bytes: i64) -> String {
 fn remaining_time(seconds: i64) -> String {
     let seconds = seconds.max(1) as u64;
     match seconds {
-        ..60 => format!("noch {seconds} s"),
-        60..3_600 => format!("noch {} min", seconds.div_ceil(60)),
-        _ => format!("noch {} h", seconds.div_ceil(3_600)),
+        ..60 => t!("noch {} s", seconds),
+        60..3_600 => t!("noch {} min", seconds.div_ceil(60)),
+        _ => t!("noch {} h", seconds.div_ceil(3_600)),
     }
 }
 

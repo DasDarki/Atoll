@@ -7,7 +7,7 @@ import { TextField } from "../widgets/text-field.slint";
 import { FieldLabel } from "../widgets/field-label.slint";
 
 export component BookmarkEditor inherits Modal {
-    title: OverlayState.bookmark-editor-folder ? "Ordner bearbeiten" : "Lesezeichen";
+    title: OverlayState.bookmark-editor-folder ? @tr("Ordner bearbeiten") : @tr("Lesezeichen");
     card-width: 480px;
     autofocus: false;
     dismissed => { OverlayState.bookmark-cancel(); }
@@ -16,7 +16,7 @@ export component BookmarkEditor inherits Modal {
 
     VerticalLayout {
         spacing: 6px;
-        FieldLabel { text: "NAME"; }
+        FieldLabel { text: @tr("NAME"); }
         title-field := TextField {
             text <=> OverlayState.bookmark-title;
             accepted => { OverlayState.bookmark-save(); }
@@ -26,7 +26,7 @@ export component BookmarkEditor inherits Modal {
 
     if !OverlayState.bookmark-editor-folder : VerticalLayout {
         spacing: 6px;
-        FieldLabel { text: "ADRESSE"; }
+        FieldLabel { text: @tr("ADRESSE"); }
         TextField {
             text <=> OverlayState.bookmark-url;
             accepted => { OverlayState.bookmark-save(); }
@@ -36,7 +36,7 @@ export component BookmarkEditor inherits Modal {
 
     VerticalLayout {
         spacing: 6px;
-        FieldLabel { text: "ORDNER"; }
+        FieldLabel { text: @tr("ORDNER"); }
         HorizontalLayout {
             spacing: 8px;
             ComboBox {
@@ -45,7 +45,7 @@ export component BookmarkEditor inherits Modal {
                 current-index <=> OverlayState.bookmark-folder-index;
             }
             ActionButton {
-                text: "Neuer Ordner…";
+                text: @tr("Neuer Ordner…");
                 clicked => { OverlayState.bookmark-editor-new-folder(); }
             }
         }
@@ -54,17 +54,17 @@ export component BookmarkEditor inherits Modal {
     HorizontalLayout {
         spacing: 8px;
         ActionButton {
-            text: "Entfernen";
+            text: @tr("Entfernen");
             kind: ButtonKind.danger;
             clicked => { OverlayState.bookmark-remove(); }
         }
         Rectangle { horizontal-stretch: 1; }
         ActionButton {
-            text: "Abbrechen";
+            text: @tr("Abbrechen");
             clicked => { OverlayState.bookmark-cancel(); }
         }
         ActionButton {
-            text: "Fertig";
+            text: @tr("Fertig");
             kind: ButtonKind.primary;
             clicked => { OverlayState.bookmark-save(); }
         }

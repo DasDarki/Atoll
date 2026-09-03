@@ -78,7 +78,7 @@ impl PluginContext {
             .cloned()
             .ok_or_else(|| {
                 mlua::Error::runtime(format!(
-                    "diese Erweiterung hat kein Panel namens \"{id}\", es fehlt im Manifest"
+                    "this extension has no panel named \"{id}\", it is missing from the manifest"
                 ))
             })
     }
@@ -89,7 +89,7 @@ impl PluginContext {
         let url = self
             .host
             .current_page_url(&self.id)
-            .ok_or_else(|| mlua::Error::runtime("gerade ist keine Seite offen"))?;
+            .ok_or_else(|| mlua::Error::runtime("no page is open right now"))?;
         self.require_site(&url)?;
         Ok(url)
     }
@@ -271,7 +271,7 @@ pub(crate) fn native_table(lua: &Lua, context: &Rc<PluginContext>) -> mlua::Resu
             let world = world
                 .as_deref()
                 .map_or(Some(ScriptWorld::Isolated), ScriptWorld::parse)
-                .ok_or_else(|| mlua::Error::runtime("world ist \"isolated\" oder \"page\""))?;
+                .ok_or_else(|| mlua::Error::runtime("world is \"isolated\" or \"page\""))?;
             let pending = held.pending();
             held.host.evaluate(&held.id, pending, code, world);
             Ok(pending.0)
@@ -286,7 +286,7 @@ pub(crate) fn native_table(lua: &Lua, context: &Rc<PluginContext>) -> mlua::Resu
             let world = world
                 .as_deref()
                 .map_or(Some(ScriptWorld::Isolated), ScriptWorld::parse)
-                .ok_or_else(|| mlua::Error::runtime("world ist \"isolated\" oder \"page\""))?;
+                .ok_or_else(|| mlua::Error::runtime("world is \"isolated\" or \"page\""))?;
             let pending = held.pending();
             held.host
                 .evaluate(&held.id, pending, content::stylesheet(&css), world);
@@ -318,18 +318,18 @@ pub(crate) fn native_table(lua: &Lua, context: &Rc<PluginContext>) -> mlua::Resu
                     .collect::<mlua::Result<Vec<_>>>()?;
                 if wanted.is_empty() {
                     return Err(mlua::Error::runtime(
-                        "ein Seiten-Skript braucht mindestens ein Muster unter \"matches\"",
+                        "a page script needs at least one pattern under \"matches\"",
                     ));
                 }
                 let world = world
                     .as_deref()
                     .map_or(Some(ScriptWorld::Isolated), ScriptWorld::parse)
-                    .ok_or_else(|| mlua::Error::runtime("world ist \"isolated\" oder \"page\""))?;
+                    .ok_or_else(|| mlua::Error::runtime("world is \"isolated\" or \"page\""))?;
                 let run_at = run_at
                     .as_deref()
                     .map_or(Some(RunAt::DocumentStart), RunAt::parse)
                     .ok_or_else(|| {
-                        mlua::Error::runtime("runAt ist \"documentStart\" oder \"documentEnd\"")
+                        mlua::Error::runtime("runAt is \"documentStart\" or \"documentEnd\"")
                     })?;
                 let script = content::build(content::Request {
                     plugin: &held.id,
@@ -381,7 +381,7 @@ pub(crate) fn native_table(lua: &Lua, context: &Rc<PluginContext>) -> mlua::Resu
                     .collect::<mlua::Result<Vec<_>>>()?;
                 if patterns.is_empty() {
                     return Err(mlua::Error::runtime(
-                        "eine Regel braucht mindestens ein Muster unter \"patterns\"",
+                        "a rule needs at least one pattern under \"patterns\"",
                     ));
                 }
                 let action = match target {
@@ -500,7 +500,7 @@ pub(crate) fn native_table(lua: &Lua, context: &Rc<PluginContext>) -> mlua::Resu
             let mut workers = held.workers.borrow_mut();
             let running = workers
                 .get_mut(worker)
-                .ok_or_else(|| mlua::Error::runtime("dieser Worker läuft nicht mehr"))?;
+                .ok_or_else(|| mlua::Error::runtime("this worker is no longer running"))?;
             running.call(name, args, pending);
             Ok(pending.0)
         })?,
@@ -534,11 +534,10 @@ pub(crate) fn install_require(lua: &Lua, directory: &Path) -> mlua::Result<()> {
             return Ok(cached);
         }
         let path = module_path(&directory, &name).ok_or_else(|| {
-            mlua::Error::runtime(format!("\"{name}\" liegt nicht in dieser Erweiterung"))
+            mlua::Error::runtime(format!("\"{name}\" is not inside this extension"))
         })?;
-        let source = std::fs::read_to_string(&path).map_err(|error| {
-            mlua::Error::runtime(format!("\"{name}\" kann nicht gelesen werden: {error}"))
-        })?;
+        let source = std::fs::read_to_string(&path)
+            .map_err(|error| mlua::Error::runtime(format!("\"{name}\" cannot be read: {error}")))?;
         let value: Value = lua.load(source).set_name(name.clone()).call(())?;
         modules.set(name, value.clone())?;
         Ok(value)

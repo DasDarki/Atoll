@@ -3,6 +3,7 @@ use atoll_storage::prelude::*;
 use atoll_storage::{NewIsland, NewTab};
 
 use super::Browser;
+use atoll_i18n::t;
 
 const CLOSED_TAB_MEMORY: usize = 25;
 
@@ -81,7 +82,7 @@ impl Browser {
                 Some(tab.id)
             }
             Err(error) => {
-                self.report("Tab anlegen", Err::<(), _>(error));
+                self.report(t!("Tab anlegen"), Err::<(), _>(error));
                 None
             }
         }
@@ -166,7 +167,7 @@ impl Browser {
 
         self.forget_tabs([tab]);
         if let Err(error) = self.storage.delete_tab(tab) {
-            self.report("Tab schließen", Err::<(), _>(error));
+            self.report(t!("Tab schließen"), Err::<(), _>(error));
             return;
         }
         self.reload_session();
@@ -241,7 +242,7 @@ impl Browser {
             return;
         };
         if let Err(error) = self.storage.set_tab_pinned(tab, pinned) {
-            self.report("Anpinnen", Err::<(), _>(error));
+            self.report(t!("Anpinnen"), Err::<(), _>(error));
             return;
         }
         let commands = self.lifecycle.borrow_mut().set_protected(tab, pinned);
@@ -290,7 +291,7 @@ impl Browser {
 
     pub fn move_tab_to_island(&self, tab: TabId, island: IslandId) {
         let result = self.storage.move_tab(tab, island, usize::MAX);
-        self.report("Tab verschieben", result);
+        self.report(t!("Tab verschieben"), result);
         self.reload_session();
         self.refresh_sidebar();
     }
@@ -306,10 +307,10 @@ impl Browser {
         };
         let this = self.this();
         self.prompt_text(
-            "Neue Insel",
-            "Name der neuen Insel",
-            "Neue Insel",
-            "Anlegen",
+            t!("Neue Insel"),
+            t!("Name der neuen Insel"),
+            t!("Neue Insel"),
+            t!("Anlegen"),
             move |name| {
                 let Some(browser) = this.upgrade() else {
                     return;
@@ -331,7 +332,7 @@ impl Browser {
                     })?;
                     transaction.move_tab(tab, island.id, 0)
                 });
-                browser.report("Insel anlegen", result);
+                browser.report(t!("Insel anlegen"), result);
                 browser.reload_session();
                 browser.refresh_sidebar();
             },
@@ -364,7 +365,7 @@ impl Browser {
         let workspace = self.session.borrow().workspace;
         let created = self.storage.create_island(NewIsland {
             workspace_id: workspace,
-            name: "Tabs",
+            name: t!("Tabs"),
             color: self.next_island_color(),
             index: None,
             created_at: Self::now(),
@@ -375,7 +376,7 @@ impl Browser {
                 Some(island.id)
             }
             Err(error) => {
-                self.report("Insel anlegen", Err::<(), _>(error));
+                self.report(t!("Insel anlegen"), Err::<(), _>(error));
                 None
             }
         }
@@ -417,12 +418,12 @@ impl Browser {
         }
         if island.is_archived() {
             let result = self.storage.restore_island(island.id);
-            self.report("Wiederherstellen", result);
-            self.show_toast(&format!("Insel „{}“ aus dem Archiv geholt", island.name));
+            self.report(t!("Wiederherstellen"), result);
+            self.show_toast(&t!("Insel „{}“ aus dem Archiv geholt", island.name));
         }
         if island.collapsed {
             let result = self.storage.set_island_collapsed(island.id, false);
-            self.report("Insel aufklappen", result);
+            self.report(t!("Insel aufklappen"), result);
         }
         if island.workspace_id != self.session.borrow().workspace {
             let key = Self::active_workspace_key(island.workspace_id);

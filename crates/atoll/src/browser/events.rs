@@ -9,6 +9,7 @@ use super::page::web_cursor;
 use super::plugins::EnginePageMessage;
 use super::views::TabView;
 use crate::ui::BrowserState;
+use atoll_i18n::t;
 
 impl Browser {
     /// Handles the engine events that concern this window.
@@ -184,7 +185,7 @@ impl Browser {
                     && let Some(window) = self.window()
                 {
                     let text = if matches == 0 {
-                        "Keine Treffer".to_owned()
+                        t!("Keine Treffer").to_owned()
                     } else {
                         format!("{active_match}/{matches}")
                     };
@@ -312,9 +313,9 @@ impl Browser {
             }
             EngineEvent::PasskeyRefused(view) => {
                 if self.is_live_view(view) {
-                    self.show_toast(
-                        "Passkeys werden in Atoll nicht unterstützt, melde dich anders an",
-                    );
+                    self.show_toast(t!(
+                        "Passkeys werden in Atoll nicht unterstützt, melde dich anders an"
+                    ));
                 }
                 Effect::NONE
             }
@@ -491,7 +492,7 @@ impl Browser {
                 self.reload_session();
                 self.activate_tab(tab.id);
             }
-            Err(error) => self.report("Popup öffnen", Err::<(), _>(error)),
+            Err(error) => self.report(t!("Popup öffnen"), Err::<(), _>(error)),
         }
     }
 

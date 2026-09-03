@@ -8,24 +8,35 @@ use slint::wgpu_30::WGPUConfiguration;
 use slint::winit_030::WinitWindowAccessor;
 use slint::{ComponentHandle, RenderingState};
 
-use crate::browser::WindowManager;
+use crate::browser::{Preferences, WindowManager};
 use crate::platform::paths::Paths;
 use crate::ui::AppWindow;
+use atoll_i18n::t;
 
 const DEFAULT_FRAME_RATE: u32 = 60;
+
+/// Tells the user interface which of the bundled translations to show. It only works once a
+/// window exists, and German needs none because it is the language of the source.
+pub fn select_interface_language(language: atoll_i18n::Language) {
+    if let Err(error) = slint::select_bundled_translation(language.bundle()) {
+        tracing::warn!(%error, language = language.tag(), "the language could not be selected");
+    }
+    slint::update_all_translations();
+}
 
 /// Starts Atoll and runs until the last window is closed.
 pub fn run() -> Result<()> {
     let launched = Instant::now();
     let paths = Paths::resolve()?;
     let storage = Storage::open(&paths.database).with_context(|| {
-        format!(
+        t!(
             "Datenbank {} kann nicht geöffnet werden",
             paths.database.display()
         )
     })?;
     tracing::debug!(elapsed = ?launched.elapsed(), "database open");
-    let gpu = Rc::new(GpuContext::create().context("keine geeignete Grafikkarte gefunden")?);
+    atoll_i18n::set_language(Preferences::load(&storage).language());
+    let gpu = Rc::new(GpuContext::create().context(t!("keine geeignete Grafikkarte gefunden"))?);
     let gpu_handle = gpu.clone();
     tracing::debug!(elapsed = ?launched.elapsed(), "graphics device ready");
 
@@ -38,10 +49,11 @@ pub fn run() -> Result<()> {
             queue: gpu.queue.clone(),
         })
         .select()
-        .context("die Oberfläche kann nicht initialisiert werden")?;
+        .context(t!("die Oberfläche kann nicht initialisiert werden"))?;
 
     let manager = WindowManager::new(storage, gpu, paths);
     let first = manager.restore_windows()?;
+    select_interface_language(atoll_i18n::language());
     tracing::debug!(elapsed = ?launched.elapsed(), "windows shown");
     start_engine_after_first_frame(&first, &manager, launched);
 

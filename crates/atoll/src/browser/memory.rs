@@ -10,6 +10,7 @@ use super::downloads::format_bytes;
 use super::preferences::{MAX_MEMORY_LIMIT_GB, PreferenceKey};
 use crate::platform::memory::renderer_memory;
 use crate::ui::SettingsState;
+use atoll_i18n::t;
 
 /// How often the memory of the pages is measured.
 const INTERVAL: Duration = Duration::from_secs(30);
@@ -124,7 +125,7 @@ impl Browser {
             self.memory
                 .usage()
                 .map(|bytes| {
-                    format!(
+                    t!(
                         "Geöffnete Seiten belegen gerade {}.",
                         format_bytes(bytes as i64)
                     )

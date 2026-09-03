@@ -11,47 +11,47 @@ export component IslandHeader inherits Rectangle {
     menu := ContextMenuArea {
         Menu {
             MenuItem {
-                title: "Neuer Tab in dieser Insel";
+                title: @tr("Neuer Tab in dieser Insel");
                 activated => { SidebarState.island-action(root.entry.island-id, "new-tab"); }
             }
             MenuItem {
-                title: "Umbenennen";
+                title: @tr("Umbenennen");
                 activated => { SidebarState.island-action(root.entry.island-id, "rename"); }
             }
             Menu {
-                title: "Farbe";
+                title: @tr("Farbe");
                 for color[index] in Theme.island-colors : MenuItem {
-                    title: ["Violett", "Blau", "Cyan", "Türkis", "Grün", "Bernstein", "Rosa", "Schiefer"][index];
+                    title: [@tr("Violett"), @tr("Blau"), @tr("Cyan"), @tr("Türkis"), @tr("Grün"), @tr("Bernstein"), @tr("Rosa"), @tr("Schiefer")][index];
                     activated => { SidebarState.set-island-color(root.entry.island-id, index); }
                 }
             }
             MenuSeparator { }
             MenuItem {
-                title: "Alle Tabs schlafen legen";
+                title: @tr("Alle Tabs schlafen legen");
                 activated => { SidebarState.island-action(root.entry.island-id, "sleep"); }
             }
             MenuItem {
-                title: "Alle Tabs als Lesezeichen speichern";
+                title: @tr("Alle Tabs als Lesezeichen speichern");
                 activated => { SidebarState.island-action(root.entry.island-id, "bookmark"); }
             }
             MenuItem {
-                title: "Als Liste exportieren";
+                title: @tr("Als Liste exportieren");
                 activated => { SidebarState.island-action(root.entry.island-id, "export"); }
             }
             MenuItem {
-                title: "Nach oben";
+                title: @tr("Nach oben");
                 activated => { SidebarState.island-action(root.entry.island-id, "move-up"); }
             }
             MenuItem {
-                title: "Nach unten";
+                title: @tr("Nach unten");
                 activated => { SidebarState.island-action(root.entry.island-id, "move-down"); }
             }
             MenuItem {
-                title: "In neues Fenster verschieben";
+                title: @tr("In neues Fenster verschieben");
                 activated => { SidebarState.island-action(root.entry.island-id, "new-window"); }
             }
             Menu {
-                title: "In Workspace verschieben";
+                title: @tr("In Workspace verschieben");
                 for workspace in SidebarState.workspaces : MenuItem {
                     title: workspace.name;
                     enabled: !workspace.active;
@@ -60,11 +60,11 @@ export component IslandHeader inherits Rectangle {
             }
             MenuSeparator { }
             MenuItem {
-                title: "Archivieren";
+                title: @tr("Archivieren");
                 activated => { SidebarState.island-action(root.entry.island-id, "archive"); }
             }
             MenuItem {
-                title: "Insel löschen";
+                title: @tr("Insel löschen");
                 activated => { SidebarState.island-action(root.entry.island-id, "delete"); }
             }
         }

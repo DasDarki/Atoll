@@ -52,28 +52,28 @@ component WorkspaceChip inherits Rectangle {
     menu := ContextMenuArea {
         Menu {
             MenuItem {
-                title: root.item.open-elsewhere ? "Zum Fenster wechseln" : "In neuem Fenster öffnen";
+                title: root.item.open-elsewhere ? @tr("Zum Fenster wechseln") : @tr("In neuem Fenster öffnen");
                 enabled: !root.item.active;
                 activated => { SidebarState.workspace-action(root.item.id, "open-window"); }
             }
             MenuSeparator { }
             MenuItem {
-                title: "Umbenennen";
+                title: @tr("Umbenennen");
                 activated => { SidebarState.workspace-action(root.item.id, "rename"); }
             }
             MenuItem {
-                title: "Nach links verschieben";
+                title: @tr("Nach links verschieben");
                 enabled: root.index > 0;
                 activated => { SidebarState.workspace-action(root.item.id, "move-left"); }
             }
             MenuItem {
-                title: "Nach rechts verschieben";
+                title: @tr("Nach rechts verschieben");
                 enabled: root.index < root.total - 1;
                 activated => { SidebarState.workspace-action(root.item.id, "move-right"); }
             }
             MenuSeparator { }
             MenuItem {
-                title: "Workspace löschen";
+                title: @tr("Workspace löschen");
                 enabled: root.total > 1;
                 activated => { SidebarState.workspace-action(root.item.id, "delete"); }
             }

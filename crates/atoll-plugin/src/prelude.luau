@@ -40,8 +40,8 @@ function atoll.error(...)
 end
 
 function atoll.on(event, handler)
-	assert(type(event) == "string", "atoll.on braucht den Namen eines Ereignisses")
-	assert(type(handler) == "function", "atoll.on braucht eine Funktion")
+	assert(type(event) == "string", "atoll.on needs the name of an event")
+	assert(type(handler) == "function", "atoll.on needs a function")
 	local list = handlers[event]
 	if not list then
 		list = {}
@@ -120,9 +120,9 @@ atoll.tabs = {
 
 atoll.commands = {
 	register = function(command)
-		assert(type(command) == "table", "atoll.commands.register braucht eine Tabelle")
-		assert(type(command.id) == "string", "ein Befehl braucht eine id")
-		assert(type(command.run) == "function", "ein Befehl braucht run")
+		assert(type(command) == "table", "atoll.commands.register needs a table")
+		assert(type(command.id) == "string", "a command needs an id")
+		assert(type(command.run) == "function", "a command needs run")
 		commands[command.id] = command.run
 		native.register_command(command.id, tostring(command.title or command.id), command.shortcut)
 	end,
@@ -152,8 +152,8 @@ atoll.page = {
 
 atoll.content = {
 	register = function(script)
-		assert(type(script) == "table", "atoll.content.register braucht eine Tabelle")
-		assert(type(script.id) == "string", "ein Seiten-Skript braucht eine id")
+		assert(type(script) == "table", "atoll.content.register needs a table")
+		assert(type(script.id) == "string", "a page script needs an id")
 		native.content_register(
 			script.id,
 			script.matches or {},
@@ -170,12 +170,12 @@ atoll.content = {
 
 atoll.requests = {
 	block = function(rule)
-		assert(type(rule) == "table", "atoll.requests.block braucht eine Tabelle")
+		assert(type(rule) == "table", "atoll.requests.block needs a table")
 		native.request_rule(tostring(rule.id or "block"), rule.patterns or {}, rule.types or {}, nil)
 	end,
 	redirect = function(rule)
-		assert(type(rule) == "table", "atoll.requests.redirect braucht eine Tabelle")
-		assert(type(rule.to) == "string", "eine Umleitung braucht ein Ziel unter \"to\"")
+		assert(type(rule) == "table", "atoll.requests.redirect needs a table")
+		assert(type(rule.to) == "string", "a redirect needs a target under \"to\"")
 		native.request_rule(tostring(rule.id or "redirect"), rule.patterns or {}, rule.types or {}, rule.to)
 	end,
 	clear = function(id)
@@ -209,7 +209,7 @@ end
 
 atoll.worker = {
 	spawn = function(source, calls)
-		assert(type(source) == "string", "atoll.worker.spawn braucht den Quelltext des Workers")
+		assert(type(source) == "string", "atoll.worker.spawn needs the source of the worker")
 		local id = native.worker_spawn(source)
 		workers[id] = if type(calls) == "table" then calls else {}
 		return setmetatable({ id = id }, worker)
@@ -269,7 +269,7 @@ function dispatch.worker(id, name, payload)
 	local list = workers[id]
 	local handler = if list then list[name] else nil
 	if not handler then
-		error(`dieser Worker darf "{name}" nicht rufen, die Erweiterung kennt es nicht`, 0)
+		error(`this worker may not call "{name}", the extension does not know it`, 0)
 	end
 	return handler(payload)
 end

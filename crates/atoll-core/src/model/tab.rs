@@ -1,6 +1,7 @@
 use crate::address;
 use crate::ids::{FaviconId, IslandId, TabId};
 use crate::time::Timestamp;
+use atoll_i18n::t;
 
 /// A tab record. It only becomes an engine instance while it is being looked at.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -32,7 +33,7 @@ impl Tab {
             return title.to_owned();
         }
         if self.is_blank() {
-            return String::from("Neuer Tab");
+            return t!("Neuer Tab").to_owned();
         }
         address::display_host(&self.url).unwrap_or_else(|| self.url.clone())
     }

@@ -36,10 +36,10 @@ const LOAD_BUDGET: Duration = Duration::from_secs(2);
 const MAX_STRIKES: u32 = 3;
 
 /// The message of the error that stops a script that ran too long.
-const TIMEOUT: &str = "das Skript lief zu lange und wurde angehalten";
+const TIMEOUT: &str = "the script ran too long and was stopped";
 
 /// What a script hears when the worker it waits for is stopped.
-const WORKER_STOPPED: &str = "der Worker wurde beendet";
+const WORKER_STOPPED: &str = "the worker was stopped";
 
 pub(crate) const API_KEY: &str = "atoll.api";
 pub(crate) const DISPATCH_KEY: &str = "atoll.dispatch";
@@ -546,7 +546,7 @@ impl PluginRuntime {
                     Outcome::Waiting
                 }
                 None => Outcome::Failed(
-                    "ein Skript hat coroutine.yield ohne einen Atoll-Aufruf benutzt".to_owned(),
+                    "a script used coroutine.yield without a call into Atoll".to_owned(),
                 ),
             },
             Ok(values) => Outcome::Finished(returned(&plugin.lua, &values)),
@@ -665,7 +665,7 @@ impl PluginRuntime {
         tracing::warn!(plugin = %id, message, "an extension reported an error");
         self.host.report(id, message);
         if timed_out && plugin.strikes >= MAX_STRIKES {
-            let reason = format!("{TIMEOUT} ({MAX_STRIKES} Mal)");
+            let reason = format!("{TIMEOUT} ({MAX_STRIKES} times)");
             plugin.failure = Some(reason.clone());
             plugin.waiting.clear();
             self.waiting.retain(|_, waiting| waiting != id);

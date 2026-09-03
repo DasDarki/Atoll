@@ -10,6 +10,7 @@ mod ui {
     slint::include_modules!();
 }
 
+use atoll_i18n::t;
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
@@ -24,7 +25,13 @@ fn main() -> ExitCode {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {
             tracing::error!("{error:#}");
-            eprintln!("Atoll konnte nicht gestartet werden: {error:#}");
+            eprintln!(
+                "{}",
+                t!(
+                    "Atoll konnte nicht gestartet werden: {}",
+                    format!("{error:#}")
+                )
+            );
             ExitCode::FAILURE
         }
     }

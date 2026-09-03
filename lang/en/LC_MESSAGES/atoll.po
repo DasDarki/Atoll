@@ -1,0 +1,1642 @@
+# Atoll in en. The strings in the source are German, this file translates them.
+# Both the user interface, which Slint bundles, and the Rust side read this file.
+# Run scripts/translations.py update after changing a string in the source.
+msgid ""
+msgstr ""
+"Project-Id-Version: Atoll\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "\n\nDiese Erweiterung möchte keine besonderen Rechte."
+msgstr "\n\nThis extension does not want any special permissions."
+
+msgid "\n\nLade Erweiterungen nur aus Quellen, denen du vertraust."
+msgstr "\n\nOnly install extensions from sources you trust."
+
+msgid "\n\nSeiten: {}"
+msgstr "\n\nSites: {}"
+
+msgid "\n\nSie möchte:"
+msgstr "\n\nIt wants to:"
+
+msgid "\n• {}"
+msgstr "\n• {}"
+
+msgid " {} vorhandene Tabs wurden verschoben."
+msgstr " {} existing tabs were moved."
+
+msgid " {} {}, {} {}:"
+msgstr " {} {}, {} {}:"
+
+msgid " · {} verschoben"
+msgstr " · {} moved"
+
+msgid " · {} {}"
+msgstr " · {} {}"
+
+msgid " · {} übersprungen"
+msgstr " · {} skipped"
+
+msgid ", Einmalcode in der Zwischenablage"
+msgstr ", one-time code in the clipboard"
+
+msgid "--- Inselname ---\nhttps://example.com\n\n# Kommentare werden ignoriert"
+msgstr "--- Island name ---\nhttps://example.com\n\n# Comments are ignored"
+
+msgid "1 Anfrage blockiert"
+msgstr "1 request blocked"
+
+msgid "1 Insel archiviert"
+msgstr "1 island archived"
+
+msgid "1Password füllt nur Anmeldungen auf Webseiten aus"
+msgstr "1Password only fills logins on websites"
+
+msgid "1Password meldet: {}"
+msgstr "1Password reports: {}"
+
+msgid "1Password wird gefragt, eventuell musst du die App entsperren…"
+msgstr "Asking 1Password, you may have to unlock the app…"
+
+msgid "ADRESSE"
+msgstr "ADDRESS"
+
+msgid "ARCHIVIERT"
+msgstr "ARCHIVED"
+
+msgid "Abbrechen"
+msgstr "Cancel"
+
+msgid "Abgebrochen"
+msgstr "Cancelled"
+
+msgid "Adresse"
+msgstr "address"
+
+msgid "Adresse des Repositorys, zum Beispiel https://example.org/erweiterung.git"
+msgstr "Address of the repository, for example https://example.org/extension.git"
+
+msgid "Adresse kopieren"
+msgstr "Copy address"
+
+msgid "Adresse nicht gespeichert: {}"
+msgstr "Address not saved: {}"
+
+msgid "Adressen"
+msgstr "addresses"
+
+msgid "Aktiv"
+msgstr "Active"
+
+msgid "Aktualisieren"
+msgstr "Update"
+
+msgid "Aktuelle Insel"
+msgstr "Current island"
+
+msgid "Aktuelle Insel archivieren"
+msgstr "Archive current island"
+
+msgid "Aktuelle Seite"
+msgstr "Current page"
+
+msgid "Aktuelle Seite als Startseite festlegen"
+msgstr "Use current page as start page"
+
+msgid "Aktueller Workspace"
+msgstr "Current workspace"
+
+msgid "Alle Cookies löschen?"
+msgstr "Delete all cookies?"
+
+msgid "Alle Dateien"
+msgstr "All files"
+
+msgid "Alle Logins durchsuchen"
+msgstr "Search all logins"
+
+msgid "Alle Tabs als Lesezeichen speichern"
+msgstr "Bookmark all tabs"
+
+msgid "Alle Tabs durchsuchen"
+msgstr "Search all tabs"
+
+msgid "Alle Tabs schlafen legen"
+msgstr "Put all tabs to sleep"
+
+msgid "Alle Workspaces"
+msgstr "All workspaces"
+
+msgid "Alle archivieren"
+msgstr "Archive all"
+
+msgid "Alle entfernen"
+msgstr "Remove all"
+
+msgid "Alle in neuen Tabs öffnen"
+msgstr "Open all in new tabs"
+
+msgid "Allgemein"
+msgstr "General"
+
+msgid "Als Lesezeichen gespeichert"
+msgstr "Bookmarked"
+
+msgid "Als Lesezeichen speichern"
+msgstr "Add bookmark"
+
+msgid "Als Liste exportieren"
+msgstr "Export as list"
+
+msgid "Als neue Insel anlegen"
+msgstr "Create as new island"
+
+msgid "Alt+Pos1"
+msgstr "Alt+Home"
+
+msgid "Anfragen blockieren und umleiten"
+msgstr "block and redirect requests"
+
+msgid "Anlegen"
+msgstr "Create"
+
+msgid "Anmeldungen mit 1Password ausfüllen"
+msgstr "Fill logins with 1Password"
+
+msgid "Anpinnen"
+msgstr "Pin"
+
+msgid "Arbeitsspeicher begrenzen"
+msgstr "Limit memory"
+
+msgid "Archiv"
+msgstr "Archive"
+
+msgid "Archiv öffnen"
+msgstr "Open archive"
+
+msgid "Archivieren"
+msgstr "Archive"
+
+msgid "Archiviert"
+msgstr "Archived"
+
+msgid "Archivierte Inseln einschließen"
+msgstr "Include archived islands"
+
+msgid "Archivierte Inseln verschwinden aus der Sidebar, bleiben aber vollständig erhalten."
+msgstr "Archived islands disappear from the sidebar but are kept in full."
+
+msgid "Archivierung vorschlagen nach Wochen"
+msgstr "Suggest archiving after weeks"
+
+msgid "Atoll beenden"
+msgstr "Quit Atoll"
+
+msgid "Atoll konnte nicht gestartet werden: {}"
+msgstr "Atoll could not be started: {}"
+
+msgid "Auf Seite suchen"
+msgstr "Find on page"
+
+msgid "Auf dieser Seite wurde kein Video gefunden"
+msgstr "No video found on this page"
+
+msgid "Auf dieser Seite wurde nichts blockiert"
+msgstr "Nothing was blocked on this page"
+
+msgid "Aus Archiv"
+msgstr "From archive"
+
+msgid "Aus Git"
+msgstr "From Git"
+
+msgid "Aus HTML importieren…"
+msgstr "Import from HTML…"
+
+msgid "Aus Zwischenablage einfügen"
+msgstr "Paste from clipboard"
+
+msgid "Aus dem Erweiterungsordner"
+msgstr "From the extension folder"
+
+msgid "Aus einem Archiv installiert"
+msgstr "Installed from an archive"
+
+msgid "Aus einem Zip-Archiv oder aus einem Git-Repository. Atoll fragt danach, was die Erweiterung darf."
+msgstr "From a zip archive or from a Git repository. Atoll then asks what the extension may do."
+
+msgid "Aus {}"
+msgstr "From {}"
+
+msgid "Ausgeschaltet"
+msgstr "Switched off"
+
+msgid "Ausgeschaltet auf"
+msgstr "Switched off on"
+
+msgid "Ausgestellt für"
+msgstr "Issued to"
+
+msgid "Ausgestellt von"
+msgstr "Issued by"
+
+msgid "Ausnahme entfernen"
+msgstr "Remove exception"
+
+msgid "Auswahl"
+msgstr "Selection"
+
+msgid "Bearbeiten"
+msgstr "Edit"
+
+msgid "Beenden"
+msgstr "Quit"
+
+msgid "Befehle"
+msgstr "Commands"
+
+msgid "Behalten"
+msgstr "Keep"
+
+msgid "Belegen die Seiten mehr als das Budget, schlafen die am längsten nicht genutzten Hintergrund-Tabs ein. Tabs mit Wiedergabe, ungesendeten Eingaben und angepinnte Tabs bleiben geladen. "
+msgstr "When the pages use more than the budget, the background tabs unused for longest go to sleep. Tabs that play media, have unsent input or are pinned stay loaded. "
+
+msgid "Benutzername"
+msgstr "User name"
+
+msgid "Bernstein"
+msgstr "Amber"
+
+msgid "Bild aus der Zwischenablage"
+msgstr "Image from the clipboard"
+
+msgid "Bild in neuem Tab öffnen"
+msgstr "Open image in a new tab"
+
+msgid "Bildadresse kopieren"
+msgstr "Copy image address"
+
+msgid "Blau"
+msgstr "Blue"
+
+msgid "Bleiben"
+msgstr "Stay"
+
+msgid "Blendet die Leiste aus, solange sie leer ist."
+msgstr "Hides the bar while it is empty."
+
+msgid "Budget in GB"
+msgstr "Budget in GB"
+
+msgid "Cookies gelöscht"
+msgstr "Cookies deleted"
+
+msgid "Cookies konnten nicht gelöscht werden"
+msgstr "Cookies could not be deleted"
+
+msgid "Cookies löschen"
+msgstr "Delete cookies"
+
+msgid "Cookies und Websitedaten löschen"
+msgstr "Delete cookies and site data"
+
+msgid "Cookies, gespeicherte Daten und der Cache von {} werden gelöscht. Du wirst dort abgemeldet."
+msgstr "Cookies, stored data and the cache of {} will be deleted. You will be signed out there."
+
+msgid "Cyan"
+msgstr "Cyan"
+
+msgid "DATEN"
+msgstr "DATA"
+
+msgid "DUPLIKATE"
+msgstr "DUPLICATES"
+
+msgid "Dafür zuerst eine Startseite eintragen."
+msgstr "Enter a start page first."
+
+msgid "Darf: {}"
+msgstr "May: {}"
+
+msgid "Darstellung"
+msgstr "Appearance"
+
+msgid "Das Anmeldefeld gehört zu einer anderen Seite, es wurde nichts eingefügt"
+msgstr "The login field belongs to another site, nothing was filled in"
+
+msgid "Das Archiv ist leer."
+msgstr "The archive is empty."
+
+msgid "Das Bild konnte nicht gespeichert werden"
+msgstr "The image could not be saved"
+
+msgid "Datei auswählen"
+msgstr "Choose file"
+
+msgid "Datei auswählen…"
+msgstr "Choose file…"
+
+msgid "Datei hochladen"
+msgstr "Upload file"
+
+msgid "Datei kann nicht geöffnet werden: {}"
+msgstr "File cannot be opened: {}"
+
+msgid "Datei konnte nicht gelesen werden: {}"
+msgstr "File could not be read: {}"
+
+msgid "Datei wurde verschoben oder gelöscht"
+msgstr "The file was moved or deleted"
+
+msgid "Datei wählen…"
+msgstr "Choose file…"
+
+msgid "Dateien im eigenen Ordner lesen und schreiben"
+msgstr "read and write files in its own folder"
+
+msgid "Datenbank {} kann nicht geöffnet werden"
+msgstr "Database {} cannot be opened"
+
+msgid "Datenschutz"
+msgstr "Privacy"
+
+msgid "Der Ordner der Erweiterung und alles, was sie gespeichert hat, werden gelöscht."
+msgstr "The folder of the extension and everything it stored will be deleted."
+
+msgid "Der Ordner erscheint in der Lesezeichenleiste."
+msgstr "The folder appears in the bookmarks bar."
+
+msgid "Der Ordner wird in „{}“ angelegt."
+msgstr "The folder will be created in \"{}\"."
+
+msgid "Der gesamte Verlauf wird gelöscht. Tabs, Inseln und Lesezeichen bleiben erhalten."
+msgstr "The whole history will be deleted. Tabs, islands and bookmarks are kept."
+
+msgid "Die 1Password-CLI wird gesucht…"
+msgstr "Looking for the 1Password CLI…"
+
+msgid "Die Adresse muss {{query}} enthalten, bis dahin bleibt die bisherige Suche aktiv."
+msgstr "The address has to contain {{query}}, until then the previous search stays active."
+
+msgid "Die Browser-Engine konnte nicht gestartet werden."
+msgstr "The browser engine could not be started."
+
+msgid "Die Datei enthält keine Lesezeichen"
+msgstr "The file holds no bookmarks"
+
+msgid "Die Datei wurde verschoben oder gelöscht"
+msgstr "The file was moved or deleted"
+
+msgid "Die Lesezeichenleiste erscheint, sobald sie Lesezeichen enthält"
+msgstr "The bookmarks bar appears as soon as it holds bookmarks"
+
+msgid "Die Seite hat sich geändert, es wurde nichts eingefügt"
+msgstr "The page changed, nothing was filled in"
+
+msgid "Die Seite wurde nicht über eine geprüfte, verschlüsselte Verbindung geladen."
+msgstr "The page was not loaded over a checked, encrypted connection."
+
+msgid "Die Zwischenablage enthält keinen Text"
+msgstr "The clipboard holds no text"
+
+msgid "Diese Datei liegt auf deinem Computer."
+msgstr "This file is on your computer."
+
+msgid "Diese Erweiterung hat noch nichts gemeldet."
+msgstr "This extension has not reported anything yet."
+
+msgid "Diese Seite"
+msgstr "This page"
+
+msgid "Diese Seite ist abgestürzt."
+msgstr "This page crashed."
+
+msgid "Diese Seite wurde nicht aus dem Internet geladen."
+msgstr "This page was not loaded from the internet."
+
+msgid "Dieser Ordner ist leer."
+msgstr "This folder is empty."
+
+msgid "Dieses Video ist kopiergeschützt und lässt sich nicht speichern"
+msgstr "This video is copy-protected and cannot be saved"
+
+msgid "Download abgeschlossen: {}"
+msgstr "Download finished: {}"
+
+msgid "Download entfernen"
+msgstr "Remove download"
+
+msgid "Download fehlgeschlagen: {}"
+msgstr "Download failed: {}"
+
+msgid "Download gestartet: {}"
+msgstr "Download started: {}"
+
+msgid "Download speichern"
+msgstr "Save download"
+
+msgid "Download-Ordner nicht verfügbar: {}"
+msgstr "Download folder not available: {}"
+
+msgid "Download-Ordner wählen"
+msgstr "Choose download folder"
+
+msgid "Download-Ordner öffnen"
+msgstr "Open download folder"
+
+msgid "Download-Übersicht beim Start eines Downloads öffnen"
+msgstr "Open the download list when a download starts"
+
+msgid "Downloads"
+msgstr "Downloads"
+
+msgid "Downloads leeren"
+msgstr "Clear downloads"
+
+msgid "Downloads sehen und starten"
+msgstr "see the downloads and start new ones"
+
+msgid "Du wirst auf allen Websites abgemeldet."
+msgstr "You will be signed out on every website."
+
+msgid "Duplizieren"
+msgstr "Duplicate"
+
+msgid "ERWEITERUNGEN"
+msgstr "EXTENSIONS"
+
+msgid "Eigene Adresse"
+msgstr "Own address"
+
+msgid "Eingefroren"
+msgstr "Frozen"
+
+msgid "Eingefroren im Hintergrund"
+msgstr "Frozen in the background"
+
+msgid "Eingefrorene Tabs im Hintergrund"
+msgstr "Frozen tabs in the background"
+
+msgid "Einmalcode"
+msgstr "One-time code"
+
+msgid "Einstellungen"
+msgstr "Settings"
+
+msgid "Enter lädt es hoch."
+msgstr "Enter uploads it."
+
+msgid "Entfernen"
+msgstr "Remove"
+
+msgid "Entfernt alle besuchten Seiten. Tabs, Inseln und Lesezeichen bleiben erhalten."
+msgstr "Removes every visited page. Tabs, islands and bookmarks are kept."
+
+msgid "Entsperren abgebrochen"
+msgstr "Unlocking cancelled"
+
+msgid "Entwicklertools"
+msgstr "Developer tools"
+
+msgid "Entwicklertools öffnen"
+msgstr "Open developer tools"
+
+msgid "Erlaubte Dateien"
+msgstr "Allowed files"
+
+msgid "Erweiterung aus Archiv installieren"
+msgstr "Install extension from archive"
+
+msgid "Erweiterung aus Git installieren"
+msgstr "Install extension from Git"
+
+msgid "Erweiterung installieren"
+msgstr "Install extension"
+
+msgid "Erweiterung nicht installiert"
+msgstr "Extension not installed"
+
+msgid "Erweiterung wird entpackt …"
+msgstr "Unpacking the extension …"
+
+msgid "Erweiterung wird geladen …"
+msgstr "Loading the extension …"
+
+msgid "Erweiterung {} abgeschaltet: {}"
+msgstr "Extension {} switched off: {}"
+
+msgid "Erweiterung {}: {}"
+msgstr "Extension {}: {}"
+
+msgid "Erweiterung „{}“ zulassen?"
+msgstr "Allow the extension \"{}\"?"
+
+msgid "Erweiterungen"
+msgstr "Extensions"
+
+msgid "Export"
+msgstr "Export"
+
+msgid "Exportieren"
+msgstr "Export"
+
+msgid "Farbe"
+msgstr "Colour"
+
+msgid "Farbe ändern"
+msgstr "Change colour"
+
+msgid "Fehler: "
+msgstr "Error: "
+
+msgid "Fehler: {}"
+msgstr "Error: {}"
+
+msgid "Fehlgeschlagen"
+msgstr "Failed"
+
+msgid "Fenster schließen"
+msgstr "Close window"
+
+msgid "Fenster öffnen"
+msgstr "Open window"
+
+msgid "Fertig"
+msgstr "Done"
+
+msgid "Filterlisten aktualisieren"
+msgstr "Update filter lists"
+
+msgid "Filterlisten werden aktualisiert"
+msgstr "Updating the filter lists"
+
+msgid "Filterlisten werden aktualisiert…"
+msgstr "Updating the filter lists…"
+
+msgid "Filterlisten werden geladen…"
+msgstr "Loading the filter lists…"
+
+msgid "Füge eine URL-Liste ein oder wähle eine Datei."
+msgstr "Paste a URL list or choose a file."
+
+msgid "Für gestreamte Videos fehlt yt-dlp, installiere das Paket yt-dlp"
+msgstr "Streamed videos need yt-dlp, install the package yt-dlp"
+
+msgid "Für {} ausgeschaltet"
+msgstr "Switched off for {}"
+
+msgid "Für {} ist kein Login gespeichert. Suche in allen Logins:"
+msgstr "No login is stored for {}. Search in all logins:"
+
+msgid "GLEICHNAMIGE INSELN"
+msgstr "ISLANDS OF THE SAME NAME"
+
+msgid "Geschieht automatisch alle vier Tage."
+msgstr "Happens automatically every four days."
+
+msgid "Geschlossenen Tab wiederherstellen"
+msgstr "Reopen closed tab"
+
+msgid "Geöffnete Seiten belegen gerade {}."
+msgstr "Open pages are using {} right now."
+
+msgid "Gib auf dieser Seite keine Passwörter oder Zahlungsdaten ein, sie werden unverschlüsselt übertragen."
+msgstr "Do not enter passwords or payment details on this page, they are sent unencrypted."
+
+msgid "Gilt sofort, ohne Neustart."
+msgstr "Applies at once, without a restart."
+
+msgid "Grün"
+msgstr "Green"
+
+msgid "Gültig bis"
+msgstr "Valid until"
+
+msgid "INSEL FÜR ADRESSEN OHNE MARKIERUNG"
+msgstr "ISLAND FOR ADDRESSES WITHOUT A MARKER"
+
+msgid "Import"
+msgstr "Import"
+
+msgid "Import abgeschlossen"
+msgstr "Import finished"
+
+msgid "Importieren"
+msgstr "Import"
+
+msgid "Importiert"
+msgstr "Imported"
+
+msgid "In Fenster verschieben"
+msgstr "Move to window"
+
+msgid "In Insel verschieben"
+msgstr "Move to island"
+
+msgid "In Workspace verschieben"
+msgstr "Move to workspace"
+
+msgid "In den Einstellungen ausgeschaltet"
+msgstr "Switched off in the settings"
+
+msgid "In die Zwischenablage kopiert"
+msgstr "Copied to the clipboard"
+
+msgid "In neue Insel verschieben"
+msgstr "Move to a new island"
+
+msgid "In neuem Fenster öffnen"
+msgstr "Open in a new window"
+
+msgid "In neuem Fenster öffnen: {}"
+msgstr "Open in a new window: {}"
+
+msgid "In neuem Tab öffnen"
+msgstr "Open in a new tab"
+
+msgid "In neues Fenster verschieben"
+msgstr "Move to a new window"
+
+msgid "Insel"
+msgstr "Island"
+
+msgid "Insel anlegen"
+msgstr "Create island"
+
+msgid "Insel archiviert"
+msgstr "Island archived"
+
+msgid "Insel archiviert. Wiederherstellen über das Archiv."
+msgstr "Island archived. Restore it from the archive."
+
+msgid "Insel aufklappen"
+msgstr "Expand island"
+
+msgid "Insel einklappen"
+msgstr "Collapse island"
+
+msgid "Insel endgültig löschen?"
+msgstr "Delete island for good?"
+
+msgid "Insel löschen"
+msgstr "Delete island"
+
+msgid "Insel löschen?"
+msgstr "Delete island?"
+
+msgid "Insel umbenennen"
+msgstr "Rename island"
+
+msgid "Insel verschieben"
+msgstr "Move island"
+
+msgid "Insel wiederhergestellt"
+msgstr "Island restored"
+
+msgid "Insel „{}“ aus dem Archiv geholt"
+msgstr "Island \"{}\" taken out of the archive"
+
+msgid "Insel-Markierungen schreiben"
+msgstr "Write island markers"
+
+msgid "Inseln"
+msgstr "Islands"
+
+msgid "Inseln, die so lange nicht benutzt wurden, werden in der Sidebar markiert und im Archiv vorgeschlagen. Archiviert wird nur nach deiner Bestätigung. 0 schaltet die Vorschläge aus."
+msgstr "Islands unused for this long are marked in the sidebar and suggested in the archive. Nothing is archived without your confirmation. 0 switches the suggestions off."
+
+msgid "Installiere eine aus einem Archiv oder aus Git, oder lege einen Ordner mit einer plugin.toml an."
+msgstr "Install one from an archive or from Git, or put a folder with a plugin.toml in place."
+
+msgid "Installieren"
+msgstr "Install"
+
+msgid "Interne Seite"
+msgstr "Internal page"
+
+msgid "Jetzt aktualisieren"
+msgstr "Update now"
+
+msgid "Kein Login gefunden"
+msgstr "No login found"
+
+msgid "Kein passender Befehl"
+msgstr "No matching command"
+
+msgid "Keine Anmeldefelder gefunden"
+msgstr "No login fields found"
+
+msgid "Keine Erweiterungen installiert"
+msgstr "No extensions installed"
+
+msgid "Keine Treffer"
+msgstr "No matches"
+
+msgid "Keine besonderen Rechte"
+msgstr "No special permissions"
+
+msgid "Keine gültigen Adressen gefunden · {} ungültige Zeilen"
+msgstr "No valid addresses found · {} invalid lines"
+
+msgid "Leer lassen für die Atoll-Startseite"
+msgstr "Leave empty for the Atoll start page"
+
+msgid "Lesezeichen"
+msgstr "Bookmarks"
+
+msgid "Lesezeichen (HTML)"
+msgstr "Bookmarks (HTML)"
+
+msgid "Lesezeichen entfernen"
+msgstr "Remove bookmark"
+
+msgid "Lesezeichen importieren"
+msgstr "Import bookmarks"
+
+msgid "Lesezeichen löschen"
+msgstr "Delete bookmark"
+
+msgid "Lesezeichen mit Strg+D oder dem Stern in der Adressleiste hinzufügen"
+msgstr "Add bookmarks with Ctrl+D or the star in the address bar"
+
+msgid "Lesezeichen speichern"
+msgstr "Save bookmark"
+
+msgid "Lesezeichen verschieben"
+msgstr "Move bookmark"
+
+msgid "Lesezeichen verwalten"
+msgstr "Manage bookmarks"
+
+msgid "Lesezeichenleiste"
+msgstr "Bookmarks bar"
+
+msgid "Lesezeichenleiste anzeigen"
+msgstr "Show bookmarks bar"
+
+msgid "Lesezeichenleiste ausblenden"
+msgstr "Hide bookmarks bar"
+
+msgid "Lesezeichenleiste einblenden"
+msgstr "Show bookmarks bar"
+
+msgid "Lesezeichenleiste immer anzeigen"
+msgstr "Always show the bookmarks bar"
+
+msgid "Lesezeichenleiste nur mit Lesezeichen anzeigen"
+msgstr "Only show the bookmarks bar when it holds bookmarks"
+
+msgid "Link in neuem Tab öffnen"
+msgstr "Open link in a new tab"
+
+msgid "Linkadresse kopieren"
+msgstr "Copy link address"
+
+msgid "Liste leeren"
+msgstr "Clear list"
+
+msgid "Login einer anderen Seite verwenden?"
+msgstr "Use the login of another site?"
+
+msgid "Lokale Datei"
+msgstr "Local file"
+
+msgid "Läuft, {} Befehle"
+msgstr "Running, {} commands"
+
+msgid "Löschen"
+msgstr "Delete"
+
+msgid "Meldet dich auf allen Websites ab."
+msgstr "Signs you out on every website."
+
+msgid "Mit 1Password anmelden"
+msgstr "Sign in with 1Password"
+
+msgid "NAME"
+msgstr "NAME"
+
+msgid "Nach links verschieben"
+msgstr "Move left"
+
+msgid "Nach oben"
+msgstr "Move up"
+
+msgid "Nach rechts verschieben"
+msgstr "Move right"
+
+msgid "Nach unten"
+msgstr "Move down"
+
+msgid "Name der neuen Insel"
+msgstr "Name of the new island"
+
+msgid "Name des neuen Workspaces"
+msgstr "Name of the new workspace"
+
+msgid "Navigation"
+msgstr "Navigation"
+
+msgid "Neu laden"
+msgstr "Reload"
+
+msgid "Neu laden (F5)"
+msgstr "Reload (F5)"
+
+msgid "Neue Insel"
+msgstr "New island"
+
+msgid "Neue Tabs mit der Atoll-Startseite öffnen"
+msgstr "Open new tabs with the Atoll start page"
+
+msgid "Neue Tabs mit der Startseite öffnen"
+msgstr "Open new tabs with the start page"
+
+msgid "Neuer Lesezeichenordner"
+msgstr "New bookmark folder"
+
+msgid "Neuer Ordner"
+msgstr "New folder"
+
+msgid "Neuer Ordner darin…"
+msgstr "New folder inside…"
+
+msgid "Neuer Ordner…"
+msgstr "New folder…"
+
+msgid "Neuer Tab"
+msgstr "New tab"
+
+msgid "Neuer Tab in dieser Insel"
+msgstr "New tab in this island"
+
+msgid "Neuer Workspace"
+msgstr "New workspace"
+
+msgid "Neues Fenster"
+msgstr "New window"
+
+msgid "Nicht geladen"
+msgstr "Not loaded"
+
+msgid "Nicht mehr anpinnen"
+msgstr "Unpin"
+
+msgid "Nichts gefunden"
+msgstr "Nothing found"
+
+msgid "Noch keine Downloads."
+msgstr "No downloads yet."
+
+msgid "Noch keine Lesezeichen. Speichere Seiten mit Strg+D oder importiere den HTML-Export aus Opera."
+msgstr "No bookmarks yet. Save pages with Ctrl+D or import the HTML export from Opera."
+
+msgid "Noch nicht zugelassen"
+msgstr "Not allowed yet"
+
+msgid "OK"
+msgstr "OK"
+
+msgid "ORDNER"
+msgstr "FOLDER"
+
+msgid "Ordner anlegen"
+msgstr "Create folder"
+
+msgid "Ordner auswählen"
+msgstr "Choose folder"
+
+msgid "Ordner bearbeiten"
+msgstr "Edit folder"
+
+msgid "Ordner der Erweiterungen"
+msgstr "Folder of the extensions"
+
+msgid "Ordner kann nicht geöffnet werden: {}"
+msgstr "Folder cannot be opened: {}"
+
+msgid "Ordner löschen"
+msgstr "Delete folder"
+
+msgid "Ordner löschen?"
+msgstr "Delete folder?"
+
+msgid "Ordner öffnen"
+msgstr "Open folder"
+
+msgid "Ordner „{}“ in der Lesezeichenleiste angelegt"
+msgstr "Folder \"{}\" created in the bookmarks bar"
+
+msgid "Panel konnte nicht geöffnet werden: {}"
+msgstr "The panel could not be opened: {}"
+
+msgid "Passkeys werden in Atoll nicht unterstützt, melde dich anders an"
+msgstr "Atoll does not support passkeys, sign in another way"
+
+msgid "Passwort"
+msgstr "Password"
+
+msgid "Passwörter, Zahlungsdaten und alles andere werden verschlüsselt an diese Website übertragen."
+msgstr "Passwords, payment details and everything else are sent to this website encrypted."
+
+msgid "Pausiert · {}"
+msgstr "Paused · {}"
+
+msgid "Popup öffnen"
+msgstr "Open popup"
+
+msgid "Protokoll"
+msgstr "Log"
+
+msgid "Protokoll von „{}“"
+msgstr "Log of \"{}\""
+
+msgid "Rosa"
+msgstr "Pink"
+
+msgid "SPEICHERORT"
+msgstr "LOCATION"
+
+msgid "SPRACHE"
+msgstr "LANGUAGE"
+
+msgid "STARTSEITE"
+msgstr "START PAGE"
+
+msgid "SUCHMASCHINE"
+msgstr "SEARCH ENGINE"
+
+msgid "Schema \"{}\" wird nicht unterstützt"
+msgstr "scheme \"{}\" is not supported"
+
+msgid "Schiefer"
+msgstr "Slate"
+
+msgid "Schlafen legen"
+msgstr "Put to sleep"
+
+msgid "Schließen"
+msgstr "Close"
+
+msgid "Schläft, wird beim Öffnen geladen"
+msgstr "Asleep, loads when opened"
+
+msgid "Seit über einer Woche nicht benutzt."
+msgstr "Unused for more than a week."
+
+msgid "Seit über {} Wochen nicht benutzt."
+msgstr "Unused for more than {} weeks."
+
+msgid "Seite als Lesezeichen speichern"
+msgstr "Bookmark page"
+
+msgid "Seite neu laden?"
+msgstr "Reload page?"
+
+msgid "Seite verlassen?"
+msgstr "Leave page?"
+
+msgid "Sidebar anzeigen"
+msgstr "Show sidebar"
+
+msgid "Sidebar ausblenden"
+msgstr "Hide sidebar"
+
+msgid "Sidebar einblenden"
+msgstr "Show sidebar"
+
+msgid "So viele zuletzt genutzte Tabs bleiben geladen und erscheinen sofort. Alle anderen schlafen und kosten keinen Arbeitsspeicher."
+msgstr "This many recently used tabs stay loaded and appear at once. Every other tab sleeps and costs no memory."
+
+msgid "Sonst erscheint nur eine kurze Meldung. Die Übersicht öffnet Strg+J."
+msgstr "Otherwise only a short message appears. Ctrl+J opens the list."
+
+msgid "Sonst zeigen neue Tabs die Atoll-Startseite mit der Suche."
+msgstr "Otherwise new tabs show the Atoll start page with the search."
+
+msgid "Speichern fehlgeschlagen: {}"
+msgstr "Saving failed: {}"
+
+msgid "Speichern unter"
+msgstr "Save as"
+
+msgid "Standard"
+msgstr "Default"
+
+msgid "Startseite festgelegt"
+msgstr "Start page set"
+
+msgid "Startseite öffnen"
+msgstr "Open start page"
+
+msgid "Startseiten-Button ausblenden"
+msgstr "Hide home button"
+
+msgid "Startseiten-Button einblenden"
+msgstr "Show home button"
+
+msgid "Startseiten-Button in der Symbolleiste"
+msgstr "Home button in the toolbar"
+
+msgid "Strg++"
+msgstr "Ctrl++"
+
+msgid "Strg+,"
+msgstr "Ctrl+,"
+
+msgid "Strg+-"
+msgstr "Ctrl+-"
+
+msgid "Strg+0"
+msgstr "Ctrl+0"
+
+msgid "Strg+B"
+msgstr "Ctrl+B"
+
+msgid "Strg+B blendet sie jederzeit ein oder aus."
+msgstr "Ctrl+B shows and hides it at any time."
+
+msgid "Strg+D"
+msgstr "Ctrl+D"
+
+msgid "Strg+F"
+msgstr "Ctrl+F"
+
+msgid "Strg+F5"
+msgstr "Ctrl+F5"
+
+msgid "Strg+J"
+msgstr "Ctrl+J"
+
+msgid "Strg+K suchen · Strg+Umschalt+P Befehle"
+msgstr "Ctrl+K search · Ctrl+Shift+P commands"
+
+msgid "Strg+L Adressleiste  ·  Strg+T neuer Tab  ·  Strg+W Tab schließen"
+msgstr "Ctrl+L address bar  ·  Ctrl+T new tab  ·  Ctrl+W close tab"
+
+msgid "Strg+N"
+msgstr "Ctrl+N"
+
+msgid "Strg+T"
+msgstr "Ctrl+T"
+
+msgid "Strg+Umschalt+B"
+msgstr "Ctrl+Shift+B"
+
+msgid "Strg+Umschalt+B blendet sie jederzeit ein oder aus."
+msgstr "Ctrl+Shift+B shows and hides it at any time."
+
+msgid "Strg+Umschalt+L"
+msgstr "Ctrl+Shift+L"
+
+msgid "Strg+Umschalt+O"
+msgstr "Ctrl+Shift+O"
+
+msgid "Strg+Umschalt+Q"
+msgstr "Ctrl+Shift+Q"
+
+msgid "Strg+Umschalt+S"
+msgstr "Ctrl+Shift+S"
+
+msgid "Strg+Umschalt+T"
+msgstr "Ctrl+Shift+T"
+
+msgid "Strg+Umschalt+W"
+msgstr "Ctrl+Shift+W"
+
+msgid "Strg+W"
+msgstr "Ctrl+W"
+
+msgid "Styles und Skripte in die genannten Seiten einfügen und deren Inhalt lesen"
+msgstr "put styles and scripts into the named sites and read what they hold"
+
+msgid "Suchen oder Adresse eingeben"
+msgstr "Search or enter address"
+
+msgid "Suchmaschine: {}"
+msgstr "Search engine: {}"
+
+msgid "Systemsprache"
+msgstr "System language"
+
+msgid "Tab"
+msgstr "tab"
+
+msgid "Tab anlegen"
+msgstr "Create tab"
+
+msgid "Tab in neues Fenster verschieben"
+msgstr "Move tab to a new window"
+
+msgid "Tab schließen"
+msgstr "Close tab"
+
+msgid "Tab verschieben"
+msgstr "Move tab"
+
+msgid "Tabs"
+msgstr "tabs"
+
+msgid "Tabs der aktuellen Insel schlafen legen"
+msgstr "Put the tabs of the current island to sleep"
+
+msgid "Tabs, Lesezeichen und Verlauf durchsuchen · > für Befehle"
+msgstr "Search tabs, bookmarks and history · > for commands"
+
+msgid "Textdatei (.txt)"
+msgstr "Text file (.txt)"
+
+msgid "Textdateien"
+msgstr "Text files"
+
+msgid "Trotzdem einfügen"
+msgstr "Fill in anyway"
+
+msgid "Türkis"
+msgstr "Teal"
+
+msgid "UMFANG"
+msgstr "SCOPE"
+
+msgid "URL-Liste exportieren"
+msgstr "Export URL list"
+
+msgid "URL-Liste importieren"
+msgstr "Import URL list"
+
+msgid "URL-Liste speichern"
+msgstr "Save URL list"
+
+msgid "URL-Liste öffnen"
+msgstr "Open URL list"
+
+msgid "Umbenennen"
+msgstr "Rename"
+
+msgid "VORSCHLÄGE"
+msgstr "SUGGESTIONS"
+
+msgid "Verbindung ist nicht sicher"
+msgstr "Connection is not secure"
+
+msgid "Verbindung ist nicht vollständig sicher"
+msgstr "Connection is not fully secure"
+
+msgid "Verbindung ist sicher"
+msgstr "Connection is secure"
+
+msgid "Vergrößern"
+msgstr "Zoom in"
+
+msgid "Verkleinern"
+msgstr "Zoom out"
+
+msgid "Verlassen"
+msgstr "Leave"
+
+msgid "Verlauf"
+msgstr "History"
+
+msgid "Verlauf gelöscht"
+msgstr "History deleted"
+
+msgid "Verlauf löschen"
+msgstr "Delete history"
+
+msgid "Verlauf löschen?"
+msgstr "Delete history?"
+
+msgid "Video gespeichert: {}"
+msgstr "Video saved: {}"
+
+msgid "Video herunterladen"
+msgstr "Download video"
+
+msgid "Video wird heruntergeladen"
+msgstr "Downloading the video"
+
+msgid "Video-Download fehlgeschlagen: {}"
+msgstr "Video download failed: {}"
+
+msgid "Videos lassen sich nur von Webseiten herunterladen"
+msgstr "Videos can only be downloaded from websites"
+
+msgid "Violett"
+msgstr "Violet"
+
+msgid "Vollbild"
+msgstr "Full screen"
+
+msgid "Vollständig neu laden, ohne Cache"
+msgstr "Reload completely, without the cache"
+
+msgid "Vollständig neu laden, ohne Cache (Strg+F5)"
+msgstr "Reload completely, without the cache (Ctrl+F5)"
+
+msgid "Vor jedem Download nach dem Speicherort fragen"
+msgstr "Ask where to save before every download"
+
+msgid "Vorgenommene Änderungen werden möglicherweise nicht gespeichert."
+msgstr "Changes you made may not be saved."
+
+msgid "WERBEBLOCKER"
+msgstr "AD BLOCKER"
+
+msgid "Warnung: "
+msgstr "Warning: "
+
+msgid "Websitedaten gelöscht"
+msgstr "Site data deleted"
+
+msgid "Websitedaten konnten nicht gelöscht werden"
+msgstr "Site data could not be deleted"
+
+msgid "Websitedaten löschen?"
+msgstr "Delete site data?"
+
+msgid "Werbeblocker"
+msgstr "Ad blocker"
+
+msgid "Werbeblocker ausgeschaltet"
+msgstr "Ad blocker switched off"
+
+msgid "Werbeblocker ausschalten"
+msgstr "Switch the ad blocker off"
+
+msgid "Werbeblocker eingeschaltet, wirkt ab dem nächsten Laden einer Seite"
+msgstr "Ad blocker switched on, it works from the next page load"
+
+msgid "Werbeblocker einschalten"
+msgstr "Switch the ad blocker on"
+
+msgid "Werbeblocker für {} ausgeschaltet"
+msgstr "Ad blocker switched off for {}"
+
+msgid "Werbeblocker für {} ausschalten"
+msgstr "Switch the ad blocker off for {}"
+
+msgid "Werbeblocker für {} eingeschaltet"
+msgstr "Ad blocker switched on for {}"
+
+msgid "Werbeblocker für {} einschalten"
+msgstr "Switch the ad blocker on for {}"
+
+msgid "Werbeblocker umschalten"
+msgstr "Toggle the ad blocker"
+
+msgid "Werbung und Tracker blockieren"
+msgstr "Block ads and trackers"
+
+msgid "Wie soll der Workspace heißen?"
+msgstr "What should the workspace be called?"
+
+msgid "Wie soll die Insel heißen?"
+msgstr "What should the island be called?"
+
+msgid "Wiederherstellen"
+msgstr "Restore"
+
+msgid "Wird vom Startseiten-Button und mit Alt+Pos1 geöffnet."
+msgstr "Opened by the home button and with Alt+Home."
+
+msgid "Workspace"
+msgstr "Workspace"
+
+msgid "Workspace anlegen"
+msgstr "Create workspace"
+
+msgid "Workspace löschen"
+msgstr "Delete workspace"
+
+msgid "Workspace löschen?"
+msgstr "Delete workspace?"
+
+msgid "Workspace umbenennen"
+msgstr "Rename workspace"
+
+msgid "Workspace verschieben"
+msgstr "Move workspace"
+
+msgid "Workspace wechseln"
+msgstr "Switch workspace"
+
+msgid "Workspace {}"
+msgstr "Workspace {}"
+
+msgid "ZIEL"
+msgstr "TARGET"
+
+msgid "ZULETZT HERUNTERGELADEN"
+msgstr "DOWNLOADED LAST"
+
+msgid "Zeigt einen Speichern-Dialog, statt direkt im Download-Ordner zu speichern."
+msgstr "Shows a save dialog instead of saving straight into the download folder."
+
+msgid "Zeile {}: {} ({})"
+msgstr "Line {}: {} ({})"
+
+msgid "Zip-Archiv"
+msgstr "Zip archive"
+
+msgid "Zoom"
+msgstr "Zoom"
+
+msgid "Zoom zurücksetzen"
+msgstr "Reset zoom"
+
+msgid "Zoom: "
+msgstr "Zoom: "
+
+msgid "Zu Tab wechseln"
+msgstr "Switch to tab"
+
+msgid "Zu Workspace wechseln: {}"
+msgstr "Switch to workspace: {}"
+
+msgid "Zugangsdaten werden geholt…"
+msgstr "Fetching the credentials…"
+
+msgid "Zulassen"
+msgstr "Allow"
+
+msgid "Zum Fenster wechseln"
+msgstr "Switch to window"
+
+msgid "Zum Fenster wechseln: {}"
+msgstr "Switch to window: {}"
+
+msgid "Zum erneuten Laden klicken oder F5 drücken."
+msgstr "Click to load it again or press F5."
+
+msgid "Zurücksetzen"
+msgstr "Reset"
+
+msgid "Zusammenführen"
+msgstr "Merge"
+
+msgid "Zwischenablage"
+msgstr "Clipboard"
+
+msgid "Zwischenablage nicht verfügbar"
+msgstr "Clipboard not available"
+
+msgid "adblock werbung seite ausnahme"
+msgstr "adblock ads page exception"
+
+msgid "bookmarks ordner folder"
+msgstr "bookmarks folder"
+
+msgid "der Browser startet noch"
+msgstr "the browser is still starting"
+
+msgid "die Erweiterung ist nicht installiert"
+msgstr "the extension is not installed"
+
+msgid "die Erweiterungen sind beendet"
+msgstr "the extensions have ended"
+
+msgid "die Oberfläche kann nicht initialisiert werden"
+msgstr "the user interface cannot be initialised"
+
+msgid "die Zwischenablage lesen und schreiben"
+msgstr "read and write the clipboard"
+
+msgid "die genannten Seiten selbst abfragen"
+msgstr "ask the named sites for data on its own"
+
+msgid "die offenen Tabs sehen, Tabs öffnen und schließen"
+msgstr "see the open tabs, open and close tabs"
+
+msgid "doppelt in der Liste"
+msgstr "twice in the list"
+
+msgid "eigene Einstellungen und Daten speichern"
+msgstr "keep its own settings and data"
+
+msgid "erweiterung plugin"
+msgstr "extension plugin"
+
+msgid "erweiterung plugin panel fenster"
+msgstr "extension plugin panel window"
+
+msgid "exit schließen alle fenster"
+msgstr "exit close all windows"
+
+msgid "gerade ist keine Seite offen"
+msgstr "no page is open right now"
+
+msgid "herunterladen dateien"
+msgstr "download files"
+
+msgid "inseln"
+msgstr "islands"
+
+msgid "kein Fenster offen"
+msgstr "no window open"
+
+msgid "keine Adresse"
+msgstr "no address"
+
+msgid "keine geeignete Grafikkarte gefunden"
+msgstr "no suitable graphics card found"
+
+msgid "keine gültige Adresse"
+msgstr "not a valid address"
+
+msgid "noch {} h"
+msgstr "{} h left"
+
+msgid "noch {} min"
+msgstr "{} min left"
+
+msgid "noch {} s"
+msgstr "{} s left"
+
+msgid "passwort login zugangsdaten ausfüllen"
+msgstr "password login credentials fill"
+
+msgid "rückgängig"
+msgstr "undo"
+
+msgid "suche einstellung"
+msgstr "search setting"
+
+msgid "tab öffnen"
+msgstr "open tab"
+
+msgid "ungültige Zeile"
+msgstr "invalid line"
+
+msgid "ungültige Zeilen"
+msgstr "invalid lines"
+
+msgid "video speichern download film clip"
+msgstr "video save download film clip"
+
+msgid "vor einer Minute"
+msgstr "a minute ago"
+
+msgid "vor einer Stunde"
+msgstr "an hour ago"
+
+msgid "vor {} Minuten"
+msgstr "{} minutes ago"
+
+msgid "vor {} Monaten"
+msgstr "{} months ago"
+
+msgid "vor {} Stunden"
+msgstr "{} hours ago"
+
+msgid "vor {} Tagen"
+msgstr "{} days ago"
+
+msgid "vor {} Wochen"
+msgstr "{} weeks ago"
+
+msgid "{n} Tab"
+msgid_plural "{n} Tabs"
+msgstr[0] "{n} tab"
+msgstr[1] "{n} tabs"
+
+msgid "{{query}} wird durch den Suchbegriff ersetzt."
+msgstr "{{query}} is replaced with the search term."
+
+msgid "{} ({})"
+msgstr "{} ({})"
+
+msgid "{} Adressen gespeichert in {}"
+msgstr "{} addresses saved in {}"
+
+msgid "{} Adressen in {} {}"
+msgstr "{} addresses in {} {}"
+
+msgid "{} Anfragen blockiert"
+msgstr "{} requests blocked"
+
+msgid "{} B"
+msgstr "{} B"
+
+msgid "{} Inseln archiviert"
+msgstr "{} islands archived"
+
+msgid "{} Lesezeichen importiert"
+msgstr "{} bookmarks imported"
+
+msgid "{} eingefügt"
+msgstr "{} filled in"
+
+msgid "{} gibt es nicht"
+msgstr "{} does not exist"
+
+msgid "{} konnte nicht geladen werden"
+msgstr "{} could not be loaded"
+
+msgid "{} konnte nicht geladen werden. Es gelten die Listen von {}."
+msgstr "{} could not be loaded. The lists of {} apply."
+
+msgid "{} konnte nicht geladen werden. Neuer Versuch in einer Stunde."
+msgstr "{} could not be loaded. Trying again in an hour."
+
+msgid "{} konnte nicht geöffnet werden"
+msgstr "{} could not be opened"
+
+msgid "{} und {}"
+msgstr "{} and {}"
+
+msgid "{} und {} eingefügt"
+msgstr "{} and {} filled in"
+
+msgid "{} von {}"
+msgstr "{} of {}"
+
+msgid "{} {} importiert, {} neue {}."
+msgstr "{} {} imported, {} new {}."
+
+msgid "{} {} in die Zwischenablage kopiert"
+msgstr "{} {} copied to the clipboard"
+
+msgid "{} · archiviert"
+msgstr "{} · archived"
+
+msgid "{} · {}"
+msgstr "{} · {}"
+
+msgid "{} · {} · archiviert {}"
+msgstr "{} · {} · archived {}"
+
+msgid "{} · {} · zuletzt benutzt {}"
+msgstr "{} · {} · last used {}"
+
+msgid "{} × {} Pixel, wird als PNG hochgeladen"
+msgstr "{} × {} pixels, uploaded as PNG"
+
+msgid "{}, aktualisiert {}"
+msgstr "{}, updated {}"
+
+msgid "Ändern…"
+msgstr "Change…"
+
+msgid "Öffnen"
+msgstr "Open"
+
+msgid "Überspringen"
+msgstr "Skip"
+
+msgid "Übersprungen, {}: {}"
+msgstr "Skipped, {}: {}"
+
+msgid "übersprungene Adresse"
+msgstr "skipped address"
+
+msgid "übersprungene Adressen"
+msgstr "skipped addresses"
+
+msgid "„{}“ aktualisieren"
+msgstr "Update “{}”"
+
+msgid "„{}“ aktualisiert"
+msgstr "“{}” updated"
+
+msgid "„{}“ entfernen?"
+msgstr "Remove \"{}\"?"
+
+msgid "„{}“ entfernt"
+msgstr "“{}” removed"
+
+msgid "„{}“ installiert"
+msgstr "“{}” installed"
+
+msgid "„{}“ ist aktuell"
+msgstr "\"{}\" is up to date"
+
+msgid "„{}“ ist für {} gespeichert, nicht für {}. Füge die Zugangsdaten nur ein, wenn du der Seite vertraust."
+msgstr "\"{}\" is stored for {}, not for {}. Only fill in the credentials if you trust the site."
+
+msgid "„{}“ neu geladen"
+msgstr "“{}” reloaded"
+
+msgid "„{}“ suchen"
+msgstr "Search for \"{}\""
+
+msgid "„{}“ und alle enthaltenen Tabs werden gelöscht."
+msgstr "\"{}\" and all the tabs it holds will be deleted."
+
+msgid "„{}“ wird aktualisiert …"
+msgstr "\"{}\" is being updated …"
+
+msgid "„{}“ wird mit allen Inseln und {} Tabs endgültig gelöscht."
+msgstr "\"{}\" will be deleted for good, with all its islands and {} tabs."
+
+msgid "„{}“ wird mit {} Tabs endgültig gelöscht."
+msgstr "\"{}\" will be deleted for good, with {} tabs."
+
+msgid "„{}“ wird mit {} enthaltenen Einträgen gelöscht."
+msgstr "\"{}\" will be deleted, with the {} entries it holds."
+
+msgid "↑↓ auswählen   ↵ öffnen   Esc schließen"
+msgstr "↑↓ select   ↵ open   Esc close"

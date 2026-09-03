@@ -9,6 +9,7 @@ use slint::{ComponentHandle, ModelRc, VecModel};
 use super::Browser;
 use crate::bridge::colors::island_color;
 use crate::ui::{ArchiveItem, OverlayState};
+use atoll_i18n::t;
 
 impl Browser {
     pub fn open_archive(&self) {
@@ -90,11 +91,11 @@ impl Browser {
             .storage
             .restore_island(island)
             .and_then(|()| self.storage.touch_island(island, Self::now()));
-        self.report("Wiederherstellen", result);
+        self.report(t!("Wiederherstellen"), result);
         self.refresh_archive();
         self.reload_session();
         self.refresh_sidebar();
-        self.show_toast("Insel wiederhergestellt");
+        self.show_toast(t!("Insel wiederhergestellt"));
     }
 
     pub fn delete_archived_island(&self, island: IslandId) {
@@ -105,15 +106,15 @@ impl Browser {
             .unwrap_or_default();
         let this = self.this();
         self.confirm(
-            "Insel endgültig löschen?",
-            &format!("„{name}“ und alle enthaltenen Tabs werden gelöscht."),
-            "Löschen",
+            t!("Insel endgültig löschen?"),
+            &t!("„{}“ und alle enthaltenen Tabs werden gelöscht.", name),
+            t!("Löschen"),
             move || {
                 let Some(browser) = this.upgrade() else {
                     return;
                 };
                 let result = browser.storage.delete_island(island);
-                browser.report("Löschen", result);
+                browser.report(t!("Löschen"), result);
                 browser.refresh_archive();
             },
         );
@@ -143,7 +144,7 @@ impl Browser {
     /// Archive suggestion: keeps `island` and suggests it again only after the next period.
     pub fn keep_island(&self, island: IslandId) {
         let result = self.storage.touch_island(island, Self::now());
-        self.report("Behalten", result);
+        self.report(t!("Behalten"), result);
         self.reload_session();
         self.refresh_sidebar();
         self.refresh_archive();
@@ -153,7 +154,7 @@ impl Browser {
     pub fn archive_suggested_island(&self, island: IslandId) {
         self.archive_island_anywhere(island);
         self.refresh_archive();
-        self.show_toast("Insel archiviert");
+        self.show_toast(t!("Insel archiviert"));
     }
 
     /// Archive suggestion: archives every suggested island.
@@ -164,8 +165,8 @@ impl Browser {
         }
         self.refresh_archive();
         self.show_toast(&match islands.len() {
-            1 => "1 Insel archiviert".to_owned(),
-            count => format!("{count} Inseln archiviert"),
+            1 => t!("1 Insel archiviert").to_owned(),
+            count => t!("{} Inseln archiviert", count),
         });
     }
 
@@ -188,7 +189,7 @@ impl Browser {
             .unwrap_or_default();
         self.forget_tabs(tabs);
         let result = self.storage.archive_island(island, Self::now());
-        self.report("Archivieren", result);
+        self.report(t!("Archivieren"), result);
         self.reload_session();
         self.refresh_sidebar();
     }
@@ -207,9 +208,9 @@ fn relative_age(now: Timestamp, then: Timestamp) -> String {
     match days {
         0 => "heute".to_owned(),
         1 => "gestern".to_owned(),
-        2..=13 => format!("vor {days} Tagen"),
-        14..=59 => format!("vor {} Wochen", days / 7),
-        _ => format!("vor {} Monaten", days / 30),
+        2..=13 => t!("vor {} Tagen", days),
+        14..=59 => t!("vor {} Wochen", days / 7),
+        _ => t!("vor {} Monaten", days / 30),
     }
 }
 

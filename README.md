@@ -93,6 +93,12 @@ saved tabs therefore cost nothing at startup.
   `request.caught`. The browser asks for every request on its network thread, where no script may
   run, so extensions hand in rules instead of a function. A redirect has to point at a site of the
   manifest. The ad blocker is asked first, the rules after it.
+- **German and English**: the user interface follows the system language and can be switched in
+  the settings without a restart. The strings in the source are German, `lang/<language>/LC_MESSAGES/atoll.po`
+  holds the translations, and both sides read it: Slint bundles it into the user interface, the
+  crate `atoll-i18n` compiles it into a catalog for the strings Atoll puts together in Rust.
+  `scripts/translations.py report` says what is missing, `update` adds new strings to the files,
+  and a test fails when a string has no translation.
 - **Site information**: the symbol in the address bar shows whether the connection is secure,
   the certificate and the zoom level, and deletes cookies and stored data of the site.
 - **Developer tools** docked below or next to the page, see *Architecture*.
@@ -205,6 +211,7 @@ crates/
   atoll-adblock    ad blocking: filter lists, their updates and the per-site switch
   atoll-onepassword  logins from the 1Password CLI and matching them to sites
   atoll-video      video downloads through yt-dlp with progress and cancel
+  atoll-i18n       the languages: the `t!` macro and the catalogs built from lang/
   atoll-plugin     the Luau runtime for extensions, their manifests, permissions and installation
   atoll-engine     CEF integration: off-screen browsers, rendering, input, clipboard bridge
   atoll            the application: Slint user interface and the controller

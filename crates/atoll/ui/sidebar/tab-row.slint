@@ -16,37 +16,37 @@ export component TabRow inherits Rectangle {
     menu := ContextMenuArea {
         Menu {
             MenuItem {
-                title: "Neu laden";
+                title: @tr("Neu laden");
                 activated => { SidebarState.tab-action(root.entry.tab-id, "reload"); }
             }
             MenuItem {
-                title: "Schlafen legen";
+                title: @tr("Schlafen legen");
                 enabled: root.entry.state == TabLoadState.frozen;
                 activated => { SidebarState.tab-action(root.entry.tab-id, "sleep"); }
             }
             MenuItem {
-                title: root.entry.pinned ? "Nicht mehr anpinnen" : "Anpinnen";
+                title: root.entry.pinned ? @tr("Nicht mehr anpinnen") : @tr("Anpinnen");
                 activated => { SidebarState.tab-action(root.entry.tab-id, "pin"); }
             }
             MenuItem {
-                title: "Duplizieren";
+                title: @tr("Duplizieren");
                 activated => { SidebarState.tab-action(root.entry.tab-id, "duplicate"); }
             }
             MenuItem {
-                title: "Adresse kopieren";
+                title: @tr("Adresse kopieren");
                 activated => { SidebarState.tab-action(root.entry.tab-id, "copy-url"); }
             }
             MenuItem {
-                title: "Als Lesezeichen speichern";
+                title: @tr("Als Lesezeichen speichern");
                 activated => { SidebarState.tab-action(root.entry.tab-id, "bookmark"); }
             }
             MenuSeparator { }
             MenuItem {
-                title: "In neue Insel verschieben";
+                title: @tr("In neue Insel verschieben");
                 activated => { SidebarState.tab-action(root.entry.tab-id, "new-island"); }
             }
             Menu {
-                title: "In Insel verschieben";
+                title: @tr("In Insel verschieben");
                 for target in SidebarState.island-targets : MenuItem {
                     title: target.name;
                     enabled: target.id != root.entry.island-id;
@@ -54,11 +54,11 @@ export component TabRow inherits Rectangle {
                 }
             }
             MenuItem {
-                title: "In neues Fenster verschieben";
+                title: @tr("In neues Fenster verschieben");
                 activated => { SidebarState.tab-action(root.entry.tab-id, "new-window"); }
             }
             Menu {
-                title: "In Fenster verschieben";
+                title: @tr("In Fenster verschieben");
                 enabled: SidebarState.window-targets.length > 0;
                 for target in SidebarState.window-targets : MenuItem {
                     title: target.name;
@@ -67,7 +67,7 @@ export component TabRow inherits Rectangle {
             }
             MenuSeparator { }
             MenuItem {
-                title: "Tab schließen";
+                title: @tr("Tab schließen");
                 activated => { SidebarState.close-tab(root.entry.tab-id); }
             }
         }
@@ -106,8 +106,8 @@ export component TabRow inherits Rectangle {
                     SidebarState.hover-tab = root.entry.tab-id;
                     SidebarState.hover-title = root.entry.title;
                     SidebarState.hover-url = root.entry.url;
-                    SidebarState.hover-detail = root.entry.state == TabLoadState.sleeping ? "Schläft, wird beim Öffnen geladen"
-                        : root.entry.state == TabLoadState.frozen ? "Eingefroren im Hintergrund" : "";
+                    SidebarState.hover-detail = root.entry.state == TabLoadState.sleeping ? @tr("Schläft, wird beim Öffnen geladen")
+                        : root.entry.state == TabLoadState.frozen ? @tr("Eingefroren im Hintergrund") : "";
                     SidebarState.hover-y = root.absolute-position.y;
                     SidebarState.hovering = true;
                 } else if (SidebarState.hover-tab == root.entry.tab-id) {

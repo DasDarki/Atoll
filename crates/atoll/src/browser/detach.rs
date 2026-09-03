@@ -5,6 +5,7 @@ use atoll_storage::prelude::*;
 use slint::ComponentHandle;
 
 use super::Browser;
+use atoll_i18n::t;
 
 /// Where a window opened by dropping a tab lands relative to the pointer, so the pointer ends up
 /// over its sidebar.
@@ -75,7 +76,7 @@ impl Browser {
                 manager.open_window_for(workspace, Some(self), position);
                 self.depart(departure);
             }
-            Err(error) => self.report("In neues Fenster verschieben", Err::<(), _>(error)),
+            Err(error) => self.report(t!("In neues Fenster verschieben"), Err::<(), _>(error)),
         }
     }
 
@@ -98,7 +99,7 @@ impl Browser {
             return;
         };
         if let Err(error) = self.storage.move_tab(tab, island, index) {
-            self.report("Tab verschieben", Err::<(), _>(error));
+            self.report(t!("Tab verschieben"), Err::<(), _>(error));
             return;
         }
         self.reload_session_here();
@@ -155,7 +156,7 @@ impl Browser {
                 manager.open_window_for(workspace, Some(self), None);
                 self.depart(departure);
             }
-            Err(error) => self.report("In neues Fenster verschieben", Err::<(), _>(error)),
+            Err(error) => self.report(t!("In neues Fenster verschieben"), Err::<(), _>(error)),
         }
     }
 

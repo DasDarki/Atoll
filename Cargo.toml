@@ -17,6 +17,7 @@ atoll-adblock = { path = "crates/atoll-adblock" }
 atoll-onepassword = { path = "crates/atoll-onepassword" }
 atoll-video = { path = "crates/atoll-video" }
 atoll-plugin = { path = "crates/atoll-plugin" }
+atoll-i18n = { path = "crates/atoll-i18n" }
 adblock = { version = "0.13", default-features = false, features = ["embedded-domain-resolver", "full-regex-handling"] }
 
 ash = "0.38"

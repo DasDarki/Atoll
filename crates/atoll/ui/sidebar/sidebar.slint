@@ -86,26 +86,26 @@ export component Sidebar inherits Rectangle {
 
             FooterButton {
                 icon: @image-url("../icons/island.svg");
-                label: "Insel";
+                label: @tr("Insel");
                 horizontal-stretch: 1;
                 clicked => { SidebarState.create-island(); }
             }
             FooterButton {
                 icon: @image-url("../icons/archive.svg");
-                label: "Archiv";
+                label: @tr("Archiv");
                 badge: SidebarState.archive-suggestion;
                 horizontal-stretch: 1;
                 clicked => { SidebarState.open-archive(); }
             }
             FooterButton {
                 icon: @image-url("../icons/import.svg");
-                label: "Import";
+                label: @tr("Import");
                 horizontal-stretch: 1;
                 clicked => { SidebarState.open-import(); }
             }
             FooterButton {
                 icon: @image-url("../icons/export.svg");
-                label: "Export";
+                label: @tr("Export");
                 horizontal-stretch: 1;
                 clicked => { SidebarState.open-export(); }
             }

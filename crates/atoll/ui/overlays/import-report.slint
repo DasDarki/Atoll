@@ -5,7 +5,7 @@ import { Modal } from "modal.slint";
 import { ActionButton, ButtonKind } from "../widgets/button.slint";
 
 export component ImportReport inherits Modal {
-    title: "Import abgeschlossen";
+    title: @tr("Import abgeschlossen");
     card-width: 600px;
     dismissed => { OverlayState.report-close(); }
 
@@ -38,7 +38,7 @@ export component ImportReport inherits Modal {
     HorizontalLayout {
         alignment: end;
         ActionButton {
-            text: "Schließen";
+            text: @tr("Schließen");
             kind: ButtonKind.primary;
             clicked => { OverlayState.report-close(); }
         }

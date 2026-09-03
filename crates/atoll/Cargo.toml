@@ -14,6 +14,7 @@ atoll-core.workspace = true
 atoll-engine.workspace = true
 atoll-onepassword.workspace = true
 atoll-plugin.workspace = true
+atoll-i18n.workspace = true
 ureq.workspace = true
 atoll-video.workspace = true
 atoll-storage.workspace = true

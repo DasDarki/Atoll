@@ -10,6 +10,7 @@ use slint::{ComponentHandle, ModelRc, SharedString, VecModel};
 use super::Browser;
 use super::navigation::{Resolved, resolve};
 use crate::ui::{BrowserState, Completion, SuggestionItem, SuggestionKind};
+use atoll_i18n::t;
 
 const MAX_SUGGESTIONS: usize = 8;
 const HISTORY_CANDIDATES: usize = 300;
@@ -198,7 +199,7 @@ impl Browser {
             Some(Resolved::Search(url)) => (
                 SuggestionItem {
                     kind: SuggestionKind::Search,
-                    title: format!("„{query}“ suchen").into(),
+                    title: t!("„{}“ suchen", query).into(),
                     ..SuggestionItem::default()
                 },
                 url,
@@ -249,7 +250,7 @@ impl Browser {
                         kind: SuggestionKind::Tab,
                         title: title.into(),
                         url: display_url(&entry.tab.url).into(),
-                        detail: "Zu Tab wechseln".into(),
+                        detail: t!("Zu Tab wechseln").into(),
                         has_icon: icon.is_some(),
                         icon: icon.unwrap_or_default(),
                     },
@@ -277,7 +278,7 @@ impl Browser {
                         kind: SuggestionKind::Bookmark,
                         title: bookmark.title.as_str().into(),
                         url: display_url(url).into(),
-                        detail: "Lesezeichen".into(),
+                        detail: t!("Lesezeichen").into(),
                         has_icon: icon.is_some(),
                         icon: icon.unwrap_or_default(),
                     },

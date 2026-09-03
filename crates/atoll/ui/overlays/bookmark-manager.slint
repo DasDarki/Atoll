@@ -6,18 +6,18 @@ import { ActionButton, ButtonKind } from "../widgets/button.slint";
 import { IconButton } from "../widgets/icon-button.slint";
 
 export component BookmarkManager inherits Modal {
-    title: "Lesezeichen";
+    title: @tr("Lesezeichen");
     card-width: 720px;
     dismissed => { OverlayState.bookmark-manager-close(); }
 
     HorizontalLayout {
         spacing: 8px;
         ActionButton {
-            text: "Neuer Ordner";
+            text: @tr("Neuer Ordner");
             clicked => { OverlayState.bookmark-new-folder(); }
         }
         ActionButton {
-            text: "Aus HTML importieren…";
+            text: @tr("Aus HTML importieren…");
             clicked => { OverlayState.bookmark-import(); }
         }
         Rectangle { horizontal-stretch: 1; }
@@ -28,7 +28,7 @@ export component BookmarkManager inherits Modal {
         border-radius: Theme.radius;
         background: Theme.background;
         Text {
-            text: "Noch keine Lesezeichen. Speichere Seiten mit Strg+D oder importiere den HTML-Export aus Opera.";
+            text: @tr("Noch keine Lesezeichen. Speichere Seiten mit Strg+D oder importiere den HTML-Export aus Opera.");
             color: Theme.text-faint;
             font-size: Theme.font-normal;
             wrap: word-wrap;
@@ -124,7 +124,7 @@ export component BookmarkManager inherits Modal {
     HorizontalLayout {
         alignment: end;
         ActionButton {
-            text: "Schließen";
+            text: @tr("Schließen");
             kind: ButtonKind.primary;
             clicked => { OverlayState.bookmark-manager-close(); }
         }

@@ -3,6 +3,7 @@ use slint::ComponentHandle;
 use super::Browser;
 use super::preferences::PreferenceKey;
 use crate::ui::{BrowserState, SidebarState};
+use atoll_i18n::t;
 
 impl Browser {
     /// Shows the sidebar, the bookmarks bar and the home button as configured.
@@ -45,7 +46,9 @@ impl Browser {
         let visible = !self.preferences.borrow().bookmarks_bar_visible;
         self.set_bookmarks_bar_visible(visible);
         if visible && !self.is_bookmarks_bar_shown() {
-            self.show_toast("Die Lesezeichenleiste erscheint, sobald sie Lesezeichen enthält");
+            self.show_toast(t!(
+                "Die Lesezeichenleiste erscheint, sobald sie Lesezeichen enthält"
+            ));
         }
     }
 

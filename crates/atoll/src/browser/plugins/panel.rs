@@ -15,6 +15,7 @@ use super::super::web_input::{InputTarget, modifiers_of};
 use crate::bridge::images::frame_image;
 use crate::browser::Browser;
 use crate::ui::{PanelState, PointerAction, PointerButton, WebPointer, WebScroll};
+use atoll_i18n::t;
 
 /// The panel one window shows.
 pub struct OpenPanel {
@@ -37,14 +38,14 @@ impl Browser {
     ) -> Result<(), HostError> {
         let page = folder.join(&panel.page);
         if !page.is_file() {
-            return Err(HostError::Refused(format!("{} gibt es nicht", panel.page)));
+            return Err(HostError::Refused(t!("{} gibt es nicht", panel.page)));
         }
         let url = format!("file://{}", page.display());
         let view = {
             let engine = self.engine.borrow();
             let engine = engine
                 .as_ref()
-                .ok_or_else(|| HostError::Refused("der Browser startet noch".to_owned()))?;
+                .ok_or_else(|| HostError::Refused(t!("der Browser startet noch").to_owned()))?;
             engine
                 .create_view("about:blank", self.panel_geometry.get(), false)
                 .map_err(|error| HostError::Refused(error.to_string()))?

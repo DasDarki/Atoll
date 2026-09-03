@@ -16,6 +16,7 @@ use super::Plugins;
 use crate::browser::Browser;
 use crate::browser::windows::WindowManager;
 use crate::platform::tasks::run_in_background;
+use atoll_i18n::t;
 
 /// How many log lines of one extension the settings page keeps.
 const KEPT_LOGS: usize = 200;
@@ -86,8 +87,8 @@ impl PluginHost for Bridge {
     fn log(&self, plugin: &PluginId, level: LogLevel, message: &str) {
         let marker = match level {
             LogLevel::Info => "",
-            LogLevel::Warn => "Warnung: ",
-            LogLevel::Error => "Fehler: ",
+            LogLevel::Warn => t!("Warnung: "),
+            LogLevel::Error => t!("Fehler: "),
         };
         tracing::debug!(plugin = %plugin, %message, "extension log");
         self.note(plugin, format!("{marker}{message}"));
@@ -108,23 +109,23 @@ impl PluginHost for Bridge {
     fn open_tab(&self, _plugin: &PluginId, url: &str, background: bool) -> Result<i64, HostError> {
         let browser = self
             .browser()
-            .ok_or_else(|| HostError::Refused("kein Fenster offen".to_owned()))?;
+            .ok_or_else(|| HostError::Refused(t!("kein Fenster offen").to_owned()))?;
         browser
             .plugin_open_tab(url, background)
-            .ok_or_else(|| HostError::Refused(format!("{url} konnte nicht geöffnet werden")))
+            .ok_or_else(|| HostError::Refused(t!("{} konnte nicht geöffnet werden", url)))
     }
 
     fn close_tab(&self, _plugin: &PluginId, tab: i64) -> Result<(), HostError> {
         let browser = self
             .browser()
-            .ok_or_else(|| HostError::Refused("kein Fenster offen".to_owned()))?;
+            .ok_or_else(|| HostError::Refused(t!("kein Fenster offen").to_owned()))?;
         browser.plugin_close_tab(tab)
     }
 
     fn activate_tab(&self, _plugin: &PluginId, tab: i64) -> Result<(), HostError> {
         let browser = self
             .browser()
-            .ok_or_else(|| HostError::Refused("kein Fenster offen".to_owned()))?;
+            .ok_or_else(|| HostError::Refused(t!("kein Fenster offen").to_owned()))?;
         browser.plugin_activate_tab(tab)
     }
 
@@ -182,9 +183,9 @@ impl PluginHost for Bridge {
     }
 
     fn report(&self, plugin: &PluginId, message: &str) {
-        self.note(plugin, format!("Fehler: {message}"));
+        self.note(plugin, t!("Fehler: {}", message));
         if let Some(browser) = self.browser() {
-            browser.show_toast(&format!("Erweiterung {plugin}: {message}"));
+            browser.show_toast(&t!("Erweiterung {}: {}", plugin, message));
         }
     }
 
@@ -194,11 +195,11 @@ impl PluginHost for Bridge {
 
     fn evaluate(&self, plugin: &PluginId, pending: PendingId, code: String, world: ScriptWorld) {
         let Some(browser) = self.browser() else {
-            self.answer(pending, Err("kein Fenster offen".to_owned()));
+            self.answer(pending, Err(t!("kein Fenster offen").to_owned()));
             return;
         };
         if !browser.plugin_evaluate(pending, &code, world) {
-            self.answer(pending, Err("gerade ist keine Seite offen".to_owned()));
+            self.answer(pending, Err(t!("gerade ist keine Seite offen").to_owned()));
         }
         tracing::debug!(plugin = %plugin, "an extension reads a page");
     }
@@ -234,14 +235,13 @@ impl PluginHost for Bridge {
     fn show_panel(&self, plugin: &PluginId, panel: &Panel) -> Result<(), HostError> {
         let browser = self
             .browser()
-            .ok_or_else(|| HostError::Refused("kein Fenster offen".to_owned()))?;
-        let plugins = self
-            .plugins
-            .borrow()
-            .upgrade()
-            .ok_or_else(|| HostError::Refused("die Erweiterungen sind beendet".to_owned()))?;
+            .ok_or_else(|| HostError::Refused(t!("kein Fenster offen").to_owned()))?;
+        let plugins =
+            self.plugins.borrow().upgrade().ok_or_else(|| {
+                HostError::Refused(t!("die Erweiterungen sind beendet").to_owned())
+            })?;
         let folder = plugins.folder_of(plugin).ok_or_else(|| {
-            HostError::Refused("die Erweiterung ist nicht installiert".to_owned())
+            HostError::Refused(t!("die Erweiterung ist nicht installiert").to_owned())
         })?;
         browser.open_panel(plugin, &folder, panel)
     }
@@ -280,7 +280,7 @@ impl PluginHost for Bridge {
             plugins.remember_disabled(plugin);
         }
         if let Some(browser) = self.browser() {
-            browser.show_toast(&format!("Erweiterung {plugin} abgeschaltet: {reason}"));
+            browser.show_toast(&t!("Erweiterung {} abgeschaltet: {}", plugin, reason));
         }
     }
 }

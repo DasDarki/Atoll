@@ -11,12 +11,23 @@ use super::{Control, Transfer};
 use crate::browser::Browser;
 use crate::browser::windows::WindowManager;
 use crate::platform::tasks::run_with_updates;
+use atoll_i18n::t;
 
 /// How often the download list shows the progress of a video.
 const PROGRESS_INTERVAL: Duration = Duration::from_millis(250);
 
-/// The name of a video download until yt-dlp has named the file.
-const UNNAMED: &str = "Video wird vorbereitet…";
+/// The name of a video download until yt-dlp has named the file. It is stored as it is, so that
+/// it stays the same when the language changes, and is translated where the list shows it.
+pub(super) const UNNAMED: &str = "Video wird vorbereitet…";
+
+/// The name of a download as the list shows it.
+pub(super) fn display_name(file_name: &str) -> &str {
+    if file_name == UNNAMED {
+        atoll_i18n::translate(UNNAMED)
+    } else {
+        file_name
+    }
+}
 
 impl Browser {
     /// Downloads the video at `url`, a page, player or stream address, with yt-dlp into the
@@ -31,7 +42,7 @@ impl Browser {
         self.ensure_downloads_loaded();
         let directory = self.download_directory();
         if let Err(error) = std::fs::create_dir_all(&directory) {
-            self.show_toast(&format!("Download-Ordner nicht verfügbar: {error}"));
+            self.show_toast(&t!("Download-Ordner nicht verfügbar: {}", error));
             return;
         }
         let file_name = name.map_or_else(|| UNNAMED.to_owned(), |name| format!("{name}.mp4"));
@@ -47,7 +58,7 @@ impl Browser {
         let id = match created {
             Ok(id) => id,
             Err(error) => {
-                self.report("Download speichern", Err::<(), _>(error));
+                self.report(t!("Download speichern"), Err::<(), _>(error));
                 return;
             }
         };
@@ -88,7 +99,7 @@ impl Browser {
         if self.preferences.borrow().download_panel {
             self.open_downloads();
         } else {
-            self.show_toast("Video wird heruntergeladen");
+            self.show_toast(t!("Video wird heruntergeladen"));
         }
         self.refresh_downloads();
 
@@ -172,14 +183,16 @@ impl Browser {
     fn stream_finished(&self, id: DownloadId, result: Result<std::path::PathBuf, VideoError>) {
         if result == Err(VideoError::Missing) {
             let removed = self.storage.remove_download(id);
-            self.report("Download entfernen", removed);
+            self.report(t!("Download entfernen"), removed);
             {
                 let mut downloads = self.downloads.borrow_mut();
                 downloads.transfers.remove(&id);
                 downloads.entries.retain(|entry| entry.id != id);
             }
             self.refresh_downloads();
-            self.show_toast("Für gestreamte Videos fehlt yt-dlp, installiere das Paket yt-dlp");
+            self.show_toast(t!(
+                "Für gestreamte Videos fehlt yt-dlp, installiere das Paket yt-dlp"
+            ));
             return;
         }
         let entry = {
@@ -206,10 +219,10 @@ impl Browser {
         self.store_download(&entry);
         self.refresh_downloads();
         match result {
-            Ok(_) => self.show_toast(&format!("Video gespeichert: {}", entry.file_name)),
+            Ok(_) => self.show_toast(&t!("Video gespeichert: {}", entry.file_name)),
             Err(VideoError::Failed(message)) => {
                 tracing::warn!(%message, "video download failed");
-                self.show_toast(&format!(
+                self.show_toast(&t!(
                     "Video-Download fehlgeschlagen: {}",
                     shorten(&message, 48)
                 ));

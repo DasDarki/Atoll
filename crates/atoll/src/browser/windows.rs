@@ -18,6 +18,7 @@ use crate::bridge::{bindings, window_events};
 use crate::platform::paths::Paths;
 use crate::pump::MessagePump;
 use crate::ui::AppWindow;
+use atoll_i18n::t;
 
 /// The setting the single window of older versions remembered its workspace in.
 const LEGACY_WORKSPACE_KEY: &str = "active_workspace";
@@ -142,7 +143,7 @@ impl WindowManager {
                 let like = self.focused_browser();
                 self.open_window_for(workspace.id, like.as_deref(), None);
             }
-            Err(error) => self.report_error("Neues Fenster", &error.into()),
+            Err(error) => self.report_error(t!("Neues Fenster"), &error.into()),
         }
     }
 
@@ -180,7 +181,7 @@ impl WindowManager {
                 Some(browser)
             }
             Err(error) => {
-                self.report_error("Fenster öffnen", &error);
+                self.report_error(t!("Fenster öffnen"), &error);
                 None
             }
         }
@@ -419,7 +420,7 @@ impl WindowManager {
             Err(error) => {
                 tracing::error!(%error, "engine could not be started");
                 if let Some(browser) = self.focused_browser() {
-                    browser.show_toast("Die Browser-Engine konnte nicht gestartet werden.");
+                    browser.show_toast(t!("Die Browser-Engine konnte nicht gestartet werden."));
                 }
                 return;
             }
@@ -573,7 +574,7 @@ fn detached_size(browser: &Browser) -> Option<(u32, u32)> {
 fn initial_workspace(storage: &Storage) -> Result<WorkspaceId> {
     let workspaces = storage.workspaces()?;
     if workspaces.is_empty() {
-        return Ok(storage.create_workspace("Allgemein")?.id);
+        return Ok(storage.create_workspace(t!("Allgemein"))?.id);
     }
     let remembered = storage
         .setting_i64(LEGACY_WORKSPACE_KEY)?
@@ -591,9 +592,9 @@ fn next_workspace_name(storage: &Storage) -> String {
         .map(|workspace| workspace.name)
         .collect();
     (names.len() + 1..)
-        .map(|number| format!("Workspace {number}"))
+        .map(|number| t!("Workspace {}", number))
         .find(|name| !names.contains(name))
-        .unwrap_or_else(|| "Workspace".to_owned())
+        .unwrap_or_else(|| t!("Workspace").to_owned())
 }
 
 /// Additional Chromium switches: Atoll's defaults, then those from `ATOLL_CHROMIUM_FLAGS`.

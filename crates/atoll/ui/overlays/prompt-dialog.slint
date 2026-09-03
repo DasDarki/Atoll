@@ -59,11 +59,11 @@ export component PromptDialog inherits Modal {
                 spacing: 8px;
 
                 if OverlayState.dialog.kind != DialogKind.alert : ActionButton {
-                    text: OverlayState.dialog.cancel-label != "" ? OverlayState.dialog.cancel-label : "Abbrechen";
+                    text: OverlayState.dialog.cancel-label != "" ? OverlayState.dialog.cancel-label : @tr("Abbrechen");
                     clicked => { OverlayState.dialog-closed(false, ""); }
                 }
                 ActionButton {
-                    text: OverlayState.dialog.accept-label != "" ? OverlayState.dialog.accept-label : "OK";
+                    text: OverlayState.dialog.accept-label != "" ? OverlayState.dialog.accept-label : @tr("OK");
                     kind: OverlayState.dialog.destructive ? ButtonKind.danger : ButtonKind.primary;
                     clicked => { OverlayState.dialog-closed(true, field.text); }
                 }

@@ -49,7 +49,7 @@ component RecentFileRow inherits Rectangle {
 }
 
 export component UploadPicker inherits Modal {
-    title: "Datei hochladen";
+    title: @tr("Datei hochladen");
     card-width: 540px;
     dismissed => { OverlayState.upload-cancel(); }
     confirmed => {
@@ -86,7 +86,7 @@ export component UploadPicker inherits Modal {
                 alignment: center;
                 spacing: 4px;
                 Text {
-                    text: "Bild aus der Zwischenablage";
+                    text: @tr("Bild aus der Zwischenablage");
                     color: Theme.text;
                     font-size: Theme.font-large;
                     font-weight: 700;
@@ -98,7 +98,7 @@ export component UploadPicker inherits Modal {
                     wrap: word-wrap;
                 }
                 Text {
-                    text: "Enter lädt es hoch.";
+                    text: @tr("Enter lädt es hoch.");
                     color: Theme.text-faint;
                     font-size: Theme.font-small + 1px;
                 }
@@ -113,7 +113,7 @@ export component UploadPicker inherits Modal {
 
     if OverlayState.upload-files.length > 0 : VerticalLayout {
         spacing: 6px;
-        FieldLabel { text: "ZULETZT HERUNTERGELADEN"; }
+        FieldLabel { text: @tr("ZULETZT HERUNTERGELADEN"); }
         VerticalLayout {
             spacing: 2px;
             for file[index] in OverlayState.upload-files : RecentFileRow {
@@ -127,12 +127,12 @@ export component UploadPicker inherits Modal {
     HorizontalLayout {
         spacing: 8px;
         ActionButton {
-            text: "Datei auswählen…";
+            text: @tr("Datei auswählen…");
             clicked => { OverlayState.upload-browse(); }
         }
         Rectangle { horizontal-stretch: 1; }
         ActionButton {
-            text: "Abbrechen";
+            text: @tr("Abbrechen");
             clicked => { OverlayState.upload-cancel(); }
         }
     }

@@ -369,7 +369,7 @@ fn missing_permissions_and_sites_are_refused() {
     runtime.run_command(&"demo".to_owned(), "elsewhere");
     let reports = browser.reports();
     assert!(
-        reports[0].contains("Berechtigung \"tabs\""),
+        reports[0].contains("permission \"tabs\""),
         "reported: {reports:?}"
     );
     assert!(
@@ -397,11 +397,11 @@ fn a_script_that_runs_forever_is_stopped_and_finally_switched_off() {
     }
     let reports = browser.reports();
     assert_eq!(reports.len(), 3, "each attempt is reported: {reports:?}");
-    assert!(reports[0].contains("zu lange"));
+    assert!(reports[0].contains("ran too long"));
     assert_eq!(browser.disabled.borrow().len(), 1);
     assert_eq!(
         runtime.loaded()[0].failure.as_deref(),
-        Some("das Skript lief zu lange und wurde angehalten (3 Mal)")
+        Some("the script ran too long and was stopped (3 times)")
     );
 }
 
@@ -447,7 +447,8 @@ fn modules_are_loaded_from_the_extension_folder_only() {
     assert!(
         calls
             .iter()
-            .any(|call| call.starts_with("toast false") && call.contains("nicht in dieser")),
+            .any(|call| call.starts_with("toast false")
+                && call.contains("is not inside this extension")),
         "calls: {calls:?}"
     );
 }
@@ -651,7 +652,7 @@ fn a_panel_only_talks_to_its_own_extension() {
     assert!(calls.contains(&"show panel notes".to_owned()));
     assert!(calls.contains(&"post hinweis to notes: {\"a\":1}".to_owned()));
     assert!(
-        calls.iter().any(|call| call.contains("kein Panel namens")),
+        calls.iter().any(|call| call.contains("no panel named")),
         "a panel that is not in the manifest is refused: {calls:?}"
     );
 
@@ -830,7 +831,7 @@ fn a_worker_only_reaches_what_the_extension_handed_it() {
     let data = browser.storage.borrow();
     let answer = data.get("antwort").expect("the worker answered");
     assert!(
-        answer.contains("kennt es nicht"),
+        answer.contains("does not know it"),
         "a worker may only call what the extension handed it: {answer}"
     );
 }

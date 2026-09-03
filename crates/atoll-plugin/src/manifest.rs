@@ -7,6 +7,7 @@ use std::path::Path;
 use serde::{Deserialize, Serialize};
 
 use crate::pattern::UrlPattern;
+use atoll_i18n::t;
 
 /// The extension interface this version of Atoll offers. An extension names the version it was
 /// written for and is refused if Atoll does not offer it.
@@ -42,17 +43,16 @@ impl Permission {
     /// What the user sees when Atoll asks whether the extension may do this.
     pub fn description(self) -> &'static str {
         match self {
-            Permission::Tabs => "die offenen Tabs sehen, Tabs öffnen und schließen",
+            Permission::Tabs => t!("die offenen Tabs sehen, Tabs öffnen und schließen"),
             Permission::Pages => {
-                "Styles und Skripte in die genannten Seiten einfügen und deren \
-                                  Inhalt lesen"
+                t!("Styles und Skripte in die genannten Seiten einfügen und deren Inhalt lesen")
             }
-            Permission::Requests => "Anfragen blockieren und umleiten",
-            Permission::Storage => "eigene Einstellungen und Daten speichern",
-            Permission::Network => "die genannten Seiten selbst abfragen",
-            Permission::Clipboard => "die Zwischenablage lesen und schreiben",
-            Permission::Downloads => "Downloads sehen und starten",
-            Permission::Files => "Dateien im eigenen Ordner lesen und schreiben",
+            Permission::Requests => t!("Anfragen blockieren und umleiten"),
+            Permission::Storage => t!("eigene Einstellungen und Daten speichern"),
+            Permission::Network => t!("die genannten Seiten selbst abfragen"),
+            Permission::Clipboard => t!("die Zwischenablage lesen und schreiben"),
+            Permission::Downloads => t!("Downloads sehen und starten"),
+            Permission::Files => t!("Dateien im eigenen Ordner lesen und schreiben"),
         }
     }
 

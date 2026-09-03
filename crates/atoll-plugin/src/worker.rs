@@ -8,9 +8,9 @@
 use std::cell::{Cell, RefCell};
 use std::collections::{BTreeMap, VecDeque};
 use std::rc::Rc;
+use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender, TryRecvError, channel};
-use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -31,8 +31,8 @@ const ANSWER_TIMEOUT: Duration = Duration::from_secs(30);
 /// How many workers one extension may have at a time.
 pub(crate) const MAX_WORKERS: usize = 4;
 
-const STOPPED: &str = "der Worker wurde beendet";
-const TIMEOUT: &str = "der Worker lief zu lange und wurde angehalten";
+const STOPPED: &str = "the worker was stopped";
+const TIMEOUT: &str = "the worker ran too long and was stopped";
 
 /// A way to tell the browser that a worker has something to say. Workers run on their own
 /// threads, so this is what gets the main thread to look at them.
@@ -182,11 +182,11 @@ impl Workers {
     ) -> mlua::Result<WorkerId> {
         if self.running.len() >= MAX_WORKERS {
             return Err(mlua::Error::runtime(format!(
-                "eine Erweiterung darf höchstens {MAX_WORKERS} Worker haben"
+                "an extension may have at most {MAX_WORKERS} workers"
             )));
         }
         let worker = Worker::spawn(plugin, source, wake)
-            .map_err(|error| mlua::Error::runtime(format!("der Worker startet nicht: {error}")))?;
+            .map_err(|error| mlua::Error::runtime(format!("the worker does not start: {error}")))?;
         self.next += 1;
         self.running.insert(self.next, worker);
         Ok(self.next)
@@ -233,7 +233,7 @@ impl Channel {
         self.next_ticket.set(self.next_ticket.get() + 1);
         let ticket = self.next_ticket.get();
         if !self.send(Report::Call { ticket, name, args }) {
-            return Err("die Erweiterung ist nicht mehr geladen".to_owned());
+            return Err("the extension is no longer loaded".to_owned());
         }
         let until = Instant::now() + ANSWER_TIMEOUT;
         loop {
@@ -251,10 +251,10 @@ impl Channel {
                 }
                 Ok(other) => self.queued.borrow_mut().push_back(other),
                 Err(RecvTimeoutError::Timeout) => {
-                    return Err("die Erweiterung hat nicht geantwortet".to_owned());
+                    return Err("the extension did not answer".to_owned());
                 }
                 Err(RecvTimeoutError::Disconnected) => {
-                    return Err("die Erweiterung ist nicht mehr geladen".to_owned());
+                    return Err("the extension is no longer loaded".to_owned());
                 }
             }
         }
@@ -287,7 +287,7 @@ fn run(source: &str, channel: &Rc<Channel>, cancel: &Arc<AtomicBool>) {
         .and_then(|values| match values.front() {
             Some(mlua::Value::Table(table)) => Ok(table.clone()),
             _ => Err(mlua::Error::runtime(
-                "ein Worker muss eine Tabelle mit seinen Funktionen zurückgeben",
+                "a worker has to return a table with its functions",
             )),
         });
     deadline.set(None);
@@ -375,9 +375,7 @@ fn perform(
 ) -> Result<Value, String> {
     let run = || -> mlua::Result<Value> {
         let function: mlua::Function = functions.get(name).map_err(|_| {
-            mlua::Error::runtime(format!(
-                "dieser Worker kennt keine Funktion namens \"{name}\""
-            ))
+            mlua::Error::runtime(format!("this worker has no function named \"{name}\""))
         })?;
         let argument = lua.to_value(&args)?;
         let answer: mlua::Value = function.call(argument)?;
@@ -494,7 +492,9 @@ mod tests {
         let worker = Worker::spawn("demo", "return 5".to_owned(), quiet()).unwrap();
         let reports = await_reports(&worker, 1);
         match reports.first() {
-            Some(Report::Failed(message)) => assert!(message.contains("Tabelle"), "{message}"),
+            Some(Report::Failed(message)) => {
+                assert!(message.contains("table with its functions"), "{message}")
+            }
             _ => panic!("the worker did not report the problem"),
         }
     }

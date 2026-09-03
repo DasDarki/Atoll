@@ -13,6 +13,7 @@ use slint::{ComponentHandle, Model, ModelRc, SharedString, VecModel};
 use super::Browser;
 use crate::platform::dialogs::{self, FileDialogKind, FileDialogOptions, FileFilter};
 use crate::ui::{ExportIslandItem, OverlayState};
+use atoll_i18n::t;
 
 const SCOPE_ISLAND: i32 = 0;
 const SCOPE_WORKSPACE: i32 = 1;
@@ -31,10 +32,10 @@ impl Browser {
         let state = window.global::<OverlayState>();
         state.set_import_text("".into());
         state.set_import_target(0);
-        state.set_import_workspace_name("Import".into());
+        state.set_import_workspace_name(t!("Import").into());
         state.set_import_duplicates(1);
         state.set_import_islands(0);
-        state.set_import_fallback("Importiert".into());
+        state.set_import_fallback(t!("Importiert").into());
         state.set_import_visible(true);
         self.import_text_edited("");
     }
@@ -45,17 +46,19 @@ impl Browser {
         let list = parse(text);
         let urls = list.url_count();
         let summary = if text.trim().is_empty() {
-            "Füge eine URL-Liste ein oder wähle eine Datei.".to_owned()
+            t!("Füge eine URL-Liste ein oder wähle eine Datei.").to_owned()
         } else if urls == 0 {
-            format!(
+            t!(
                 "Keine gültigen Adressen gefunden · {} ungültige Zeilen",
                 list.invalid.len()
             )
         } else {
             let islands = list.groups.len();
-            let mut summary = format!(
-                "{urls} Adressen in {islands} {}",
-                plural(islands, "Insel", "Inseln")
+            let mut summary = t!(
+                "{} Adressen in {} {}",
+                urls,
+                islands,
+                plural(islands, t!("Insel"), t!("Inseln"))
             );
             if state.get_import_target() == 0 {
                 let plan = plan_import(
@@ -66,17 +69,18 @@ impl Browser {
                 let skipped = plan.skipped.len();
                 let moved = plan.moved_count();
                 if skipped > 0 {
-                    summary.push_str(&format!(" · {skipped} übersprungen"));
+                    summary.push_str(&t!(" · {} übersprungen", skipped));
                 }
                 if moved > 0 {
-                    summary.push_str(&format!(" · {moved} verschoben"));
+                    summary.push_str(&t!(" · {} verschoben", moved));
                 }
             }
             if !list.invalid.is_empty() {
                 let invalid = list.invalid.len();
-                summary.push_str(&format!(
-                    " · {invalid} {}",
-                    plural(invalid, "ungültige Zeile", "ungültige Zeilen")
+                summary.push_str(&t!(
+                    " · {} {}",
+                    invalid,
+                    plural(invalid, t!("ungültige Zeile"), t!("ungültige Zeilen"))
                 ));
             }
             summary
@@ -90,16 +94,16 @@ impl Browser {
         dialogs::show(
             FileDialogOptions {
                 kind: FileDialogKind::Open,
-                title: "URL-Liste öffnen".into(),
+                title: t!("URL-Liste öffnen").into(),
                 directory: None,
                 file_name: None,
                 filters: vec![
                     FileFilter {
-                        name: "Textdateien".into(),
+                        name: t!("Textdateien").into(),
                         extensions: vec!["txt".into(), "text".into(), "list".into()],
                     },
                     FileFilter {
-                        name: "Alle Dateien".into(),
+                        name: t!("Alle Dateien").into(),
                         extensions: vec!["*".into()],
                     },
                 ],
@@ -114,7 +118,7 @@ impl Browser {
                 match std::fs::read(&path) {
                     Ok(bytes) => browser.set_import_text(&String::from_utf8_lossy(&bytes)),
                     Err(error) => {
-                        browser.show_toast(&format!("Datei konnte nicht gelesen werden: {error}"))
+                        browser.show_toast(&t!("Datei konnte nicht gelesen werden: {}", error))
                     }
                 }
             },
@@ -124,7 +128,7 @@ impl Browser {
     pub fn import_paste(&self) {
         match self.clipboard.text() {
             Some(text) => self.set_import_text(&text),
-            None => self.show_toast("Die Zwischenablage enthält keinen Text"),
+            None => self.show_toast(t!("Die Zwischenablage enthält keinen Text")),
         }
     }
 
@@ -151,13 +155,13 @@ impl Browser {
         let workspace = if state.get_import_target() == 1 {
             let name = state.get_import_workspace_name().trim().to_owned();
             let name = if name.is_empty() {
-                "Import".to_owned()
+                t!("Import").to_owned()
             } else {
                 name
             };
             match self.storage.create_workspace(&name) {
                 Ok(workspace) => workspace.id,
-                Err(error) => return self.report("Import", Err::<(), _>(error)),
+                Err(error) => return self.report(t!("Import"), Err::<(), _>(error)),
             }
         } else {
             self.session.borrow().workspace
@@ -167,7 +171,7 @@ impl Browser {
         let applied = self.apply_import(workspace, &plan);
         state.set_import_visible(false);
         if let Err(error) = applied {
-            return self.report("Import", Err::<(), _>(error));
+            return self.report(t!("Import"), Err::<(), _>(error));
         }
 
         if workspace != self.session.borrow().workspace {
@@ -196,7 +200,7 @@ impl Browser {
                 IslandNamePolicy::Merge
             },
             fallback_island: if fallback.is_empty() {
-                "Importiert".to_owned()
+                t!("Importiert").to_owned()
             } else {
                 fallback
             },
@@ -277,13 +281,15 @@ impl Browser {
         let created = plan.created_count();
         let moved = plan.moved_count();
         let islands = plan.new_island_count();
-        let mut summary = format!(
-            "{created} {} importiert, {islands} neue {}.",
-            plural(created, "Tab", "Tabs"),
-            plural(islands, "Insel", "Inseln")
+        let mut summary = t!(
+            "{} {} importiert, {} neue {}.",
+            created,
+            islands,
+            plural(created, t!("Tab"), t!("Tabs")),
+            plural(islands, t!("Insel"), t!("Inseln"))
         );
         if moved > 0 {
-            summary.push_str(&format!(" {moved} vorhandene Tabs wurden verschoben."));
+            summary.push_str(&t!(" {} vorhandene Tabs wurden verschoben.", moved));
         }
         if plan.invalid.is_empty() && plan.skipped.is_empty() {
             self.show_toast(&summary);
@@ -293,9 +299,11 @@ impl Browser {
         let mut lines: Vec<SharedString> = Vec::new();
         for invalid in &plan.invalid {
             lines.push(
-                format!(
+                t!(
                     "Zeile {}: {} ({})",
-                    invalid.line_number, invalid.content, invalid.reason
+                    invalid.line_number,
+                    invalid.content,
+                    invalid.reason
                 )
                 .into(),
             );
@@ -303,16 +311,22 @@ impl Browser {
         for skipped in &plan.skipped {
             let reason = match skipped.reason {
                 SkipReason::AlreadyPresent => "bereits vorhanden",
-                SkipReason::RepeatedInList => "doppelt in der Liste",
+                SkipReason::RepeatedInList => t!("doppelt in der Liste"),
             };
-            lines.push(format!("Übersprungen, {reason}: {}", skipped.url).into());
+            lines.push(t!("Übersprungen, {}: {}", reason, skipped.url).into());
         }
         let invalid = plan.invalid.len();
         let skipped = plan.skipped.len();
-        summary.push_str(&format!(
-            " {invalid} {}, {skipped} {}:",
-            plural(invalid, "ungültige Zeile", "ungültige Zeilen"),
-            plural(skipped, "übersprungene Adresse", "übersprungene Adressen")
+        summary.push_str(&t!(
+            " {} {}, {} {}:",
+            invalid,
+            skipped,
+            plural(invalid, t!("ungültige Zeile"), t!("ungültige Zeilen")),
+            plural(
+                skipped,
+                t!("übersprungene Adresse"),
+                t!("übersprungene Adressen")
+            )
         ));
 
         let Some(window) = self.window() else { return };
@@ -402,9 +416,9 @@ impl Browser {
             .sum();
         let summary = format!(
             "{urls} {} in {} {}",
-            plural(urls, "Adresse", "Adressen"),
+            plural(urls, t!("Adresse"), t!("Adressen")),
             groups.len(),
-            plural(groups.len(), "Insel", "Inseln")
+            plural(groups.len(), t!("Insel"), t!("Inseln"))
         );
         window
             .global::<OverlayState>()
@@ -436,12 +450,13 @@ impl Browser {
 
         if state.get_export_destination() == 0 {
             if self.clipboard.set_text(&text) {
-                self.show_toast(&format!(
-                    "{count} {} in die Zwischenablage kopiert",
-                    plural(count, "Adresse", "Adressen")
+                self.show_toast(&t!(
+                    "{} {} in die Zwischenablage kopiert",
+                    count,
+                    plural(count, t!("Adresse"), t!("Adressen"))
                 ));
             } else {
-                self.show_toast("Zwischenablage nicht verfügbar");
+                self.show_toast(t!("Zwischenablage nicht verfügbar"));
             }
             return;
         }
@@ -454,11 +469,11 @@ impl Browser {
         dialogs::show(
             FileDialogOptions {
                 kind: FileDialogKind::Save,
-                title: "URL-Liste speichern".into(),
+                title: t!("URL-Liste speichern").into(),
                 directory: None,
                 file_name: Some(file_name),
                 filters: vec![FileFilter {
-                    name: "Textdateien".into(),
+                    name: t!("Textdateien").into(),
                     extensions: vec!["txt".into()],
                 }],
             },
@@ -470,11 +485,12 @@ impl Browser {
                     return;
                 };
                 match std::fs::write(&path, text.as_bytes()) {
-                    Ok(()) => browser.show_toast(&format!(
-                        "{count} Adressen gespeichert in {}",
+                    Ok(()) => browser.show_toast(&t!(
+                        "{} Adressen gespeichert in {}",
+                        count,
                         path.display()
                     )),
-                    Err(error) => browser.show_toast(&format!("Speichern fehlgeschlagen: {error}")),
+                    Err(error) => browser.show_toast(&t!("Speichern fehlgeschlagen: {}", error)),
                 }
             },
         );

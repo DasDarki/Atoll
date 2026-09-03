@@ -122,10 +122,12 @@ pub type PendingResult = Result<Value, String>;
 
 /// A message for the user when an extension asks for something it may not do.
 pub(crate) fn missing_permission(permission: Permission) -> String {
-    format!("diese Erweiterung darf das nicht, im Manifest fehlt die Berechtigung \"{permission}\"")
+    format!(
+        "this extension may not do that, the permission \"{permission}\" is missing from the manifest"
+    )
 }
 
 /// A message for the user when an extension reaches for a site it did not ask for.
 pub(crate) fn missing_host(url: &str) -> String {
-    format!("diese Erweiterung darf nicht auf {url} zugreifen, die Adresse fehlt unter \"hosts\"")
+    format!("this extension may not reach {url}, the address is missing under \"hosts\"")
 }

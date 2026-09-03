@@ -8,7 +8,7 @@ import { TextField } from "../widgets/text-field.slint";
 import { FieldLabel } from "../widgets/field-label.slint";
 
 export component ImportDialog inherits Modal {
-    title: "URL-Liste importieren";
+    title: @tr("URL-Liste importieren");
     card-width: 640px;
     autofocus: false;
     dismissed => { OverlayState.import-cancel(); }
@@ -18,11 +18,11 @@ export component ImportDialog inherits Modal {
     HorizontalLayout {
         spacing: 8px;
         ActionButton {
-            text: "Datei wählen…";
+            text: @tr("Datei wählen…");
             clicked => { OverlayState.import-choose-file(); }
         }
         ActionButton {
-            text: "Aus Zwischenablage einfügen";
+            text: @tr("Aus Zwischenablage einfügen");
             clicked => { OverlayState.import-paste(); }
         }
         Rectangle { horizontal-stretch: 1; }
@@ -32,7 +32,7 @@ export component ImportDialog inherits Modal {
         height: 190px;
         font-size: Theme.font-normal;
         text <=> OverlayState.import-text;
-        placeholder-text: "--- Inselname ---\nhttps://example.com\n\n# Kommentare werden ignoriert";
+        placeholder-text: @tr("--- Inselname ---\nhttps://example.com\n\n# Kommentare werden ignoriert");
         edited(text) => { OverlayState.import-text-edited(text); }
     }
 
@@ -45,22 +45,22 @@ export component ImportDialog inherits Modal {
 
     VerticalLayout {
         spacing: 6px;
-        FieldLabel { text: "ZIEL"; }
+        FieldLabel { text: @tr("ZIEL"); }
         Segmented {
-            options: ["Aktueller Workspace", "Neuer Workspace"];
+            options: [@tr("Aktueller Workspace"), @tr("Neuer Workspace")];
             selected <=> OverlayState.import-target;
         }
         if OverlayState.import-target == 1 : TextField {
             text <=> OverlayState.import-workspace-name;
-            placeholder: "Name des neuen Workspaces";
+            placeholder: @tr("Name des neuen Workspaces");
         }
     }
 
     VerticalLayout {
         spacing: 6px;
-        FieldLabel { text: "DUPLIKATE"; }
+        FieldLabel { text: @tr("DUPLIKATE"); }
         Segmented {
-            options: ["Behalten", "Überspringen", "Zusammenführen"];
+            options: [@tr("Behalten"), @tr("Überspringen"), @tr("Zusammenführen")];
             selected <=> OverlayState.import-duplicates;
             changed-by-user => { OverlayState.import-text-edited(OverlayState.import-text); }
         }
@@ -68,9 +68,9 @@ export component ImportDialog inherits Modal {
 
     VerticalLayout {
         spacing: 6px;
-        FieldLabel { text: "GLEICHNAMIGE INSELN"; }
+        FieldLabel { text: @tr("GLEICHNAMIGE INSELN"); }
         Segmented {
-            options: ["Zusammenführen", "Als neue Insel anlegen"];
+            options: [@tr("Zusammenführen"), @tr("Als neue Insel anlegen")];
             selected <=> OverlayState.import-islands;
             changed-by-user => { OverlayState.import-text-edited(OverlayState.import-text); }
         }
@@ -78,10 +78,10 @@ export component ImportDialog inherits Modal {
 
     VerticalLayout {
         spacing: 6px;
-        FieldLabel { text: "INSEL FÜR ADRESSEN OHNE MARKIERUNG"; }
+        FieldLabel { text: @tr("INSEL FÜR ADRESSEN OHNE MARKIERUNG"); }
         TextField {
             text <=> OverlayState.import-fallback;
-            placeholder: "Importiert";
+            placeholder: @tr("Importiert");
         }
     }
 
@@ -89,11 +89,11 @@ export component ImportDialog inherits Modal {
         alignment: end;
         spacing: 8px;
         ActionButton {
-            text: "Abbrechen";
+            text: @tr("Abbrechen");
             clicked => { OverlayState.import-cancel(); }
         }
         ActionButton {
-            text: "Importieren";
+            text: @tr("Importieren");
             kind: ButtonKind.primary;
             enabled: OverlayState.import-ready;
             clicked => { OverlayState.import-confirm(); }

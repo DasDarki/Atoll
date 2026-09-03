@@ -32,6 +32,7 @@ use crate::browser::windows::WindowManager;
 use crate::platform::opener;
 use crate::pump::MessagePump;
 use crate::ui::{PluginItem, SettingsState};
+use atoll_i18n::t;
 
 /// The extensions of this Atoll, shared by every window.
 pub struct Plugins {
@@ -244,7 +245,7 @@ impl Plugins {
             && let Some(browser) = manager.focused_browser()
             && let Err(error) = browser.open_panel(plugin, &folder, &found.1)
         {
-            browser.show_toast(&format!("Panel konnte nicht geöffnet werden: {error}"));
+            browser.show_toast(&t!("Panel konnte nicht geöffnet werden: {}", error));
         }
     }
 
@@ -486,9 +487,9 @@ impl Browser {
         let this = self.this();
         let message = permission_request(&manifest);
         self.confirm(
-            &format!("Erweiterung „{}“ zulassen?", manifest.name),
+            &t!("Erweiterung „{}“ zulassen?", manifest.name),
             &message,
-            "Zulassen",
+            t!("Zulassen"),
             move || {
                 if let Some(browser) = this.upgrade() {
                     browser.plugins.asking.borrow_mut().remove(&manifest.id);
@@ -654,12 +655,12 @@ fn permission_request(manifest: &Manifest) -> String {
     };
     let permissions = manifest.listed_permissions();
     if permissions.is_empty() {
-        message.push_str("\n\nDiese Erweiterung möchte keine besonderen Rechte.");
+        message.push_str(t!("\n\nDiese Erweiterung möchte keine besonderen Rechte."));
         return message;
     }
-    message.push_str("\n\nSie möchte:");
+    message.push_str(t!("\n\nSie möchte:"));
     for permission in permissions {
-        message.push_str(&format!("\n• {}", permission.description()));
+        message.push_str(&t!("\n• {}", permission.description()));
     }
     if !manifest.hosts.is_empty() {
         let hosts: Vec<&str> = manifest
@@ -667,9 +668,11 @@ fn permission_request(manifest: &Manifest) -> String {
             .iter()
             .map(atoll_plugin::UrlPattern::as_str)
             .collect();
-        message.push_str(&format!("\n\nSeiten: {}", hosts.join(", ")));
+        message.push_str(&t!("\n\nSeiten: {}", hosts.join(", ")));
     }
-    message.push_str("\n\nLade Erweiterungen nur aus Quellen, denen du vertraust.");
+    message.push_str(t!(
+        "\n\nLade Erweiterungen nur aus Quellen, denen du vertraust."
+    ));
     message
 }
 
@@ -716,19 +719,16 @@ impl Browser {
                 self.plugins.set_enabled(&id, true);
                 self.plugins
                     .start(&installed.folder, &installed.manifest, &granted);
-                self.show_toast(&format!("„{}“ neu geladen", installed.manifest.name));
+                self.show_toast(&t!("„{}“ neu geladen", installed.manifest.name));
             }
             "log" => {
                 let log = self.plugins.logs(&id);
                 let text = if log.is_empty() {
-                    "Diese Erweiterung hat noch nichts gemeldet.".to_owned()
+                    t!("Diese Erweiterung hat noch nichts gemeldet.").to_owned()
                 } else {
                     log.join("\n")
                 };
-                self.inform(
-                    &format!("Protokoll von „{}“", installed.manifest.name),
-                    &text,
-                );
+                self.inform(&t!("Protokoll von „{}“", installed.manifest.name), &text);
             }
             "update" => self.update_plugin(installed),
             "remove" => self.remove_plugin(installed),
@@ -744,14 +744,14 @@ impl Browser {
         let id = installed.manifest.id.clone();
         let folder = installed.folder.clone();
         self.confirm(
-            &format!("„{name}“ entfernen?"),
-            "Der Ordner der Erweiterung und alles, was sie gespeichert hat, werden gelöscht.",
-            "Entfernen",
+            &t!("„{}“ entfernen?", name),
+            t!("Der Ordner der Erweiterung und alles, was sie gespeichert hat, werden gelöscht."),
+            t!("Entfernen"),
             move || {
                 if let Some(browser) = this.upgrade() {
                     browser.plugins.remove(&id, &folder);
                     browser.show_plugin_settings();
-                    browser.show_toast(&format!("„{name}“ entfernt"));
+                    browser.show_toast(&t!("„{}“ entfernt", name));
                 }
             },
         );
@@ -770,7 +770,7 @@ impl Browser {
         let directory = self.plugins.directory().to_path_buf();
         let result = std::fs::create_dir_all(&directory).and_then(|()| opener::open(&directory));
         if let Err(error) = result {
-            self.show_toast(&format!("Ordner kann nicht geöffnet werden: {error}"));
+            self.show_toast(&t!("Ordner kann nicht geöffnet werden: {}", error));
         }
     }
 }
@@ -778,9 +778,9 @@ impl Browser {
 /// Where an extension came from, as the settings show it.
 fn source_name(source: &Source) -> String {
     match source {
-        Source::Folder => "Aus dem Erweiterungsordner".to_owned(),
-        Source::Archive => "Aus einem Archiv installiert".to_owned(),
-        Source::Git(url) => format!("Aus {url}"),
+        Source::Folder => t!("Aus dem Erweiterungsordner").to_owned(),
+        Source::Archive => t!("Aus einem Archiv installiert").to_owned(),
+        Source::Git(url) => t!("Aus {}", url),
     }
 }
 
@@ -795,11 +795,11 @@ fn plugin_item(installed: &InstalledPlugin) -> PluginItem {
     let status = match (&installed.info, installed.enabled, installed.known) {
         (Some(info), _, _) => match &info.failure {
             Some(failure) => failure.clone(),
-            None => format!("Läuft, {} Befehle", info.commands.len()),
+            None => t!("Läuft, {} Befehle", info.commands.len()),
         },
-        (None, true, _) => "Nicht geladen".to_owned(),
-        (None, false, true) => "Ausgeschaltet".to_owned(),
-        (None, false, false) => "Noch nicht zugelassen".to_owned(),
+        (None, true, _) => t!("Nicht geladen").to_owned(),
+        (None, false, true) => t!("Ausgeschaltet").to_owned(),
+        (None, false, false) => t!("Noch nicht zugelassen").to_owned(),
     };
     PluginItem {
         id: manifest.id.as_str().into(),
@@ -809,9 +809,9 @@ fn plugin_item(installed: &InstalledPlugin) -> PluginItem {
         version: manifest.version.as_str().into(),
         detail: manifest.description.as_str().into(),
         permissions: if permissions.is_empty() {
-            "Keine besonderen Rechte".into()
+            t!("Keine besonderen Rechte").into()
         } else {
-            format!("Darf: {}", permissions.join(", ")).into()
+            t!("Darf: {}", permissions.join(", ")).into()
         },
         status: status.as_str().into(),
         enabled: installed.enabled,

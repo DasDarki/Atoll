@@ -11,8 +11,7 @@ use super::preferences::{
 };
 use crate::platform::dialogs::{self, FileDialogKind, FileDialogOptions};
 use crate::ui::{BrowserState, SettingsState};
-
-const CUSTOM_SEARCH_ENGINE: &str = "Eigene Adresse";
+use atoll_i18n::t;
 
 impl Browser {
     pub fn open_settings(&self) {
@@ -23,9 +22,23 @@ impl Browser {
         let engines: Vec<SharedString> = SEARCH_ENGINES
             .iter()
             .map(|engine| engine.name.into())
-            .chain(std::iter::once(CUSTOM_SEARCH_ENGINE.into()))
+            .chain(std::iter::once(t!("Eigene Adresse").into()))
             .collect();
         state.set_search_engines(ModelRc::from(Rc::new(VecModel::from(engines))));
+        let languages: Vec<SharedString> = std::iter::once(SharedString::from(t!("Systemsprache")))
+            .chain(
+                atoll_i18n::Language::ALL
+                    .iter()
+                    .map(|language| SharedString::from(language.label())),
+            )
+            .collect();
+        state.set_languages(ModelRc::from(Rc::new(VecModel::from(languages))));
+        state.set_language(preferences.language.map_or(0, |chosen| {
+            atoll_i18n::Language::ALL
+                .iter()
+                .position(|language| *language == chosen)
+                .map_or(0, |index| index as i32 + 1)
+        }));
         state.set_search_engine(preferences.search_engine_index() as i32);
         state.set_search_url(preferences.search_url.as_str().into());
         state.set_search_url_valid(true);
@@ -73,6 +86,14 @@ impl Browser {
                 });
             }
             "home-button" => self.set_home_button(state.get_home_button()),
+            "language" => {
+                let index = usize::try_from(state.get_language()).unwrap_or_default();
+                self.set_language(
+                    index
+                        .checked_sub(1)
+                        .and_then(|index| atoll_i18n::Language::ALL.get(index).copied()),
+                );
+            }
             "search-engine" => {
                 let index = usize::try_from(state.get_search_engine()).unwrap_or_default();
                 if let Some(engine) = SEARCH_ENGINES.get(index) {
@@ -136,7 +157,7 @@ impl Browser {
         dialogs::show(
             FileDialogOptions {
                 kind: FileDialogKind::OpenFolder,
-                title: "Download-Ordner wählen".into(),
+                title: t!("Download-Ordner wählen").into(),
                 directory: Some(self.download_directory()),
                 file_name: None,
                 filters: Vec::new(),
@@ -174,6 +195,23 @@ impl Browser {
                 self.preferences.borrow().download_directory.is_some(),
             );
         }
+    }
+
+    /// Switches the language of the whole user interface, `None` to follow the system.
+    fn set_language(&self, language: Option<atoll_i18n::Language>) {
+        self.update_preference(PreferenceKey::Language, |preferences| {
+            preferences.language = language;
+        });
+        let chosen = self.preferences.borrow().language();
+        atoll_i18n::set_language(chosen);
+        crate::app::select_interface_language(chosen);
+        self.for_all_windows(Browser::relabel);
+    }
+
+    /// Builds the texts again that Atoll puts together in Rust, after the language changed.
+    pub(super) fn relabel(&self) {
+        self.open_settings();
+        self.refresh_sidebar();
     }
 
     pub(super) fn update_preference(
@@ -240,7 +278,7 @@ impl Browser {
                 .global::<SettingsState>()
                 .set_start_page(url.as_str().into());
         }
-        self.show_toast("Startseite festgelegt");
+        self.show_toast(t!("Startseite festgelegt"));
     }
 
     /// The address new tabs load, or `None` for the Atoll start page.
@@ -265,14 +303,14 @@ impl Browser {
     pub fn clear_history(&self) {
         let this = self.this();
         self.confirm(
-            "Verlauf löschen?",
-            "Der gesamte Verlauf wird gelöscht. Tabs, Inseln und Lesezeichen bleiben erhalten.",
-            "Löschen",
+            t!("Verlauf löschen?"),
+            t!("Der gesamte Verlauf wird gelöscht. Tabs, Inseln und Lesezeichen bleiben erhalten."),
+            t!("Löschen"),
             move || {
                 if let Some(browser) = this.upgrade() {
                     match browser.storage.clear_history() {
-                        Ok(()) => browser.show_toast("Verlauf gelöscht"),
-                        Err(error) => browser.report("Verlauf löschen", Err::<(), _>(error)),
+                        Ok(()) => browser.show_toast(t!("Verlauf gelöscht")),
+                        Err(error) => browser.report(t!("Verlauf löschen"), Err::<(), _>(error)),
                     }
                 }
             },
@@ -282,9 +320,9 @@ impl Browser {
     pub fn clear_cookies(&self) {
         let this = self.this();
         self.confirm(
-            "Alle Cookies löschen?",
-            "Du wirst auf allen Websites abgemeldet.",
-            "Löschen",
+            t!("Alle Cookies löschen?"),
+            t!("Du wirst auf allen Websites abgemeldet."),
+            t!("Löschen"),
             move || {
                 let Some(browser) = this.upgrade() else {
                     return;
@@ -295,9 +333,9 @@ impl Browser {
                     .as_ref()
                     .is_some_and(|engine| engine.delete_all_cookies());
                 browser.show_toast(if deleted {
-                    "Cookies gelöscht"
+                    t!("Cookies gelöscht")
                 } else {
-                    "Cookies konnten nicht gelöscht werden"
+                    t!("Cookies konnten nicht gelöscht werden")
                 });
             },
         );

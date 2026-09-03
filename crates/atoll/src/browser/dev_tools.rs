@@ -9,6 +9,7 @@ use super::views::DevTools;
 use super::web_input::{InputTarget, modifiers_of};
 use crate::bridge::images::frame_image;
 use crate::ui::{DevToolsState, PointerAction, PointerButton, WebPointer, WebScroll};
+use atoll_i18n::t;
 
 /// What the developer tools panel currently displays.
 #[derive(Default)]
@@ -84,7 +85,7 @@ impl Browser {
                     .attach_dev_tools(tab, DevTools::new(session));
             }
             Some(Err(error)) => {
-                self.report("Entwicklertools öffnen", Err::<(), _>(error));
+                self.report(t!("Entwicklertools öffnen"), Err::<(), _>(error));
                 return;
             }
             None => {}

@@ -90,7 +90,7 @@ component SectionTitle inherits VerticalLayout {
 }
 
 export component SettingsPage inherits Modal {
-    title: "Einstellungen";
+    title: @tr("Einstellungen");
     card-width: 780px;
     dismissed => { SettingsState.close(); }
 
@@ -104,37 +104,37 @@ export component SettingsPage inherits Modal {
             alignment: start;
 
             SectionButton {
-                text: "Allgemein";
+                text: @tr("Allgemein");
                 icon: @image-url("../icons/settings.svg");
                 selected: SettingsState.section == 0;
                 clicked => { SettingsState.section = 0; }
             }
             SectionButton {
-                text: "Darstellung";
+                text: @tr("Darstellung");
                 icon: @image-url("../icons/layout.svg");
                 selected: SettingsState.section == 1;
                 clicked => { SettingsState.section = 1; }
             }
             SectionButton {
-                text: "Tabs";
+                text: @tr("Tabs");
                 icon: @image-url("../icons/tab.svg");
                 selected: SettingsState.section == 2;
                 clicked => { SettingsState.section = 2; }
             }
             SectionButton {
-                text: "Downloads";
+                text: @tr("Downloads");
                 icon: @image-url("../icons/download.svg");
                 selected: SettingsState.section == 3;
                 clicked => { SettingsState.section = 3; }
             }
             SectionButton {
-                text: "Datenschutz";
+                text: @tr("Datenschutz");
                 icon: @image-url("../icons/shield.svg");
                 selected: SettingsState.section == 4;
                 clicked => { SettingsState.section = 4; }
             }
             SectionButton {
-                text: "Erweiterungen";
+                text: @tr("Erweiterungen");
                 icon: @image-url("../icons/layers.svg");
                 selected: SettingsState.section == 5;
                 clicked => { SettingsState.section = 5; }
@@ -155,7 +155,7 @@ export component SettingsPage inherits Modal {
                 alignment: start;
 
                 if SettingsState.section == 0 : VerticalLayout {
-                    SectionTitle { text: "STARTSEITE"; }
+                    SectionTitle { text: @tr("STARTSEITE"); }
                     VerticalLayout {
                         spacing: 8px;
                         padding-top: 4px;
@@ -165,18 +165,18 @@ export component SettingsPage inherits Modal {
                             TextField {
                                 horizontal-stretch: 1;
                                 text <=> SettingsState.start-page;
-                                placeholder: "Leer lassen für die Atoll-Startseite";
+                                placeholder: @tr("Leer lassen für die Atoll-Startseite");
                                 edited => { SettingsState.changed("start-page"); }
                                 accepted => { SettingsState.changed("start-page"); }
                             }
                             ActionButton {
-                                text: "Aktuelle Seite";
+                                text: @tr("Aktuelle Seite");
                                 enabled: BrowserState.has-page;
                                 clicked => { SettingsState.use-current-page(); }
                             }
                         }
                         Text {
-                            text: "Wird vom Startseiten-Button und mit Alt+Pos1 geöffnet.";
+                            text: @tr("Wird vom Startseiten-Button und mit Alt+Pos1 geöffnet.");
                             color: Theme.text-faint;
                             font-size: Theme.font-small + 1px;
                             wrap: word-wrap;
@@ -184,8 +184,8 @@ export component SettingsPage inherits Modal {
                     }
                     Divider { }
                     SettingRow {
-                        title: "Neue Tabs mit der Startseite öffnen";
-                        description: SettingsState.start-page == "" ? "Dafür zuerst eine Startseite eintragen." : "Sonst zeigen neue Tabs die Atoll-Startseite mit der Suche.";
+                        title: @tr("Neue Tabs mit der Startseite öffnen");
+                        description: SettingsState.start-page == "" ? @tr("Dafür zuerst eine Startseite eintragen.") : @tr("Sonst zeigen neue Tabs die Atoll-Startseite mit der Suche.");
                         Toggle {
                             enabled: SettingsState.start-page != "";
                             checked <=> SettingsState.new-tab-start-page;
@@ -194,14 +194,14 @@ export component SettingsPage inherits Modal {
                     }
                     Divider { }
                     SettingRow {
-                        title: "Startseiten-Button in der Symbolleiste";
+                        title: @tr("Startseiten-Button in der Symbolleiste");
                         Toggle {
                             checked <=> SettingsState.home-button;
                             toggled => { SettingsState.changed("home-button"); }
                         }
                     }
                     Divider { }
-                    SectionTitle { text: "SUCHMASCHINE"; }
+                    SectionTitle { text: @tr("SUCHMASCHINE"); }
                     VerticalLayout {
                         spacing: 8px;
                         padding-top: 4px;
@@ -217,8 +217,25 @@ export component SettingsPage inherits Modal {
                             edited => { SettingsState.changed("search-url"); }
                         }
                         if SettingsState.search-engine == SettingsState.search-engines.length - 1 : Text {
-                            text: SettingsState.search-url-valid ? "{query} wird durch den Suchbegriff ersetzt." : "Die Adresse muss {query} enthalten, bis dahin bleibt die bisherige Suche aktiv.";
+                            text: SettingsState.search-url-valid ? @tr("{{query}} wird durch den Suchbegriff ersetzt.") : @tr("Die Adresse muss {{query}} enthalten, bis dahin bleibt die bisherige Suche aktiv.");
                             color: SettingsState.search-url-valid ? Theme.text-faint : Theme.danger;
+                            font-size: Theme.font-small + 1px;
+                            wrap: word-wrap;
+                        }
+                    }
+                    SectionTitle { text: @tr("SPRACHE"); }
+                    VerticalLayout {
+                        spacing: 4px;
+                        padding-top: 4px;
+                        padding-bottom: 8px;
+                        ComboBox {
+                            model: SettingsState.languages;
+                            current-index <=> SettingsState.language;
+                            selected => { SettingsState.changed("language"); }
+                        }
+                        Text {
+                            text: @tr("Gilt sofort, ohne Neustart.");
+                            color: Theme.text-faint;
                             font-size: Theme.font-small + 1px;
                             wrap: word-wrap;
                         }
@@ -227,8 +244,8 @@ export component SettingsPage inherits Modal {
 
                 if SettingsState.section == 1 : VerticalLayout {
                     SettingRow {
-                        title: "Sidebar anzeigen";
-                        description: "Strg+B blendet sie jederzeit ein oder aus.";
+                        title: @tr("Sidebar anzeigen");
+                        description: @tr("Strg+B blendet sie jederzeit ein oder aus.");
                         Toggle {
                             checked <=> SettingsState.sidebar-visible;
                             toggled => { SettingsState.changed("sidebar-visible"); }
@@ -236,8 +253,8 @@ export component SettingsPage inherits Modal {
                     }
                     Divider { }
                     SettingRow {
-                        title: "Lesezeichenleiste anzeigen";
-                        description: "Strg+Umschalt+B blendet sie jederzeit ein oder aus.";
+                        title: @tr("Lesezeichenleiste anzeigen");
+                        description: @tr("Strg+Umschalt+B blendet sie jederzeit ein oder aus.");
                         Toggle {
                             checked <=> SettingsState.bookmarks-bar-visible;
                             toggled => { SettingsState.changed("bookmarks-bar-visible"); }
@@ -245,8 +262,8 @@ export component SettingsPage inherits Modal {
                     }
                     Divider { }
                     SettingRow {
-                        title: "Lesezeichenleiste nur mit Lesezeichen anzeigen";
-                        description: "Blendet die Leiste aus, solange sie leer ist.";
+                        title: @tr("Lesezeichenleiste nur mit Lesezeichen anzeigen");
+                        description: @tr("Blendet die Leiste aus, solange sie leer ist.");
                         Toggle {
                             enabled: SettingsState.bookmarks-bar-visible;
                             checked <=> SettingsState.bookmarks-bar-auto-hide;
@@ -257,8 +274,8 @@ export component SettingsPage inherits Modal {
 
                 if SettingsState.section == 2 : VerticalLayout {
                     SettingRow {
-                        title: "Eingefrorene Tabs im Hintergrund";
-                        description: "So viele zuletzt genutzte Tabs bleiben geladen und erscheinen sofort. Alle anderen schlafen und kosten keinen Arbeitsspeicher.";
+                        title: @tr("Eingefrorene Tabs im Hintergrund");
+                        description: @tr("So viele zuletzt genutzte Tabs bleiben geladen und erscheinen sofort. Alle anderen schlafen und kosten keinen Arbeitsspeicher.");
                         SpinBox {
                             width: 110px;
                             minimum: 0;
@@ -269,15 +286,15 @@ export component SettingsPage inherits Modal {
                     }
                     Divider { }
                     SettingRow {
-                        title: "Arbeitsspeicher begrenzen";
-                        description: "Belegen die Seiten mehr als das Budget, schlafen die am längsten nicht genutzten Hintergrund-Tabs ein. Tabs mit Wiedergabe, ungesendeten Eingaben und angepinnte Tabs bleiben geladen. " + SettingsState.memory-usage;
+                        title: @tr("Arbeitsspeicher begrenzen");
+                        description: @tr("Belegen die Seiten mehr als das Budget, schlafen die am längsten nicht genutzten Hintergrund-Tabs ein. Tabs mit Wiedergabe, ungesendeten Eingaben und angepinnte Tabs bleiben geladen. ") + SettingsState.memory-usage;
                         Toggle {
                             checked <=> SettingsState.memory-limit-enabled;
                             toggled => { SettingsState.changed("memory-limit"); }
                         }
                     }
                     SettingRow {
-                        title: "Budget in GB";
+                        title: @tr("Budget in GB");
                         SpinBox {
                             width: 110px;
                             enabled: SettingsState.memory-limit-enabled;
@@ -289,8 +306,8 @@ export component SettingsPage inherits Modal {
                     }
                     Divider { }
                     SettingRow {
-                        title: "Archivierung vorschlagen nach Wochen";
-                        description: "Inseln, die so lange nicht benutzt wurden, werden in der Sidebar markiert und im Archiv vorgeschlagen. Archiviert wird nur nach deiner Bestätigung. 0 schaltet die Vorschläge aus.";
+                        title: @tr("Archivierung vorschlagen nach Wochen");
+                        description: @tr("Inseln, die so lange nicht benutzt wurden, werden in der Sidebar markiert und im Archiv vorgeschlagen. Archiviert wird nur nach deiner Bestätigung. 0 schaltet die Vorschläge aus.");
                         SpinBox {
                             width: 110px;
                             minimum: 0;
@@ -302,7 +319,7 @@ export component SettingsPage inherits Modal {
                 }
 
                 if SettingsState.section == 3 : VerticalLayout {
-                    SectionTitle { text: "SPEICHERORT"; }
+                    SectionTitle { text: @tr("SPEICHERORT"); }
                     HorizontalLayout {
                         spacing: 8px;
                         padding-top: 4px;
@@ -325,18 +342,18 @@ export component SettingsPage inherits Modal {
                             }
                         }
                         if SettingsState.download-directory-custom : ActionButton {
-                            text: "Standard";
+                            text: @tr("Standard");
                             clicked => { SettingsState.reset-download-directory(); }
                         }
                         ActionButton {
-                            text: "Ändern…";
+                            text: @tr("Ändern…");
                             clicked => { SettingsState.choose-download-directory(); }
                         }
                     }
                     Divider { }
                     SettingRow {
-                        title: "Vor jedem Download nach dem Speicherort fragen";
-                        description: "Zeigt einen Speichern-Dialog, statt direkt im Download-Ordner zu speichern.";
+                        title: @tr("Vor jedem Download nach dem Speicherort fragen");
+                        description: @tr("Zeigt einen Speichern-Dialog, statt direkt im Download-Ordner zu speichern.");
                         Toggle {
                             checked <=> SettingsState.download-ask;
                             toggled => { SettingsState.changed("download-ask"); }
@@ -344,8 +361,8 @@ export component SettingsPage inherits Modal {
                     }
                     Divider { }
                     SettingRow {
-                        title: "Download-Übersicht beim Start eines Downloads öffnen";
-                        description: "Sonst erscheint nur eine kurze Meldung. Die Übersicht öffnet Strg+J.";
+                        title: @tr("Download-Übersicht beim Start eines Downloads öffnen");
+                        description: @tr("Sonst erscheint nur eine kurze Meldung. Die Übersicht öffnet Strg+J.");
                         Toggle {
                             checked <=> SettingsState.download-panel;
                             toggled => { SettingsState.changed("download-panel"); }
@@ -354,9 +371,9 @@ export component SettingsPage inherits Modal {
                 }
 
                 if SettingsState.section == 4 : VerticalLayout {
-                    SectionTitle { text: "WERBEBLOCKER"; }
+                    SectionTitle { text: @tr("WERBEBLOCKER"); }
                     SettingRow {
-                        title: "Werbung und Tracker blockieren";
+                        title: @tr("Werbung und Tracker blockieren");
                         description: SettingsState.adblock-status;
                         Toggle {
                             checked <=> SettingsState.adblock-enabled;
@@ -365,55 +382,55 @@ export component SettingsPage inherits Modal {
                     }
                     Divider { }
                     SettingRow {
-                        title: "Filterlisten aktualisieren";
-                        description: "Geschieht automatisch alle vier Tage.";
+                        title: @tr("Filterlisten aktualisieren");
+                        description: @tr("Geschieht automatisch alle vier Tage.");
                         ActionButton {
-                            text: "Jetzt aktualisieren";
+                            text: @tr("Jetzt aktualisieren");
                             enabled: !SettingsState.adblock-updating;
                             clicked => { SettingsState.update-filter-lists(); }
                         }
                     }
                     if SettingsState.adblock-exceptions != "" : Divider { }
                     if SettingsState.adblock-exceptions != "" : SettingRow {
-                        title: "Ausgeschaltet auf";
+                        title: @tr("Ausgeschaltet auf");
                         description: SettingsState.adblock-exceptions;
                         ActionButton {
-                            text: "Alle entfernen";
+                            text: @tr("Alle entfernen");
                             clicked => { SettingsState.clear-adblock-exceptions(); }
                         }
                     }
                     Divider { }
                     SectionTitle { text: "1PASSWORD"; }
                     SettingRow {
-                        title: "Anmeldungen mit 1Password ausfüllen";
+                        title: @tr("Anmeldungen mit 1Password ausfüllen");
                         description: SettingsState.onepassword-status;
                     }
                     Divider { }
-                    SectionTitle { text: "DATEN"; }
+                    SectionTitle { text: @tr("DATEN"); }
                     SettingRow {
-                        title: "Verlauf löschen";
-                        description: "Entfernt alle besuchten Seiten. Tabs, Inseln und Lesezeichen bleiben erhalten.";
+                        title: @tr("Verlauf löschen");
+                        description: @tr("Entfernt alle besuchten Seiten. Tabs, Inseln und Lesezeichen bleiben erhalten.");
                         ActionButton {
-                            text: "Löschen";
+                            text: @tr("Löschen");
                             clicked => { SettingsState.clear-history(); }
                         }
                     }
                     Divider { }
                     SettingRow {
-                        title: "Cookies löschen";
-                        description: "Meldet dich auf allen Websites ab.";
+                        title: @tr("Cookies löschen");
+                        description: @tr("Meldet dich auf allen Websites ab.");
                         ActionButton {
-                            text: "Löschen";
+                            text: @tr("Löschen");
                             clicked => { SettingsState.clear-cookies(); }
                         }
                     }
                 }
 
                 if SettingsState.section == 5 : VerticalLayout {
-                    SectionTitle { text: "ERWEITERUNGEN"; }
+                    SectionTitle { text: @tr("ERWEITERUNGEN"); }
                     if SettingsState.plugins.length == 0 : SettingRow {
-                        title: "Keine Erweiterungen installiert";
-                        description: "Installiere eine aus einem Archiv oder aus Git, oder lege einen Ordner mit einer plugin.toml an.";
+                        title: @tr("Keine Erweiterungen installiert");
+                        description: @tr("Installiere eine aus einem Archiv oder aus Git, oder lege einen Ordner mit einer plugin.toml an.");
                     }
                     for plugin[index] in SettingsState.plugins : VerticalLayout {
                         if index > 0 : Divider { }
@@ -449,42 +466,42 @@ export component SettingsPage inherits Modal {
                             spacing: 8px;
                             alignment: start;
                             ActionButton {
-                                text: "Neu laden";
+                                text: @tr("Neu laden");
                                 clicked => { SettingsState.plugin-action(plugin.id, "reload"); }
                             }
                             if plugin.from-git : ActionButton {
-                                text: "Aktualisieren";
+                                text: @tr("Aktualisieren");
                                 clicked => { SettingsState.plugin-action(plugin.id, "update"); }
                             }
                             ActionButton {
-                                text: "Protokoll";
+                                text: @tr("Protokoll");
                                 clicked => { SettingsState.plugin-action(plugin.id, "log"); }
                             }
                             ActionButton {
-                                text: "Entfernen";
+                                text: @tr("Entfernen");
                                 clicked => { SettingsState.plugin-action(plugin.id, "remove"); }
                             }
                         }
                     }
                     Divider { }
                     SettingRow {
-                        title: "Erweiterung installieren";
-                        description: "Aus einem Zip-Archiv oder aus einem Git-Repository. Atoll fragt danach, was die Erweiterung darf.";
+                        title: @tr("Erweiterung installieren");
+                        description: @tr("Aus einem Zip-Archiv oder aus einem Git-Repository. Atoll fragt danach, was die Erweiterung darf.");
                         ActionButton {
-                            text: "Aus Archiv";
+                            text: @tr("Aus Archiv");
                             clicked => { SettingsState.install-plugin("archive"); }
                         }
                         ActionButton {
-                            text: "Aus Git";
+                            text: @tr("Aus Git");
                             clicked => { SettingsState.install-plugin("git"); }
                         }
                     }
                     Divider { }
                     SettingRow {
-                        title: "Ordner der Erweiterungen";
+                        title: @tr("Ordner der Erweiterungen");
                         description: SettingsState.plugin-directory;
                         ActionButton {
-                            text: "Öffnen";
+                            text: @tr("Öffnen");
                             clicked => { SettingsState.open-plugin-folder(); }
                         }
                     }
@@ -496,7 +513,7 @@ export component SettingsPage inherits Modal {
     HorizontalLayout {
         alignment: end;
         ActionButton {
-            text: "Fertig";
+            text: @tr("Fertig");
             kind: ButtonKind.primary;
             clicked => { SettingsState.close(); }
         }

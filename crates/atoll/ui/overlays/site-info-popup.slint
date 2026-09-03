@@ -169,7 +169,7 @@ export component SiteInfoPopup inherits Rectangle {
                     alignment: center;
                     spacing: 2px;
                     Text {
-                        text: "Werbeblocker";
+                        text: @tr("Werbeblocker");
                         color: Theme.text;
                         font-size: Theme.font-normal;
                         font-weight: 600;
@@ -195,21 +195,21 @@ export component SiteInfoPopup inherits Rectangle {
                 if OverlayState.site-info-zoom != 100 : HorizontalLayout {
                     padding-left: 10px;
                     Text {
-                        text: "Zoom: " + OverlayState.site-info-zoom + " %";
+                        text: @tr("Zoom: ") + OverlayState.site-info-zoom + " %";
                         color: Theme.text-muted;
                         font-size: Theme.font-normal;
                         vertical-alignment: center;
                         horizontal-stretch: 1;
                     }
                     LinkButton {
-                        text: "Zurücksetzen";
+                        text: @tr("Zurücksetzen");
                         text-color: Theme.accent;
                         clicked => { OverlayState.site-info-reset-zoom(); }
                     }
                 }
 
                 if OverlayState.site-info-can-clear : LinkButton {
-                    text: "Cookies und Websitedaten löschen";
+                    text: @tr("Cookies und Websitedaten löschen");
                     text-color: Theme.danger;
                     clicked => { OverlayState.site-info-clear-data(); }
                 }

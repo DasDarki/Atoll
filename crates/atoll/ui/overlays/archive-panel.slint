@@ -7,12 +7,12 @@ import { IconButton } from "../widgets/icon-button.slint";
 import { FieldLabel } from "../widgets/field-label.slint";
 
 export component ArchivePanel inherits Modal {
-    title: "Archiv";
+    title: @tr("Archiv");
     card-width: 620px;
     dismissed => { OverlayState.archive-close(); }
 
     Text {
-        text: "Archivierte Inseln verschwinden aus der Sidebar, bleiben aber vollständig erhalten.";
+        text: @tr("Archivierte Inseln verschwinden aus der Sidebar, bleiben aber vollständig erhalten.");
         color: Theme.text-muted;
         font-size: Theme.font-normal;
         wrap: word-wrap;
@@ -27,18 +27,18 @@ export component ArchivePanel inherits Modal {
                 horizontal-stretch: 1;
                 alignment: center;
                 spacing: 2px;
-                FieldLabel { text: "VORSCHLÄGE"; }
+                FieldLabel { text: @tr("VORSCHLÄGE"); }
                 Text {
                     text: OverlayState.archive-suggestion-weeks == 1
-                        ? "Seit über einer Woche nicht benutzt."
-                        : "Seit über " + OverlayState.archive-suggestion-weeks + " Wochen nicht benutzt.";
+                        ? @tr("Seit über einer Woche nicht benutzt.")
+                        : @tr("Seit über {} Wochen nicht benutzt.", OverlayState.archive-suggestion-weeks);
                     color: Theme.text-faint;
                     font-size: Theme.font-small + 1px;
                 }
             }
             ActionButton {
                 y: (parent.height - self.height) / 2;
-                text: "Alle archivieren";
+                text: @tr("Alle archivieren");
                 clicked => { OverlayState.archive-all-suggested(); }
             }
         }
@@ -75,7 +75,7 @@ export component ArchivePanel inherits Modal {
                                 overflow: elide;
                             }
                             Text {
-                                text: item.workspace + " · " + (item.tab-count == 1 ? "1 Tab" : item.tab-count + " Tabs") + " · zuletzt benutzt " + item.archived;
+                                text: @tr("{} · {} · zuletzt benutzt {}", item.workspace, @tr("{n} Tab" | "{n} Tabs" % item.tab-count), item.archived);
                                 color: Theme.text-faint;
                                 font-size: Theme.font-small + 1px;
                                 overflow: elide;
@@ -83,12 +83,12 @@ export component ArchivePanel inherits Modal {
                         }
                         ActionButton {
                             y: (parent.height - self.height) / 2;
-                            text: "Behalten";
+                            text: @tr("Behalten");
                             clicked => { OverlayState.archive-keep(item.id); }
                         }
                         ActionButton {
                             y: (parent.height - self.height) / 2;
-                            text: "Archivieren";
+                            text: @tr("Archivieren");
                             kind: ButtonKind.primary;
                             clicked => { OverlayState.archive-suggested(item.id); }
                         }
@@ -102,7 +102,7 @@ export component ArchivePanel inherits Modal {
             }
         }
 
-        FieldLabel { text: "ARCHIVIERT"; }
+        FieldLabel { text: @tr("ARCHIVIERT"); }
     }
 
     if OverlayState.archive-items.length == 0 : Rectangle {
@@ -110,7 +110,7 @@ export component ArchivePanel inherits Modal {
         border-radius: Theme.radius;
         background: Theme.background;
         Text {
-            text: "Das Archiv ist leer.";
+            text: @tr("Das Archiv ist leer.");
             color: Theme.text-faint;
             font-size: Theme.font-normal;
         }
@@ -148,7 +148,7 @@ export component ArchivePanel inherits Modal {
                             overflow: elide;
                         }
                         Text {
-                            text: item.workspace + " · " + (item.tab-count == 1 ? "1 Tab" : item.tab-count + " Tabs") + " · archiviert " + item.archived;
+                            text: @tr("{} · {} · archiviert {}", item.workspace, @tr("{n} Tab" | "{n} Tabs" % item.tab-count), item.archived);
                             color: Theme.text-faint;
                             font-size: Theme.font-small + 1px;
                             overflow: elide;
@@ -156,7 +156,7 @@ export component ArchivePanel inherits Modal {
                     }
                     ActionButton {
                         y: (parent.height - self.height) / 2;
-                        text: "Wiederherstellen";
+                        text: @tr("Wiederherstellen");
                         clicked => { OverlayState.archive-restore(item.id); }
                     }
                     IconButton {
@@ -178,7 +178,7 @@ export component ArchivePanel inherits Modal {
     HorizontalLayout {
         alignment: end;
         ActionButton {
-            text: "Schließen";
+            text: @tr("Schließen");
             kind: ButtonKind.primary;
             clicked => { OverlayState.archive-close(); }
         }

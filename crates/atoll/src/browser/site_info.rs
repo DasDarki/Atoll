@@ -7,6 +7,7 @@ use slint::{ComponentHandle, ModelRc, VecModel};
 
 use super::Browser;
 use crate::ui::{OverlayState, PageSecurity, SiteInfoDetail};
+use atoll_i18n::t;
 
 /// What the site information popup says about a page.
 #[derive(Debug, Clone, PartialEq)]
@@ -79,20 +80,20 @@ impl Browser {
         let host = display_host(&url).unwrap_or_else(|| origin.clone());
         let this = self.this();
         self.confirm(
-            "Websitedaten löschen?",
-            &format!(
-                "Cookies, gespeicherte Daten und der Cache von {host} werden gelöscht. Du wirst dort abgemeldet."
+            t!("Websitedaten löschen?"),
+            &t!(
+                "Cookies, gespeicherte Daten und der Cache von {} werden gelöscht. Du wirst dort abgemeldet.", host
             ),
-            "Löschen",
+            t!("Löschen"),
             move || {
                 let Some(browser) = this.upgrade() else { return };
                 let mut cleared = false;
                 browser.with_live_view(|view| cleared = view.clear_site_data(&origin));
                 if cleared {
-                    browser.show_toast("Websitedaten gelöscht");
+                    browser.show_toast(t!("Websitedaten gelöscht"));
                     browser.reload(false);
                 } else {
-                    browser.show_toast("Websitedaten konnten nicht gelöscht werden");
+                    browser.show_toast(t!("Websitedaten konnten nicht gelöscht werden"));
                 }
             },
         );
@@ -127,30 +128,34 @@ fn site_summary(url: &str, security: Option<&SecurityInfo>) -> SiteSummary {
     };
     match summary.security {
         PageSecurity::Secure if security.is_none_or(|info| info.secure_connection) => {
-            summary.title = "Verbindung ist sicher";
-            summary.message = "Passwörter, Zahlungsdaten und alles andere werden verschlüsselt an diese Website übertragen.";
+            summary.title = t!("Verbindung ist sicher");
+            summary.message = t!(
+                "Passwörter, Zahlungsdaten und alles andere werden verschlüsselt an diese Website übertragen."
+            );
             if let Some(info) = security {
                 summary.details = certificate_details(info);
             }
         }
         PageSecurity::Secure => {
             summary.security = PageSecurity::Insecure;
-            summary.title = "Verbindung ist nicht vollständig sicher";
+            summary.title = t!("Verbindung ist nicht vollständig sicher");
             summary.message =
-                "Die Seite wurde nicht über eine geprüfte, verschlüsselte Verbindung geladen.";
+                t!("Die Seite wurde nicht über eine geprüfte, verschlüsselte Verbindung geladen.");
         }
         PageSecurity::Insecure => {
-            summary.title = "Verbindung ist nicht sicher";
-            summary.message = "Gib auf dieser Seite keine Passwörter oder Zahlungsdaten ein, sie werden unverschlüsselt übertragen.";
+            summary.title = t!("Verbindung ist nicht sicher");
+            summary.message = t!(
+                "Gib auf dieser Seite keine Passwörter oder Zahlungsdaten ein, sie werden unverschlüsselt übertragen."
+            );
         }
         PageSecurity::Internal | PageSecurity::None => {
             summary.security = PageSecurity::Internal;
             if url.starts_with("file:") {
-                summary.title = "Lokale Datei";
-                summary.message = "Diese Datei liegt auf deinem Computer.";
+                summary.title = t!("Lokale Datei");
+                summary.message = t!("Diese Datei liegt auf deinem Computer.");
             } else {
-                summary.title = "Interne Seite";
-                summary.message = "Diese Seite wurde nicht aus dem Internet geladen.";
+                summary.title = t!("Interne Seite");
+                summary.message = t!("Diese Seite wurde nicht aus dem Internet geladen.");
             }
         }
     }
@@ -161,15 +166,15 @@ fn certificate_details(info: &SecurityInfo) -> Vec<(&'static str, String)> {
     let mut details = Vec::new();
     if let Some(certificate) = &info.certificate {
         let subject = match &certificate.organization {
-            Some(organization) => format!("{} ({organization})", certificate.subject),
+            Some(organization) => t!("{} ({})", certificate.subject, organization),
             None => certificate.subject.clone(),
         };
-        details.push(("Ausgestellt für", subject));
-        details.push(("Ausgestellt von", certificate.issuer.clone()));
-        details.push(("Gültig bis", german_date(certificate.valid_until)));
+        details.push((t!("Ausgestellt für"), subject));
+        details.push((t!("Ausgestellt von"), certificate.issuer.clone()));
+        details.push((t!("Gültig bis"), german_date(certificate.valid_until)));
     }
     if let Some(protocol) = info.protocol {
-        details.push(("Protokoll", protocol.to_owned()));
+        details.push((t!("Protokoll"), protocol.to_owned()));
     }
     details
 }

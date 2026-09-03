@@ -188,7 +188,7 @@ export component DownloadsPanel inherits Rectangle {
                 padding-bottom: 4px;
                 spacing: 4px;
                 Text {
-                    text: "Downloads";
+                    text: @tr("Downloads");
                     color: Theme.text;
                     font-size: Theme.font-large;
                     font-weight: 700;
@@ -196,18 +196,18 @@ export component DownloadsPanel inherits Rectangle {
                     horizontal-stretch: 1;
                 }
                 if OverlayState.downloads-clearable : TextButton {
-                    text: "Liste leeren";
+                    text: @tr("Liste leeren");
                     clicked => { OverlayState.downloads-clear(); }
                 }
                 TextButton {
-                    text: "Ordner öffnen";
+                    text: @tr("Ordner öffnen");
                     clicked => { OverlayState.downloads-open-folder(); }
                 }
             }
 
             if OverlayState.download-items.length == 0 : Text {
                 height: 64px;
-                text: "Noch keine Downloads.";
+                text: @tr("Noch keine Downloads.");
                 color: Theme.text-faint;
                 font-size: Theme.font-normal;
                 horizontal-alignment: center;

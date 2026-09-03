@@ -493,6 +493,7 @@ dependencies = [
  "atoll-adblock",
  "atoll-core",
  "atoll-engine",
+ "atoll-i18n",
  "atoll-onepassword",
  "atoll-plugin",
  "atoll-storage",
@@ -526,6 +527,7 @@ dependencies = [
 name = "atoll-core"
 version = "0.1.0"
 dependencies = [
+ "atoll-i18n",
  "url",
 ]
 
@@ -534,6 +536,7 @@ name = "atoll-engine"
 version = "0.1.0"
 dependencies = [
  "ash",
+ "atoll-i18n",
  "cef",
  "getrandom 0.3.4",
  "libc",
@@ -545,6 +548,10 @@ dependencies = [
  "tungstenite",
  "wgpu",
 ]
+
+[[package]]
+name = "atoll-i18n"
+version = "0.1.0"
 
 [[package]]
 name = "atoll-onepassword"
@@ -560,6 +567,7 @@ dependencies = [
 name = "atoll-plugin"
 version = "0.1.0"
 dependencies = [
+ "atoll-i18n",
  "mlua",
  "regex",
  "serde",
@@ -584,6 +592,7 @@ name = "atoll-transfer"
 version = "0.1.0"
 dependencies = [
  "atoll-core",
+ "atoll-i18n",
  "url",
 ]
 

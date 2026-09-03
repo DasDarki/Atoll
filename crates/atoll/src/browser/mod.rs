@@ -62,7 +62,7 @@ use page::PageState;
 use palette::PaletteState;
 use passwords::{PasswordPopup, PasswordVault, PendingFill};
 use plugins::{OpenPanel, Plugins};
-use preferences::Preferences;
+pub use preferences::Preferences;
 use session::Session;
 use sidebar::SidebarModels;
 use suggestions::SuggestionState;

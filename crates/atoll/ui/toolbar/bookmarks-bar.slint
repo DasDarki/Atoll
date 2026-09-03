@@ -40,37 +40,37 @@ component BookmarkChip inherits Rectangle {
     menu := ContextMenuArea {
         Menu {
             if !root.item.is-folder : MenuItem {
-                title: "Öffnen";
+                title: @tr("Öffnen");
                 activated => { BrowserState.open-bookmark(root.item.id, false); }
             }
             if !root.item.is-folder : MenuItem {
-                title: "In neuem Tab öffnen";
+                title: @tr("In neuem Tab öffnen");
                 activated => { BrowserState.open-bookmark(root.item.id, true); }
             }
             if root.item.is-folder : MenuItem {
-                title: "Alle in neuen Tabs öffnen";
+                title: @tr("Alle in neuen Tabs öffnen");
                 activated => { BrowserState.bookmark-action(root.item.id, "open-all"); }
             }
             MenuItem {
-                title: root.item.is-folder ? "Umbenennen" : "Bearbeiten";
+                title: root.item.is-folder ? @tr("Umbenennen") : @tr("Bearbeiten");
                 activated => { BrowserState.bookmark-action(root.item.id, "edit"); }
             }
             if root.item.is-folder : MenuItem {
-                title: "Neuer Ordner darin…";
+                title: @tr("Neuer Ordner darin…");
                 activated => { BrowserState.bookmark-action(root.item.id, "new-folder"); }
             }
             MenuSeparator { }
             MenuItem {
-                title: "Löschen";
+                title: @tr("Löschen");
                 activated => { BrowserState.bookmark-action(root.item.id, "delete"); }
             }
             MenuSeparator { }
             MenuItem {
-                title: "Neuer Ordner…";
+                title: @tr("Neuer Ordner…");
                 activated => { BrowserState.menu-action("new-bookmark-folder"); }
             }
             MenuItem {
-                title: "Lesezeichen verwalten";
+                title: @tr("Lesezeichen verwalten");
                 activated => { BrowserState.bookmark-action(root.item.id, "manage"); }
             }
         }
@@ -168,21 +168,21 @@ export component BookmarksBar inherits Rectangle {
     menu := ContextMenuArea {
         Menu {
             MenuItem {
-                title: "Seite als Lesezeichen speichern";
+                title: @tr("Seite als Lesezeichen speichern");
                 enabled: BrowserState.has-page;
                 activated => { BrowserState.menu-action("bookmark"); }
             }
             MenuItem {
-                title: "Neuer Ordner…";
+                title: @tr("Neuer Ordner…");
                 activated => { BrowserState.menu-action("new-bookmark-folder"); }
             }
             MenuSeparator { }
             MenuItem {
-                title: "Lesezeichen verwalten";
+                title: @tr("Lesezeichen verwalten");
                 activated => { BrowserState.menu-action("bookmarks"); }
             }
             MenuItem {
-                title: "Lesezeichenleiste ausblenden";
+                title: @tr("Lesezeichenleiste ausblenden");
                 activated => { BrowserState.menu-action("bookmarks-bar"); }
             }
         }
@@ -232,7 +232,7 @@ export component BookmarksBar inherits Rectangle {
         }
 
         if BrowserState.bookmarks-bar.length == 0 : Text {
-            text: "Lesezeichen mit Strg+D oder dem Stern in der Adressleiste hinzufügen";
+            text: @tr("Lesezeichen mit Strg+D oder dem Stern in der Adressleiste hinzufügen");
             color: Theme.text-faint;
             font-size: Theme.font-small + 1px;
             vertical-alignment: center;

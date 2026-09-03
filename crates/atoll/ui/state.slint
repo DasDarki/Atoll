@@ -296,6 +296,8 @@ export global SettingsState {
     callback update-filter-lists();
     callback clear-adblock-exceptions();
 
+    in property <[string]> languages;
+    in-out property <int> language;
     in property <[PluginItem]> plugins;
     in property <string> plugin-directory;
     callback plugin-action(string, string);

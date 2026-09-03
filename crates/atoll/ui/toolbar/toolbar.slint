@@ -145,11 +145,11 @@ export component Toolbar inherits Rectangle {
         enabled: false;
         Menu {
             MenuItem {
-                title: "Neu laden (F5)";
+                title: @tr("Neu laden (F5)");
                 activated => { BrowserState.reload(false); }
             }
             MenuItem {
-                title: "Vollständig neu laden, ohne Cache (Strg+F5)";
+                title: @tr("Vollständig neu laden, ohne Cache (Strg+F5)");
                 activated => { BrowserState.reload(true); }
             }
         }
@@ -159,102 +159,102 @@ export component Toolbar inherits Rectangle {
         enabled: false;
         Menu {
             MenuItem {
-                title: "Neuer Tab";
+                title: @tr("Neuer Tab");
                 activated => { BrowserState.menu-action("new-tab"); }
             }
             MenuItem {
-                title: "Geschlossenen Tab wiederherstellen";
+                title: @tr("Geschlossenen Tab wiederherstellen");
                 activated => { BrowserState.menu-action("reopen-tab"); }
             }
             MenuItem {
-                title: "Neues Fenster";
+                title: @tr("Neues Fenster");
                 activated => { BrowserState.menu-action("new-window"); }
             }
             MenuSeparator { }
             MenuItem {
-                title: "Alle Tabs durchsuchen";
+                title: @tr("Alle Tabs durchsuchen");
                 activated => { BrowserState.menu-action("palette"); }
             }
             MenuItem {
-                title: "Befehle";
+                title: @tr("Befehle");
                 activated => { BrowserState.menu-action("commands"); }
             }
             MenuItem {
-                title: "Mit 1Password anmelden";
+                title: @tr("Mit 1Password anmelden");
                 enabled: BrowserState.has-page;
                 activated => { BrowserState.menu-action("passwords"); }
             }
             MenuItem {
-                title: "Auf Seite suchen";
+                title: @tr("Auf Seite suchen");
                 enabled: BrowserState.has-page;
                 activated => { BrowserState.menu-action("find"); }
             }
             Menu {
-                title: "Zoom";
+                title: @tr("Zoom");
                 MenuItem {
-                    title: "Vergrößern";
+                    title: @tr("Vergrößern");
                     activated => { BrowserState.menu-action("zoom-in"); }
                 }
                 MenuItem {
-                    title: "Verkleinern";
+                    title: @tr("Verkleinern");
                     activated => { BrowserState.menu-action("zoom-out"); }
                 }
                 MenuItem {
-                    title: "Zurücksetzen";
+                    title: @tr("Zurücksetzen");
                     activated => { BrowserState.menu-action("zoom-reset"); }
                 }
             }
             MenuSeparator { }
             Menu {
-                title: "Lesezeichen";
+                title: @tr("Lesezeichen");
                 MenuItem {
-                    title: "Seite als Lesezeichen speichern";
+                    title: @tr("Seite als Lesezeichen speichern");
                     enabled: BrowserState.has-page;
                     activated => { BrowserState.menu-action("bookmark"); }
                 }
                 MenuItem {
-                    title: BrowserState.bookmarks-bar-visible ? "Lesezeichenleiste ausblenden" : "Lesezeichenleiste einblenden";
+                    title: BrowserState.bookmarks-bar-visible ? @tr("Lesezeichenleiste ausblenden") : @tr("Lesezeichenleiste einblenden");
                     activated => { BrowserState.menu-action("bookmarks-bar"); }
                 }
                 MenuItem {
-                    title: "Lesezeichen verwalten";
+                    title: @tr("Lesezeichen verwalten");
                     activated => { BrowserState.menu-action("bookmarks"); }
                 }
             }
             MenuItem {
-                title: SidebarState.visible ? "Sidebar ausblenden" : "Sidebar einblenden";
+                title: SidebarState.visible ? @tr("Sidebar ausblenden") : @tr("Sidebar einblenden");
                 activated => { BrowserState.menu-action("sidebar"); }
             }
             MenuSeparator { }
             MenuItem {
-                title: "URL-Liste importieren";
+                title: @tr("URL-Liste importieren");
                 activated => { BrowserState.menu-action("import"); }
             }
             MenuItem {
-                title: "URL-Liste exportieren";
+                title: @tr("URL-Liste exportieren");
                 activated => { BrowserState.menu-action("export"); }
             }
             MenuItem {
-                title: "Archiv";
+                title: @tr("Archiv");
                 activated => { BrowserState.menu-action("archive"); }
             }
             MenuSeparator { }
             MenuItem {
-                title: "Downloads";
+                title: @tr("Downloads");
                 activated => { BrowserState.menu-action("downloads"); }
             }
             MenuItem {
-                title: "Einstellungen";
+                title: @tr("Einstellungen");
                 activated => { BrowserState.menu-action("settings"); }
             }
             MenuItem {
-                title: "Entwicklertools";
+                title: @tr("Entwicklertools");
                 enabled: BrowserState.has-page;
                 activated => { BrowserState.menu-action("devtools"); }
             }
             MenuSeparator { }
             MenuItem {
-                title: "Beenden";
+                title: @tr("Beenden");
                 activated => { BrowserState.menu-action("quit"); }
             }
         }

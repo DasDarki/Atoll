@@ -16,6 +16,7 @@ use super::InstalledPlugin;
 use crate::browser::Browser;
 use crate::platform::dialogs::{self, FileDialogKind, FileDialogOptions, FileFilter};
 use crate::platform::tasks::run_in_background;
+use atoll_i18n::t;
 
 impl Browser {
     /// Asks for an archive and installs what is inside it.
@@ -24,11 +25,11 @@ impl Browser {
         dialogs::show(
             FileDialogOptions {
                 kind: FileDialogKind::Open,
-                title: "Erweiterung aus Archiv installieren".into(),
+                title: t!("Erweiterung aus Archiv installieren").into(),
                 directory: None,
                 file_name: None,
                 filters: vec![FileFilter {
-                    name: "Zip-Archiv".into(),
+                    name: t!("Zip-Archiv").into(),
                     extensions: vec!["zip".into()],
                 }],
             },
@@ -46,7 +47,7 @@ impl Browser {
     fn install_from_archive(&self, archive: PathBuf) {
         let directory = self.plugins.directory().to_path_buf();
         let this = self.this();
-        self.show_toast("Erweiterung wird entpackt …");
+        self.show_toast(t!("Erweiterung wird entpackt …"));
         run_in_background(
             "plugin-install",
             move || atoll_plugin::install_archive(&archive, &directory),
@@ -62,10 +63,10 @@ impl Browser {
     pub(in crate::browser) fn install_plugin_git(&self) {
         let this = self.this();
         self.prompt_text(
-            "Erweiterung aus Git installieren",
-            "Adresse des Repositorys, zum Beispiel https://example.org/erweiterung.git",
+            t!("Erweiterung aus Git installieren"),
+            t!("Adresse des Repositorys, zum Beispiel https://example.org/erweiterung.git"),
             "",
-            "Installieren",
+            t!("Installieren"),
             move |url| {
                 if let Some(browser) = this.upgrade() {
                     browser.install_from_git(url);
@@ -78,7 +79,7 @@ impl Browser {
         let directory = self.plugins.directory().to_path_buf();
         let this = self.this();
         let source = Source::Git(url.clone());
-        self.show_toast("Erweiterung wird geladen …");
+        self.show_toast(t!("Erweiterung wird geladen …"));
         run_in_background(
             "plugin-clone",
             move || atoll_plugin::install_git(&url, &directory),
@@ -94,7 +95,7 @@ impl Browser {
     pub(super) fn update_plugin(&self, installed: InstalledPlugin) {
         let Some(url) = installed.source.git_url().map(str::to_owned) else {
             self.inform(
-                &format!("„{}“ aktualisieren", installed.manifest.name),
+                &t!("„{}“ aktualisieren", installed.manifest.name),
                 "Diese Erweiterung kam nicht aus Git. Installiere sie neu, um sie zu \
                  aktualisieren.",
             );
@@ -103,7 +104,7 @@ impl Browser {
         let folder = installed.folder.clone();
         let name = installed.manifest.name.clone();
         let this = self.this();
-        self.show_toast(&format!("„{name}“ wird aktualisiert …"));
+        self.show_toast(&t!("„{}“ wird aktualisiert …", name));
         run_in_background(
             "plugin-update",
             move || atoll_plugin::update_git(&folder),
@@ -112,7 +113,7 @@ impl Browser {
                     return;
                 };
                 match result {
-                    Ok(false) => browser.show_toast(&format!("„{name}“ ist aktuell")),
+                    Ok(false) => browser.show_toast(&t!("„{}“ ist aktuell", name)),
                     Ok(true) => {
                         let folder = installed.folder.clone();
                         match atoll_plugin::PluginRuntime::read_manifest(&folder) {
@@ -149,10 +150,10 @@ impl Browser {
                     self.plugins
                         .start(&installed.folder, &installed.manifest, &granted);
                 }
-                self.show_toast(&format!("„{name}“ aktualisiert"));
+                self.show_toast(&t!("„{}“ aktualisiert", name));
             }
             None => {
-                self.show_toast(&format!("„{name}“ installiert"));
+                self.show_toast(&t!("„{}“ installiert", name));
                 self.ask_about(installed.manifest, installed.folder, source);
             }
         }
@@ -192,6 +193,6 @@ impl Browser {
     }
 
     fn plugin_install_failed(&self, error: &str) {
-        self.inform("Erweiterung nicht installiert", error);
+        self.inform(t!("Erweiterung nicht installiert"), error);
     }
 }

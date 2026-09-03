@@ -6,6 +6,7 @@ rust-version.workspace = true
 publish.workspace = true
 
 [dependencies]
+atoll-i18n.workspace = true
 mlua.workspace = true
 serde.workspace = true
 serde_json.workspace = true

@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use atoll_i18n::Language;
 use atoll_storage::Storage;
 use atoll_storage::prelude::*;
 
@@ -78,6 +79,8 @@ pub struct Preferences {
     pub memory_limit_enabled: bool,
     /// The memory budget of all pages in binary gigabytes.
     pub memory_limit_gb: u32,
+    /// The language of the user interface, `None` to follow the system.
+    pub language: Option<Language>,
 }
 
 /// A single preference, used to store exactly what changed.
@@ -100,6 +103,7 @@ pub enum PreferenceKey {
     ArchiveSuggestionWeeks,
     MemoryLimitEnabled,
     MemoryLimitGb,
+    Language,
 }
 
 impl PreferenceKey {
@@ -122,6 +126,7 @@ impl PreferenceKey {
             PreferenceKey::ArchiveSuggestionWeeks => "archive_suggestion_weeks",
             PreferenceKey::MemoryLimitEnabled => "memory_limit_enabled",
             PreferenceKey::MemoryLimitGb => "memory_limit_gb",
+            PreferenceKey::Language => "language",
         }
     }
 }
@@ -146,6 +151,7 @@ impl Default for Preferences {
             archive_suggestion_weeks: DEFAULT_ARCHIVE_SUGGESTION_WEEKS,
             memory_limit_enabled: true,
             memory_limit_gb: DEFAULT_MEMORY_LIMIT_GB,
+            language: None,
         }
     }
 }
@@ -202,6 +208,7 @@ impl Preferences {
                 .map_or(defaults.memory_limit_gb, |gigabytes| {
                     gigabytes.clamp(1, MAX_MEMORY_LIMIT_GB)
                 }),
+            language: text(PreferenceKey::Language).and_then(|name| Language::parse(&name)),
         }
     }
 
@@ -230,6 +237,10 @@ impl Preferences {
             PreferenceKey::ArchiveSuggestionWeeks => self.archive_suggestion_weeks.to_string(),
             PreferenceKey::MemoryLimitEnabled => flag(self.memory_limit_enabled),
             PreferenceKey::MemoryLimitGb => self.memory_limit_gb.to_string(),
+            PreferenceKey::Language => self
+                .language
+                .map(|language| language.tag().to_owned())
+                .unwrap_or_default(),
         };
         if let Err(error) = storage.set_setting(key.storage_key(), &value) {
             tracing::warn!(%error, key = key.storage_key(), "preference could not be stored");
@@ -243,6 +254,11 @@ impl Preferences {
             .iter()
             .position(|engine| engine.url == self.search_url)
             .unwrap_or(SEARCH_ENGINES.len())
+    }
+
+    /// The language to use, which follows the system unless the user picked one.
+    pub fn language(&self) -> Language {
+        self.language.unwrap_or_else(atoll_i18n::system_language)
     }
 
     pub fn has_start_page(&self) -> bool {
@@ -275,6 +291,7 @@ mod tests {
             archive_suggestion_weeks: 9,
             memory_limit_enabled: false,
             memory_limit_gb: 12,
+            language: Some(Language::English),
         };
         for key in [
             PreferenceKey::SearchUrl,
@@ -294,6 +311,7 @@ mod tests {
             PreferenceKey::ArchiveSuggestionWeeks,
             PreferenceKey::MemoryLimitEnabled,
             PreferenceKey::MemoryLimitGb,
+            PreferenceKey::Language,
         ] {
             preferences.store(&storage, key);
         }

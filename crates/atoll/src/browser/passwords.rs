@@ -10,6 +10,7 @@ use slint::{ComponentHandle, ModelRc, Timer, TimerMode, VecModel};
 use super::Browser;
 use crate::platform::tasks::run_in_background;
 use crate::ui::{OverlayState, PasswordItem, SettingsState};
+use atoll_i18n::t;
 
 /// How long the list of logins is reused before 1Password is asked again.
 const LOGIN_CACHE: Duration = Duration::from_secs(5 * 60);
@@ -76,7 +77,7 @@ impl Browser {
             .current_page_url()
             .filter(|url| url.starts_with("https://") || url.starts_with("http://"))
         else {
-            self.show_toast("1Password füllt nur Anmeldungen auf Webseiten aus");
+            self.show_toast(t!("1Password füllt nur Anmeldungen auf Webseiten aus"));
             return;
         };
         let Some(window) = self.window() else { return };
@@ -130,16 +131,16 @@ impl Browser {
             .iter()
             .filter_map(|url| display_host(url))
             .next()
-            .unwrap_or_else(|| "keine Adresse".to_owned());
+            .unwrap_or_else(|| t!("keine Adresse").to_owned());
         let host = display_host(&page_url).unwrap_or_default();
         let this = self.this();
         self.confirm(
-            "Login einer anderen Seite verwenden?",
-            &format!(
-                "„{}“ ist für {saved_for} gespeichert, nicht für {host}. Füge die Zugangsdaten nur ein, wenn du der Seite vertraust.",
+            t!("Login einer anderen Seite verwenden?"),
+            &t!(
+                "„{}“ ist für {} gespeichert, nicht für {}. Füge die Zugangsdaten nur ein, wenn du der Seite vertraust.", saved_for, host,
                 login.title
             ),
-            "Trotzdem einfügen",
+            t!("Trotzdem einfügen"),
             move || {
                 if let Some(browser) = this.upgrade() {
                     browser.fetch_credentials(login, true);
@@ -150,7 +151,7 @@ impl Browser {
 
     fn load_logins(&self) {
         self.set_password_status(
-            "1Password wird gefragt, eventuell musst du die App entsperren…",
+            t!("1Password wird gefragt, eventuell musst du die App entsperren…"),
             true,
         );
         let cli = self.vault.cli.clone();
@@ -217,9 +218,12 @@ impl Browser {
             let status = match (shown.is_empty(), popup.query.is_empty()) {
                 (false, _) => String::new(),
                 (true, true) => {
-                    format!("Für {host} ist kein Login gespeichert. Suche in allen Logins:")
+                    t!(
+                        "Für {} ist kein Login gespeichert. Suche in allen Logins:",
+                        host
+                    )
                 }
-                (true, false) => "Kein Login gefunden".to_owned(),
+                (true, false) => t!("Kein Login gefunden").to_owned(),
             };
             popup.shown = shown;
             (items, status)
@@ -231,7 +235,7 @@ impl Browser {
     }
 
     fn fetch_credentials(&self, login: Login, other_site: bool) {
-        self.set_password_status("Zugangsdaten werden geholt…", true);
+        self.set_password_status(t!("Zugangsdaten werden geholt…"), true);
         let cli = self.vault.cli.clone();
         let this = self.this();
         let id = login.id.clone();
@@ -263,7 +267,7 @@ impl Browser {
         let page_url = self.passwords.borrow().page_url.clone();
         if !self.passwords_visible() || self.current_page_url().as_deref() != Some(&page_url) {
             self.close_passwords();
-            self.show_toast("Die Seite hat sich geändert, es wurde nichts eingefügt");
+            self.show_toast(t!("Die Seite hat sich geändert, es wurde nichts eingefügt"));
             return;
         }
         let page_host = display_host(&page_url);
@@ -281,9 +285,9 @@ impl Browser {
         });
         self.close_passwords();
         let Some((view, frames)) = asked.filter(|(_, frames)| *frames > 0) else {
-            self.show_toast(
-                "Das Anmeldefeld gehört zu einer anderen Seite, es wurde nichts eingefügt",
-            );
+            self.show_toast(t!(
+                "Das Anmeldefeld gehört zu einer anderen Seite, es wurde nichts eingefügt"
+            ));
             return;
         };
         tracing::info!(frames, "filling a login from 1Password");
@@ -344,7 +348,7 @@ impl Browser {
         let Some(window) = self.window() else { return };
         window
             .global::<SettingsState>()
-            .set_onepassword_status("Die 1Password-CLI wird gesucht…".into());
+            .set_onepassword_status(t!("Die 1Password-CLI wird gesucht…").into());
         let cli = self.vault.cli.clone();
         let this = self.this();
         run_in_background(
@@ -398,7 +402,7 @@ fn mentions(login: &Login, query: &str) -> bool {
 fn login_detail(login: &Login) -> String {
     let site = login.urls.iter().find_map(|url| display_host(url));
     match (login.vault.is_empty(), site) {
-        (false, Some(site)) => format!("{} · {site}", login.vault),
+        (false, Some(site)) => t!("{} · {}", login.vault, site),
         (false, None) => login.vault.clone(),
         (true, Some(site)) => site,
         (true, None) => String::new(),
@@ -417,9 +421,9 @@ fn error_text(error: &OpError) -> String {
                                verbinden“."
                 .to_owned()
         }
-        OpError::Cancelled => "Entsperren abgebrochen".to_owned(),
+        OpError::Cancelled => t!("Entsperren abgebrochen").to_owned(),
         OpError::Failed(message) | OpError::Invalid(message) => {
-            format!("1Password meldet: {message}")
+            t!("1Password meldet: {}", message)
         }
     }
 }
@@ -427,20 +431,20 @@ fn error_text(error: &OpError) -> String {
 /// What the toast says after a fill, for example `Benutzername und Passwort eingefügt`.
 fn fill_message(filled: FilledFields, code_copied: bool) -> String {
     let names: Vec<&str> = [
-        (filled.username, "Benutzername"),
-        (filled.password, "Passwort"),
-        (filled.one_time_code, "Einmalcode"),
+        (filled.username, t!("Benutzername")),
+        (filled.password, t!("Passwort")),
+        (filled.one_time_code, t!("Einmalcode")),
     ]
     .into_iter()
     .filter_map(|(filled, name)| filled.then_some(name))
     .collect();
     let mut message = match names.as_slice() {
-        [] => "Keine Anmeldefelder gefunden".to_owned(),
-        [name] => format!("{name} eingefügt"),
-        [first @ .., last] => format!("{} und {last} eingefügt", first.join(", ")),
+        [] => t!("Keine Anmeldefelder gefunden").to_owned(),
+        [name] => t!("{} eingefügt", name),
+        [first @ .., last] => t!("{} und {} eingefügt", first.join(", "), last),
     };
     if code_copied && !filled.one_time_code {
-        message.push_str(", Einmalcode in der Zwischenablage");
+        message.push_str(t!(", Einmalcode in der Zwischenablage"));
     }
     message
 }

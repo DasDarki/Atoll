@@ -11,6 +11,7 @@ use slint::ComponentHandle;
 use super::Browser;
 use super::preferences::PreferenceKey;
 use crate::ui::{OverlayState, SettingsState};
+use atoll_i18n::t;
 
 thread_local! {
     static STATUS_LISTENER: RefCell<Option<Box<dyn Fn()>>> = const { RefCell::new(None) };
@@ -126,9 +127,9 @@ impl Browser {
         self.adblock.blocker.set_enabled(enabled);
         self.show_adblock_settings();
         self.show_toast(if enabled {
-            "Werbeblocker eingeschaltet, wirkt ab dem nächsten Laden einer Seite"
+            t!("Werbeblocker eingeschaltet, wirkt ab dem nächsten Laden einer Seite")
         } else {
-            "Werbeblocker ausgeschaltet"
+            t!("Werbeblocker ausgeschaltet")
         });
     }
 
@@ -143,7 +144,7 @@ impl Browser {
         let stored = self
             .storage
             .set_adblock_site_allowed(&site, allowed, Self::now());
-        self.report("Werbeblocker umschalten", stored);
+        self.report(t!("Werbeblocker umschalten"), stored);
         self.adblock.blocker.set_site_allowed(&site, allowed);
         self.reload(true);
         if self
@@ -153,9 +154,9 @@ impl Browser {
             self.show_site_info();
         }
         self.show_toast(&if allowed {
-            format!("Werbeblocker für {site} ausgeschaltet")
+            t!("Werbeblocker für {} ausgeschaltet", site)
         } else {
-            format!("Werbeblocker für {site} eingeschaltet")
+            t!("Werbeblocker für {} eingeschaltet", site)
         });
         self.for_all_windows(Browser::show_adblock_settings);
     }
@@ -171,7 +172,7 @@ impl Browser {
             let result = self
                 .storage
                 .set_adblock_site_allowed(site, false, Self::now());
-            self.report("Ausnahme entfernen", result);
+            self.report(t!("Ausnahme entfernen"), result);
             self.adblock.blocker.set_site_allowed(site, false);
         }
         self.for_all_windows(Browser::show_adblock_settings);
@@ -182,7 +183,7 @@ impl Browser {
         if let Some(updater) = self.adblock.updater.borrow().as_ref() {
             updater.update_now();
         }
-        self.show_toast("Filterlisten werden aktualisiert");
+        self.show_toast(t!("Filterlisten werden aktualisiert"));
     }
 
     /// Fills the ad blocker part of the settings page.
@@ -194,7 +195,7 @@ impl Browser {
         state.set_adblock_status(
             status
                 .map(|status| list_status_text(&status, SystemTime::now()))
-                .unwrap_or_else(|| "Filterlisten werden geladen…".to_owned())
+                .unwrap_or_else(|| t!("Filterlisten werden geladen…").to_owned())
                 .into(),
         );
         state.set_adblock_updating(status.is_some_and(|status| {
@@ -247,26 +248,26 @@ fn site_adblock(
         return SiteAdblock {
             active: false,
             switchable: false,
-            detail: "In den Einstellungen ausgeschaltet".to_owned(),
+            detail: t!("In den Einstellungen ausgeschaltet").to_owned(),
         };
     }
     if blocker.is_site_allowed(site) {
         return SiteAdblock {
             active: false,
             switchable: true,
-            detail: format!("Für {site} ausgeschaltet"),
+            detail: t!("Für {} ausgeschaltet", site),
         };
     }
     let detail = if !blocker.is_ready() {
         match status.map(|status| status.state) {
-            Some(ListState::Failed { list }) => format!("{list} konnte nicht geladen werden"),
-            _ => "Filterlisten werden geladen…".to_owned(),
+            Some(ListState::Failed { list }) => t!("{} konnte nicht geladen werden", list),
+            _ => t!("Filterlisten werden geladen…").to_owned(),
         }
     } else {
         match blocked {
-            0 => "Auf dieser Seite wurde nichts blockiert".to_owned(),
-            1 => "1 Anfrage blockiert".to_owned(),
-            count => format!("{count} Anfragen blockiert"),
+            0 => t!("Auf dieser Seite wurde nichts blockiert").to_owned(),
+            1 => t!("1 Anfrage blockiert").to_owned(),
+            count => t!("{} Anfragen blockiert", count),
         }
     };
     SiteAdblock {
@@ -283,15 +284,22 @@ fn list_status_text(status: &ListStatus, now: SystemTime) -> String {
         .map(|at| relative_age(now.duration_since(at).unwrap_or_default()));
     let names = list_names();
     match (status.state, age) {
-        (ListState::Loading, _) => "Filterlisten werden geladen…".to_owned(),
-        (ListState::Updating, _) => "Filterlisten werden aktualisiert…".to_owned(),
-        (ListState::Ready, Some(age)) => format!("{names}, aktualisiert {age}"),
+        (ListState::Loading, _) => t!("Filterlisten werden geladen…").to_owned(),
+        (ListState::Updating, _) => t!("Filterlisten werden aktualisiert…").to_owned(),
+        (ListState::Ready, Some(age)) => t!("{}, aktualisiert {}", names, age),
         (ListState::Ready, None) => names,
         (ListState::Failed { list }, Some(age)) => {
-            format!("{list} konnte nicht geladen werden. Es gelten die Listen von {age}.")
+            t!(
+                "{} konnte nicht geladen werden. Es gelten die Listen von {}.",
+                list,
+                age
+            )
         }
         (ListState::Failed { list }, None) => {
-            format!("{list} konnte nicht geladen werden. Neuer Versuch in einer Stunde.")
+            t!(
+                "{} konnte nicht geladen werden. Neuer Versuch in einer Stunde.",
+                list
+            )
         }
     }
 }
@@ -301,7 +309,7 @@ fn list_names() -> String {
     let names: Vec<&str> = FILTER_LISTS.iter().map(|list| list.name).collect();
     match names.split_last() {
         Some((last, [])) => (*last).to_owned(),
-        Some((last, rest)) => format!("{} und {last}", rest.join(", ")),
+        Some((last, rest)) => t!("{} und {}", rest.join(", "), last),
         None => String::new(),
     }
 }
@@ -310,12 +318,12 @@ fn relative_age(age: Duration) -> String {
     let minutes = age.as_secs() / 60;
     match minutes {
         0 => "gerade eben".to_owned(),
-        1 => "vor einer Minute".to_owned(),
-        2..60 => format!("vor {minutes} Minuten"),
-        60..120 => "vor einer Stunde".to_owned(),
-        120..1440 => format!("vor {} Stunden", minutes / 60),
+        1 => t!("vor einer Minute").to_owned(),
+        2..60 => t!("vor {} Minuten", minutes),
+        60..120 => t!("vor einer Stunde").to_owned(),
+        120..1440 => t!("vor {} Stunden", minutes / 60),
         1440..2880 => "gestern".to_owned(),
-        _ => format!("vor {} Tagen", minutes / 1440),
+        _ => t!("vor {} Tagen", minutes / 1440),
     }
 }
 

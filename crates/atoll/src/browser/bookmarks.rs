@@ -11,8 +11,7 @@ use slint::{ComponentHandle, ModelRc, SharedString, VecModel};
 use super::Browser;
 use crate::platform::dialogs::{self, FileDialogKind, FileDialogOptions, FileFilter};
 use crate::ui::{BookmarkItem, BrowserState, OverlayState};
-
-const BAR_NAME: &str = "Lesezeichenleiste";
+use atoll_i18n::t;
 
 /// What the bookmark editor currently edits.
 struct Editing {
@@ -101,7 +100,7 @@ impl Browser {
                 self.refresh_bookmarks();
                 self.edit_bookmark(bookmark.id);
             }
-            Err(error) => self.report("Lesezeichen speichern", Err::<(), _>(error)),
+            Err(error) => self.report(t!("Lesezeichen speichern"), Err::<(), _>(error)),
         }
     }
 
@@ -122,9 +121,9 @@ impl Browser {
         match result {
             Ok(_) => {
                 self.refresh_bookmarks();
-                self.show_toast("Als Lesezeichen gespeichert");
+                self.show_toast(t!("Als Lesezeichen gespeichert"));
             }
-            Err(error) => self.report("Lesezeichen speichern", Err::<(), _>(error)),
+            Err(error) => self.report(t!("Lesezeichen speichern"), Err::<(), _>(error)),
         }
     }
 
@@ -156,12 +155,12 @@ impl Browser {
         match result {
             Ok(()) => {
                 self.refresh_bookmarks();
-                self.show_toast(&format!(
+                self.show_toast(&t!(
                     "Ordner „{}“ in der Lesezeichenleiste angelegt",
                     entry.island.name
                 ));
             }
-            Err(error) => self.report("Lesezeichen speichern", Err::<(), _>(error)),
+            Err(error) => self.report(t!("Lesezeichen speichern"), Err::<(), _>(error)),
         }
     }
 
@@ -300,7 +299,7 @@ impl Browser {
         } else {
             HashSet::new()
         };
-        let mut names = vec![SharedString::from(BAR_NAME)];
+        let mut names = vec![SharedString::from(t!("Lesezeichenleiste"))];
         let mut choices = vec![None];
         self.collect_folders(None, 1, &excluded, &mut names, &mut choices);
         (names, choices)
@@ -362,7 +361,7 @@ impl Browser {
             return;
         };
         let result = self.storage.move_bookmark(dragged, parent, index);
-        self.report("Lesezeichen verschieben", result);
+        self.report(t!("Lesezeichen verschieben"), result);
         self.refresh_bookmarks();
     }
 
@@ -385,7 +384,7 @@ impl Browser {
             match atoll_transfer::validate_address(&url) {
                 Ok(url) => Some(url),
                 Err(reason) => {
-                    self.show_toast(&format!("Adresse nicht gespeichert: {reason}"));
+                    self.show_toast(&t!("Adresse nicht gespeichert: {}", reason));
                     None
                 }
             }
@@ -410,7 +409,7 @@ impl Browser {
             }
             Ok(())
         });
-        self.report("Lesezeichen speichern", result);
+        self.report(t!("Lesezeichen speichern"), result);
         self.refresh_bookmarks();
         self.focus_content();
     }
@@ -425,7 +424,7 @@ impl Browser {
                 .set_bookmark_editor_visible(false);
         }
         let result = self.storage.delete_bookmark(editing.id);
-        self.report("Lesezeichen entfernen", result);
+        self.report(t!("Lesezeichen entfernen"), result);
         self.refresh_bookmarks();
         self.focus_content();
     }
@@ -446,23 +445,24 @@ impl Browser {
         };
         if !bookmark.is_folder() {
             let result = self.storage.delete_bookmark(id);
-            self.report("Lesezeichen löschen", result);
+            self.report(t!("Lesezeichen löschen"), result);
             self.refresh_bookmarks();
             return;
         }
         let count = self.descendants(id).len() - 1;
         let this = self.this();
         self.confirm(
-            "Ordner löschen?",
-            &format!(
-                "„{}“ wird mit {count} enthaltenen Einträgen gelöscht.",
+            t!("Ordner löschen?"),
+            &t!(
+                "„{}“ wird mit {} enthaltenen Einträgen gelöscht.",
+                count,
                 bookmark.title
             ),
-            "Löschen",
+            t!("Löschen"),
             move || {
                 if let Some(browser) = this.upgrade() {
                     let result = browser.storage.delete_bookmark(id);
-                    browser.report("Ordner löschen", result);
+                    browser.report(t!("Ordner löschen"), result);
                     browser.refresh_bookmarks();
                 }
             },
@@ -479,7 +479,7 @@ impl Browser {
         };
         let target = (index as isize + offset).clamp(0, siblings.len() as isize - 1) as usize;
         let result = self.storage.move_bookmark(id, bookmark.parent_id, target);
-        self.report("Lesezeichen verschieben", result);
+        self.report(t!("Lesezeichen verschieben"), result);
         self.refresh_bookmarks();
     }
 
@@ -521,29 +521,35 @@ impl Browser {
         created: impl FnOnce(&Browser, BookmarkId) + 'static,
     ) {
         let message = match parent.and_then(|parent| self.bookmark(parent)) {
-            Some(folder) => format!("Der Ordner wird in „{}“ angelegt.", folder.title),
-            None => "Der Ordner erscheint in der Lesezeichenleiste.".to_owned(),
+            Some(folder) => t!("Der Ordner wird in „{}“ angelegt.", folder.title),
+            None => t!("Der Ordner erscheint in der Lesezeichenleiste.").to_owned(),
         };
         let this = self.this();
-        self.prompt_text("Neuer Ordner", &message, "", "Anlegen", move |name| {
-            let Some(browser) = this.upgrade() else {
-                return;
-            };
-            let result = browser.storage.create_bookmark(NewBookmark {
-                parent_id: parent,
-                title: &name,
-                url: None,
-                index: None,
-                created_at: Self::now(),
-            });
-            match result {
-                Ok(folder) => {
-                    browser.refresh_bookmarks();
-                    created(&browser, folder.id);
+        self.prompt_text(
+            t!("Neuer Ordner"),
+            &message,
+            "",
+            t!("Anlegen"),
+            move |name| {
+                let Some(browser) = this.upgrade() else {
+                    return;
+                };
+                let result = browser.storage.create_bookmark(NewBookmark {
+                    parent_id: parent,
+                    title: &name,
+                    url: None,
+                    index: None,
+                    created_at: Self::now(),
+                });
+                match result {
+                    Ok(folder) => {
+                        browser.refresh_bookmarks();
+                        created(&browser, folder.id);
+                    }
+                    Err(error) => browser.report(t!("Ordner anlegen"), Err::<(), _>(error)),
                 }
-                Err(error) => browser.report("Ordner anlegen", Err::<(), _>(error)),
-            }
-        });
+            },
+        );
     }
 
     pub fn import_bookmarks(&self) {
@@ -551,11 +557,11 @@ impl Browser {
         dialogs::show(
             FileDialogOptions {
                 kind: FileDialogKind::Open,
-                title: "Lesezeichen importieren".into(),
+                title: t!("Lesezeichen importieren").into(),
                 directory: None,
                 file_name: None,
                 filters: vec![FileFilter {
-                    name: "Lesezeichen (HTML)".into(),
+                    name: t!("Lesezeichen (HTML)").into(),
                     extensions: vec!["html".into(), "htm".into()],
                 }],
             },
@@ -569,7 +575,7 @@ impl Browser {
                 match std::fs::read(&path) {
                     Ok(bytes) => browser.import_bookmark_html(&String::from_utf8_lossy(&bytes)),
                     Err(error) => {
-                        browser.show_toast(&format!("Datei konnte nicht gelesen werden: {error}"))
+                        browser.show_toast(&t!("Datei konnte nicht gelesen werden: {}", error))
                     }
                 }
             },
@@ -579,7 +585,7 @@ impl Browser {
     fn import_bookmark_html(&self, html: &str) {
         let nodes = parse_bookmarks_html(html);
         if nodes.is_empty() {
-            self.show_toast("Die Datei enthält keine Lesezeichen");
+            self.show_toast(t!("Die Datei enthält keine Lesezeichen"));
             return;
         }
         let mut known: HashSet<String> = self
@@ -598,9 +604,9 @@ impl Browser {
         match result {
             Ok(imported) => {
                 self.refresh_bookmarks();
-                self.show_toast(&format!("{imported} Lesezeichen importiert"));
+                self.show_toast(&t!("{} Lesezeichen importiert", imported));
             }
-            Err(error) => self.report("Lesezeichen importieren", Err::<(), _>(error)),
+            Err(error) => self.report(t!("Lesezeichen importieren"), Err::<(), _>(error)),
         }
     }
 

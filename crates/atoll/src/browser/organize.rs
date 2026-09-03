@@ -4,6 +4,7 @@ use atoll_storage::prelude::*;
 
 use super::Browser;
 use super::session::Session;
+use atoll_i18n::t;
 
 impl Browser {
     /// Shows `workspace` in this window, or brings the window to the front that already shows it.
@@ -20,7 +21,7 @@ impl Browser {
         let session = match Session::load(&self.storage, workspace) {
             Ok(session) => session,
             Err(error) => {
-                self.report("Workspace wechseln", Err::<(), _>(error));
+                self.report(t!("Workspace wechseln"), Err::<(), _>(error));
                 return;
             }
         };
@@ -57,17 +58,17 @@ impl Browser {
     pub fn create_workspace(&self) {
         let this = self.this();
         self.prompt_text(
-            "Neuer Workspace",
-            "Wie soll der Workspace heißen?",
+            t!("Neuer Workspace"),
+            t!("Wie soll der Workspace heißen?"),
             "",
-            "Anlegen",
+            t!("Anlegen"),
             move |name| {
                 let Some(browser) = this.upgrade() else {
                     return;
                 };
                 match browser.storage.create_workspace(&name) {
                     Ok(workspace) => browser.select_workspace(workspace.id),
-                    Err(error) => browser.report("Workspace anlegen", Err::<(), _>(error)),
+                    Err(error) => browser.report(t!("Workspace anlegen"), Err::<(), _>(error)),
                 }
             },
         );
@@ -95,16 +96,16 @@ impl Browser {
             .unwrap_or_default();
         let this = self.this();
         self.prompt_text(
-            "Workspace umbenennen",
+            t!("Workspace umbenennen"),
             "",
             &current,
-            "Umbenennen",
+            t!("Umbenennen"),
             move |name| {
                 let Some(browser) = this.upgrade() else {
                     return;
                 };
                 let result = browser.storage.rename_workspace(workspace, &name);
-                browser.report("Umbenennen", result);
+                browser.report(t!("Umbenennen"), result);
                 browser.reload_session();
                 browser.refresh_sidebar();
             },
@@ -132,9 +133,13 @@ impl Browser {
         };
         let this = self.this();
         self.confirm(
-            "Workspace löschen?",
-            &format!("„{name}“ wird mit allen Inseln und {count} Tabs endgültig gelöscht."),
-            "Löschen",
+            t!("Workspace löschen?"),
+            &t!(
+                "„{}“ wird mit allen Inseln und {} Tabs endgültig gelöscht.",
+                name,
+                count
+            ),
+            t!("Löschen"),
             move || {
                 let Some(browser) = this.upgrade() else {
                     return;
@@ -160,7 +165,7 @@ impl Browser {
                 }
                 browser.forget_tabs(tabs);
                 if let Err(error) = browser.storage.delete_workspace(workspace) {
-                    browser.report("Workspace löschen", Err::<(), _>(error));
+                    browser.report(t!("Workspace löschen"), Err::<(), _>(error));
                     return;
                 }
                 if let (Some(manager), Some(other)) = (&manager, shown_elsewhere) {
@@ -214,7 +219,7 @@ impl Browser {
         let Some(index) = index else { return };
         let target = (index as isize + offset).max(0) as usize;
         let result = self.storage.move_workspace(workspace, target);
-        self.report("Workspace verschieben", result);
+        self.report(t!("Workspace verschieben"), result);
         self.reload_session();
         self.refresh_sidebar();
     }
@@ -222,10 +227,10 @@ impl Browser {
     pub fn create_island(&self) {
         let this = self.this();
         self.prompt_text(
-            "Neue Insel",
-            "Wie soll die Insel heißen?",
+            t!("Neue Insel"),
+            t!("Wie soll die Insel heißen?"),
             "",
-            "Anlegen",
+            t!("Anlegen"),
             move |name| {
                 let Some(browser) = this.upgrade() else {
                     return;
@@ -244,7 +249,7 @@ impl Browser {
                         browser.reload_session();
                         browser.new_tab_in_island(island.id);
                     }
-                    Err(error) => browser.report("Insel anlegen", Err::<(), _>(error)),
+                    Err(error) => browser.report(t!("Insel anlegen"), Err::<(), _>(error)),
                 }
             },
         );
@@ -260,7 +265,7 @@ impl Browser {
             return;
         };
         let result = self.storage.set_island_collapsed(island, collapsed);
-        self.report("Insel einklappen", result);
+        self.report(t!("Insel einklappen"), result);
         self.reload_session();
         self.refresh_sidebar();
     }
@@ -268,7 +273,7 @@ impl Browser {
     pub fn set_island_color(&self, island: IslandId, color: usize) {
         let color = IslandColor::from_index(color as i64);
         let result = self.storage.set_island_color(island, color);
-        self.report("Farbe ändern", result);
+        self.report(t!("Farbe ändern"), result);
         self.reload_session();
         self.refresh_sidebar();
     }
@@ -296,16 +301,16 @@ impl Browser {
             .unwrap_or_default();
         let this = self.this();
         self.prompt_text(
-            "Insel umbenennen",
+            t!("Insel umbenennen"),
             "",
             &current,
-            "Umbenennen",
+            t!("Umbenennen"),
             move |name| {
                 let Some(browser) = this.upgrade() else {
                     return;
                 };
                 let result = browser.storage.rename_island(island, &name);
-                browser.report("Umbenennen", result);
+                browser.report(t!("Umbenennen"), result);
                 browser.reload_session();
                 browser.refresh_sidebar();
             },
@@ -334,7 +339,7 @@ impl Browser {
         let Some(index) = index else { return };
         let target = (index as isize + offset).max(0) as usize;
         let result = self.storage.move_island(island, workspace, target);
-        self.report("Insel verschieben", result);
+        self.report(t!("Insel verschieben"), result);
         self.reload_session();
         self.refresh_sidebar();
     }
@@ -342,14 +347,14 @@ impl Browser {
     pub fn move_island_to_workspace(&self, island: IslandId, workspace: WorkspaceId) {
         self.leave_island_if_active(island);
         let result = self.storage.move_island(island, workspace, usize::MAX);
-        self.report("Insel verschieben", result);
+        self.report(t!("Insel verschieben"), result);
         self.reload_session();
         self.refresh_after_structure_change();
     }
 
     fn archive_island(&self, island: IslandId) {
         self.archive_island_quietly(island);
-        self.show_toast("Insel archiviert. Wiederherstellen über das Archiv.");
+        self.show_toast(t!("Insel archiviert. Wiederherstellen über das Archiv."));
     }
 
     /// Archives `island` of this window's workspace.
@@ -357,7 +362,7 @@ impl Browser {
         self.leave_island_if_active(island);
         self.forget_tabs(self.tabs_of_island(island));
         let result = self.storage.archive_island(island, Self::now());
-        self.report("Archivieren", result);
+        self.report(t!("Archivieren"), result);
         self.reload_session();
         self.refresh_after_structure_change();
     }
@@ -371,9 +376,9 @@ impl Browser {
             .unwrap_or_default();
         let this = self.this();
         self.confirm(
-            "Insel löschen?",
-            &format!("„{name}“ wird mit {count} Tabs endgültig gelöscht."),
-            "Löschen",
+            t!("Insel löschen?"),
+            &t!("„{}“ wird mit {} Tabs endgültig gelöscht.", name, count),
+            t!("Löschen"),
             move || {
                 let Some(browser) = this.upgrade() else {
                     return;
@@ -381,7 +386,7 @@ impl Browser {
                 browser.leave_island_if_active(island);
                 browser.forget_tabs(browser.tabs_of_island(island));
                 let result = browser.storage.delete_island(island);
-                browser.report("Insel löschen", result);
+                browser.report(t!("Insel löschen"), result);
                 browser.reload_session();
                 browser.refresh_after_structure_change();
             },
