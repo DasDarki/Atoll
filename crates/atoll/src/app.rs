@@ -15,6 +15,10 @@ use atoll_i18n::t;
 
 const DEFAULT_FRAME_RATE: u32 = 60;
 
+/// The name desktops know Atoll by. Its desktop entry and icon carry the same name, which is how
+/// the task bar finds the icon of a window.
+pub const APP_ID: &str = "dev.dasdarki.Atoll";
+
 /// Tells the user interface which of the bundled translations to show. It only works once a
 /// window exists, and German needs none because it is the language of the source.
 pub fn select_interface_language(language: atoll_i18n::Language) {
@@ -50,6 +54,9 @@ pub fn run() -> Result<()> {
         })
         .select()
         .context(t!("die Oberfläche kann nicht initialisiert werden"))?;
+    if let Err(error) = slint::set_xdg_app_id(APP_ID) {
+        tracing::warn!(%error, "the application id could not be set");
+    }
 
     let manager = WindowManager::new(storage, gpu, paths);
     let first = manager.restore_windows()?;
