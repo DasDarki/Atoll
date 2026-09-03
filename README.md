@@ -125,6 +125,19 @@ cargo run --release -p atoll
 The first build downloads the matching CEF distribution (about 1.8 GB extracted) into `.cef/`.
 The build copies the CEF runtime files next to the binary in `target/<profile>/`.
 
+### Installing on Arch and CachyOS
+
+```sh
+./install.sh            # build a release, package it for pacman and install it
+./install.sh --package  # only build the package under target/package/
+./install.sh --help     # every option, including --run and --uninstall
+```
+
+The package puts Atoll with its CEF runtime into `/opt/Atoll`, a starter into `/usr/bin/atoll`, and a
+desktop entry with icons named `dev.dasdarki.Atoll`, the application id the window carries, so the
+task bar shows the icon. The CEF files come straight from `.cef/`, which holds the build with
+H.264 and AAC when `scripts/build-cef.sh` was used. Removing it leaves `~/.local/share/atoll` alone.
+
 ### CEF with H.264 and AAC
 
 The prebuilt CEF cannot play H.264 and AAC, which many video sites use. `scripts/build-cef.sh`
