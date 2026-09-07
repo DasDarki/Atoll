@@ -236,3 +236,64 @@ fn migration_backfills_history_from_tab_history() {
     drop(storage);
     std::fs::remove_dir_all(directory).unwrap();
 }
+
+#[test]
+fn the_history_is_read_in_pages_and_single_pages_can_be_forgotten() {
+    let storage = storage();
+    let workspace = storage.create_workspace("Arbeit").unwrap();
+    let island = storage
+        .create_island(NewIsland {
+            workspace_id: workspace.id,
+            name: "A",
+            color: IslandColor::Blue,
+            index: None,
+            created_at: Timestamp(0),
+        })
+        .unwrap();
+    let tab = storage
+        .create_tab(NewTab {
+            island_id: island.id,
+            url: "https://a.example/",
+            title: None,
+            index: None,
+            created_at: Timestamp(1),
+        })
+        .unwrap();
+    for number in 1..=5 {
+        let url = format!("https://page{number}.example/");
+        storage
+            .record_visit(tab.id, &url, Some("Seite"), Timestamp(number))
+            .unwrap();
+    }
+
+    let first = storage.history_before(None, 2).unwrap();
+    assert_eq!(first.len(), 2);
+    assert_eq!(first[0].url, "https://page5.example/");
+    let second = storage
+        .history_before(Some(first[1].last_visited_at), 2)
+        .unwrap();
+    assert_eq!(second[0].url, "https://page3.example/");
+    assert_eq!(
+        second[1].url, "https://page2.example/",
+        "the page after the last one continues where it stopped"
+    );
+
+    let found = storage
+        .history_before_containing("page4", None, 10)
+        .unwrap();
+    assert_eq!(found.len(), 1);
+    assert_eq!(found[0].url, "https://page4.example/");
+
+    storage.forget_page("https://page4.example/").unwrap();
+    assert!(
+        storage
+            .history_before_containing("page4", None, 10)
+            .unwrap()
+            .is_empty()
+    );
+    assert_eq!(
+        storage.tab_history(tab.id, 10).unwrap().len(),
+        4,
+        "the log of the tab forgets it too"
+    );
+}

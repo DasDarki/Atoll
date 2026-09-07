@@ -501,6 +501,7 @@ dependencies = [
  "atoll-video",
  "directories",
  "image",
+ "libc",
  "rfd",
  "serde_json",
  "slint",

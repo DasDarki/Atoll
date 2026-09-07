@@ -309,7 +309,10 @@ impl Browser {
             move || {
                 if let Some(browser) = this.upgrade() {
                     match browser.storage.clear_history() {
-                        Ok(()) => browser.show_toast(t!("Verlauf gelöscht")),
+                        Ok(()) => {
+                            browser.forget_shown_history();
+                            browser.show_toast(t!("Verlauf gelöscht"));
+                        }
                         Err(error) => browser.report(t!("Verlauf löschen"), Err::<(), _>(error)),
                     }
                 }

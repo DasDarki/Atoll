@@ -33,6 +33,7 @@ pub enum Shortcut {
     Settings,
     Home,
     Downloads,
+    History,
     Passwords,
     DownloadVideo,
 }
@@ -62,6 +63,7 @@ impl Shortcut {
                 | Shortcut::Settings
                 | Shortcut::Home
                 | Shortcut::Downloads
+                | Shortcut::History
         )
     }
 
@@ -147,6 +149,7 @@ pub fn detect(event: &KeyEvent, modifiers: ModifiersState) -> Option<Shortcut> {
             ("p", true) => Shortcut::Commands,
             (",", false) => Shortcut::Settings,
             ("j", false) => Shortcut::Downloads,
+            ("h", false) => Shortcut::History,
             ("l", true) => Shortcut::Passwords,
             ("s", true) => Shortcut::DownloadVideo,
             ("+" | "=", _) => Shortcut::ZoomIn,

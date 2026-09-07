@@ -40,6 +40,7 @@ enum Command {
     ManageBookmarks,
     NewBookmarkFolder,
     OpenDownloads,
+    OpenHistory,
     OpenDownloadFolder,
     ImportList,
     ExportList,
@@ -490,6 +491,12 @@ impl Browser {
                 t!("bookmarks ordner folder"),
             ),
             (
+                Command::OpenHistory,
+                t!("Verlauf").to_owned(),
+                t!("Strg+H"),
+                t!("history verlauf besuchte seiten"),
+            ),
+            (
                 Command::OpenDownloads,
                 t!("Downloads").to_owned(),
                 t!("Strg+J"),
@@ -771,6 +778,7 @@ impl Browser {
             Command::ManageBookmarks => self.open_bookmark_manager(),
             Command::NewBookmarkFolder => self.new_bookmark_folder(),
             Command::OpenDownloads => self.open_downloads(),
+            Command::OpenHistory => self.open_history(),
             Command::OpenDownloadFolder => self.open_download_folder(),
             Command::ImportList => self.open_import(),
             Command::ExportList => self.open_export(None),

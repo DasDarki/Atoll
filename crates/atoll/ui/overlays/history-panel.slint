@@ -1,0 +1,154 @@
+import { ListView } from "std-widgets.slint";
+import { Theme } from "../theme.slint";
+import { OverlayState } from "../state.slint";
+import { HistoryItem } from "../structs.slint";
+import { Modal } from "modal.slint";
+import { ActionButton, ButtonKind } from "../widgets/button.slint";
+import { IconButton } from "../widgets/icon-button.slint";
+import { TextField } from "../widgets/text-field.slint";
+import { FieldLabel } from "../widgets/field-label.slint";
+
+component HistoryRow inherits Rectangle {
+    in property <HistoryItem> item;
+    in property <int> index;
+
+    height: 52px;
+    border-radius: Theme.radius-small;
+    background: touch.has-hover ? Theme.hover : transparent;
+
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        pointer-event(event) => {
+            if (event.kind == PointerEventKind.down && event.button == PointerEventButton.middle) {
+                OverlayState.history-open(root.index, true);
+            }
+        }
+        clicked => { OverlayState.history-open(root.index, false); }
+    }
+
+    HorizontalLayout {
+        padding-left: 12px;
+        padding-right: 8px;
+        spacing: 10px;
+
+        if root.item.has-icon : Image {
+            width: 16px;
+            height: 16px;
+            y: (parent.height - self.height) / 2;
+            source: root.item.icon;
+            image-fit: contain;
+        }
+        if !root.item.has-icon : Image {
+            width: 16px;
+            height: 16px;
+            y: (parent.height - self.height) / 2;
+            source: @image-url("../icons/globe.svg");
+            colorize: Theme.text-faint;
+        }
+
+        VerticalLayout {
+            alignment: center;
+            spacing: 2px;
+            horizontal-stretch: 1;
+            Text {
+                text: root.item.title;
+                color: Theme.text;
+                font-size: Theme.font-normal;
+                overflow: elide;
+            }
+            Text {
+                text: root.item.detail;
+                color: Theme.text-faint;
+                font-size: Theme.font-small;
+                overflow: elide;
+            }
+        }
+
+        Text {
+            text: root.item.time;
+            color: Theme.text-faint;
+            font-size: Theme.font-small;
+            vertical-alignment: center;
+        }
+
+        IconButton {
+            width: 26px;
+            height: 26px;
+            y: (parent.height - self.height) / 2;
+            icon-size: 13px;
+            icon: @image-url("../icons/trash.svg");
+            clicked => { OverlayState.history-forget(root.index); }
+        }
+    }
+}
+
+export component HistoryPanel inherits Modal {
+    title: @tr("Verlauf");
+    card-width: 660px;
+    dismissed => { OverlayState.history-close(); }
+
+    TextField {
+        placeholder: @tr("Im Verlauf suchen");
+        text <=> OverlayState.history-query;
+        edited(text) => { OverlayState.history-search(text); }
+        escape => { OverlayState.history-close(); }
+    }
+
+    if OverlayState.history-items.length == 0 : Text {
+        text: OverlayState.history-query == ""
+            ? @tr("Noch nichts besucht.")
+            : @tr("Nichts gefunden.");
+        color: Theme.text-faint;
+        font-size: Theme.font-normal;
+    }
+
+    if OverlayState.history-items.length > 0 : Rectangle {
+        height: min(420px, OverlayState.history-items.length * 52px + 60px);
+        border-radius: Theme.radius;
+        background: Theme.background;
+        border-width: 1px;
+        border-color: Theme.border;
+
+        ListView {
+            for item[index] in OverlayState.history-items : VerticalLayout {
+                if item.day != "" : Rectangle {
+                    height: 30px;
+                    HorizontalLayout {
+                        padding-left: 12px;
+                        padding-top: 8px;
+                        FieldLabel { text: item.day; }
+                    }
+                }
+                HistoryRow {
+                    item: item;
+                    index: index;
+                }
+            }
+        }
+    }
+
+    HorizontalLayout {
+        spacing: 8px;
+        alignment: space-between;
+
+        Text {
+            text: OverlayState.history-summary;
+            color: Theme.text-faint;
+            font-size: Theme.font-small + 1px;
+            vertical-alignment: center;
+        }
+
+        HorizontalLayout {
+            spacing: 8px;
+            if OverlayState.history-more : ActionButton {
+                text: @tr("Mehr laden");
+                clicked => { OverlayState.history-load-more(); }
+            }
+            ActionButton {
+                text: @tr("Verlauf löschen");
+                kind: ButtonKind.danger;
+                clicked => { OverlayState.history-clear(); }
+            }
+        }
+    }
+}

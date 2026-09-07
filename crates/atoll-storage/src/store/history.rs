@@ -83,6 +83,57 @@ pub trait HistoryStore: Connected {
         Ok(pages)
     }
 
+    /// A page of the history, newest first. `before` continues after the oldest entry of the
+    /// page that came before it.
+    fn history_before(
+        &self,
+        before: Option<Timestamp>,
+        limit: usize,
+    ) -> StorageResult<Vec<VisitedPage>> {
+        let until = before.map_or(i64::MAX, |at| at.0);
+        let mut statement = self.connection().prepare_cached(
+            "SELECT url, title, visit_count, last_visited_at FROM history
+             WHERE last_visited_at < ?1
+             ORDER BY last_visited_at DESC LIMIT ?2",
+        )?;
+        let pages = statement
+            .query_map(params![until, limit as i64], visited_page)?
+            .collect::<Result<_, _>>()?;
+        Ok(pages)
+    }
+
+    /// Like [`HistoryStore::history_before`], but only pages whose address or title contain
+    /// `text`. The order stays by time, so the days of the history keep their shape.
+    fn history_before_containing(
+        &self,
+        text: &str,
+        before: Option<Timestamp>,
+        limit: usize,
+    ) -> StorageResult<Vec<VisitedPage>> {
+        let pattern = format!("%{}%", escape_like(text));
+        let until = before.map_or(i64::MAX, |at| at.0);
+        let mut statement = self.connection().prepare_cached(
+            "SELECT url, title, visit_count, last_visited_at FROM history
+             WHERE last_visited_at < ?2 AND (url LIKE ?1 ESCAPE '\\' OR title LIKE ?1 ESCAPE '\\')
+             ORDER BY last_visited_at DESC LIMIT ?3",
+        )?;
+        let pages = statement
+            .query_map(params![pattern, until, limit as i64], visited_page)?
+            .collect::<Result<_, _>>()?;
+        Ok(pages)
+    }
+
+    /// Forgets one page, in the history and in the logs of every tab.
+    fn forget_page(&self, url: &str) -> StorageResult<()> {
+        self.connection()
+            .prepare_cached("DELETE FROM history WHERE url = ?1")?
+            .execute([url])?;
+        self.connection()
+            .prepare_cached("DELETE FROM tab_history WHERE url = ?1")?
+            .execute([url])?;
+        Ok(())
+    }
+
     /// Pages whose address or title contains `text`, most visited first.
     fn visited_pages_containing(
         &self,

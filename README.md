@@ -99,6 +99,9 @@ saved tabs therefore cost nothing at startup.
   crate `atoll-i18n` compiles it into a catalog for the strings Atoll puts together in Rust.
   `scripts/translations.py report` says what is missing, `update` adds new strings to the files,
   and a test fails when a string has no translation.
+- **History** (`Ctrl+H`): the visited pages by day, with a search of its own, a way to forget a
+  single page and one to throw the whole history away. The address bar and the palette search the
+  same pages, the view is the place that shows all of them.
 - **Site information**: the symbol in the address bar shows whether the connection is secure,
   the certificate and the zoom level, and deletes cookies and stored data of the site.
 - **Developer tools** docked below or next to the page, see *Architecture*.

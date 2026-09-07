@@ -9,6 +9,7 @@ mod downloads;
 mod events;
 mod favicons;
 mod filter;
+mod history;
 mod layout;
 mod lifecycle;
 mod memory;
@@ -56,6 +57,7 @@ use clipboard::ClipboardSync;
 use dev_tools::DevToolsPresentation;
 use downloads::{Downloads, VideoSearch};
 use favicons::FaviconCache;
+use history::HistoryView;
 use memory::MemoryWatcher;
 use overlays::DialogQueue;
 use page::PageState;
@@ -151,6 +153,7 @@ pub struct Browser {
     dev_tools_presentation: RefCell<DevToolsPresentation>,
     input_target: Cell<InputTarget>,
     favicons: Rc<RefCell<FaviconCache>>,
+    history: RefCell<HistoryView>,
     page: RefCell<PageState>,
     dialogs: RefCell<DialogQueue>,
     context_menu: Cell<Option<(ViewId, RequestId)>>,
@@ -212,6 +215,7 @@ impl Browser {
             dev_tools_presentation: RefCell::default(),
             input_target: Cell::default(),
             favicons: shared.favicons.clone(),
+            history: RefCell::default(),
             page: RefCell::default(),
             dialogs: RefCell::default(),
             context_menu: Cell::new(None),

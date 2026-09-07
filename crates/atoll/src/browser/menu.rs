@@ -27,6 +27,7 @@ impl Browser {
             "sidebar" => self.toggle_sidebar(),
             "settings" => self.open_settings(),
             "downloads" => self.open_downloads(),
+            "history" => self.open_history(),
             "new-bookmark-folder" => self.new_bookmark_folder(),
             other => tracing::warn!(action = other, "unknown menu action"),
         }

@@ -308,6 +308,22 @@ fn connect_overlays(window: &AppWindow, browser: &Rc<Browser>) {
         .archive_suggested_island(island(id)));
     on!(state, on_archive_all_suggested, browser, |target| target
         .archive_all_suggested());
+    on!(state, on_history_search, browser, |target, query| target
+        .history_search(&query));
+    on!(
+        state,
+        on_history_open,
+        browser,
+        |target, index, background| target.history_open(index, background)
+    );
+    on!(state, on_history_forget, browser, |target, index| target
+        .history_forget(index));
+    on!(state, on_history_load_more, browser, |target| target
+        .history_load_more());
+    on!(state, on_history_clear, browser, |target| target
+        .clear_history());
+    on!(state, on_history_close, browser, |target| target
+        .close_history());
     on!(state, on_archive_close, browser, |target| target
         .close_archive());
     on!(state, on_import_text_edited, browser, |target, text| target

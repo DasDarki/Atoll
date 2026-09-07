@@ -1,4 +1,5 @@
 pub mod clipboard;
+pub mod clock;
 pub mod dialogs;
 pub mod logging;
 pub mod memory;

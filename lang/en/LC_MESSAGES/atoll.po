@@ -403,6 +403,9 @@ msgstr "The page was not loaded over a checked, encrypted connection."
 msgid "Die Zwischenablage enthält keinen Text"
 msgstr "The clipboard holds no text"
 
+msgid "Dienstag"
+msgstr "Tuesday"
+
 msgid "Diese Datei liegt auf deinem Computer."
 msgstr "This file is on your computer."
 
@@ -423,6 +426,9 @@ msgstr "This folder is empty."
 
 msgid "Dieses Video ist kopiergeschützt und lässt sich nicht speichern"
 msgstr "This video is copy-protected and cannot be saved"
+
+msgid "Donnerstag"
+msgstr "Thursday"
 
 msgid "Download abgeschlossen: {}"
 msgstr "Download finished: {}"
@@ -486,6 +492,9 @@ msgstr "One-time code"
 
 msgid "Einstellungen"
 msgstr "Settings"
+
+msgid "Eintrag konnte nicht entfernt werden: {}"
+msgstr "The entry could not be removed: {}"
 
 msgid "Enter lädt es hoch."
 msgstr "Enter uploads it."
@@ -580,6 +589,9 @@ msgstr "Updating the filter lists…"
 msgid "Filterlisten werden geladen…"
 msgstr "Loading the filter lists…"
 
+msgid "Freitag"
+msgstr "Friday"
+
 msgid "Füge eine URL-Liste ein oder wähle eine Datei."
 msgstr "Paste a URL list or choose a file."
 
@@ -601,6 +613,9 @@ msgstr "Happens automatically every four days."
 msgid "Geschlossenen Tab wiederherstellen"
 msgstr "Reopen closed tab"
 
+msgid "Gestern"
+msgstr "Yesterday"
+
 msgid "Geöffnete Seiten belegen gerade {}."
 msgstr "Open pages are using {} right now."
 
@@ -616,8 +631,14 @@ msgstr "Green"
 msgid "Gültig bis"
 msgstr "Valid until"
 
+msgid "Heute"
+msgstr "Today"
+
 msgid "INSEL FÜR ADRESSEN OHNE MARKIERUNG"
 msgstr "ISLAND FOR ADDRESSES WITHOUT A MARKER"
+
+msgid "Im Verlauf suchen"
+msgstr "Search the history"
 
 msgid "Import"
 msgstr "Import"
@@ -811,11 +832,20 @@ msgstr "Running, {} commands"
 msgid "Löschen"
 msgstr "Delete"
 
+msgid "Mehr laden"
+msgstr "Load more"
+
 msgid "Meldet dich auf allen Websites ab."
 msgstr "Signs you out on every website."
 
 msgid "Mit 1Password anmelden"
 msgstr "Sign in with 1Password"
+
+msgid "Mittwoch"
+msgstr "Wednesday"
+
+msgid "Montag"
+msgstr "Monday"
 
 msgid "NAME"
 msgstr "NAME"
@@ -889,6 +919,9 @@ msgstr "Unpin"
 msgid "Nichts gefunden"
 msgstr "Nothing found"
 
+msgid "Nichts gefunden."
+msgstr "Nothing found."
+
 msgid "Noch keine Downloads."
 msgstr "No downloads yet."
 
@@ -897,6 +930,9 @@ msgstr "No bookmarks yet. Save pages with Ctrl+D or import the HTML export from 
 
 msgid "Noch nicht zugelassen"
 msgstr "Not allowed yet"
+
+msgid "Noch nichts besucht."
+msgstr "Nothing visited yet."
 
 msgid "OK"
 msgstr "OK"
@@ -970,6 +1006,9 @@ msgstr "START PAGE"
 msgid "SUCHMASCHINE"
 msgstr "SEARCH ENGINE"
 
+msgid "Samstag"
+msgstr "Saturday"
+
 msgid "Schema \"{}\" wird nicht unterstützt"
 msgstr "scheme \"{}\" is not supported"
 
@@ -1011,6 +1050,9 @@ msgstr "Show sidebar"
 
 msgid "So viele zuletzt genutzte Tabs bleiben geladen und erscheinen sofort. Alle anderen schlafen und kosten keinen Arbeitsspeicher."
 msgstr "This many recently used tabs stay loaded and appear at once. Every other tab sleeps and costs no memory."
+
+msgid "Sonntag"
+msgstr "Sunday"
 
 msgid "Sonst erscheint nur eine kurze Meldung. Die Übersicht öffnet Strg+J."
 msgstr "Otherwise only a short message appears. Ctrl+J opens the list."
@@ -1068,6 +1110,9 @@ msgstr "Ctrl+F"
 
 msgid "Strg+F5"
 msgstr "Ctrl+F5"
+
+msgid "Strg+H"
+msgstr "Ctrl+H"
 
 msgid "Strg+J"
 msgstr "Ctrl+J"
@@ -1432,6 +1477,9 @@ msgstr "no page is open right now"
 msgid "herunterladen dateien"
 msgstr "download files"
 
+msgid "history verlauf besuchte seiten"
+msgstr "history visited pages"
+
 msgid "inseln"
 msgstr "islands"
 
@@ -1527,6 +1575,9 @@ msgstr "{} islands archived"
 msgid "{} Lesezeichen importiert"
 msgstr "{} bookmarks imported"
 
+msgid "{} Seiten"
+msgstr "{} pages"
+
 msgid "{} eingefügt"
 msgstr "{} filled in"
 
@@ -1577,6 +1628,9 @@ msgstr "{} × {} pixels, uploaded as PNG"
 
 msgid "{}, aktualisiert {}"
 msgstr "{}, updated {}"
+
+msgid "{}, {}"
+msgstr "{}, {}"
 
 msgid "Ändern…"
 msgstr "Change…"
