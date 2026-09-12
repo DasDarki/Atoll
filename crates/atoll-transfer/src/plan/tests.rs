@@ -120,3 +120,57 @@ fn custom_fallback_island_name_is_used() {
     let plan = plan_import(&list, &ImportTarget::default(), &options);
     assert_eq!(plan.islands[0].name, "Aus Opera");
 }
+
+#[test]
+fn counted_islands_are_named_one_two_three() {
+    let list = parse(
+        "--- Arbeit ---\nhttps://a.example/\n--- Freizeit ---\nhttps://b.example/\nhttps://c.example/",
+    );
+    let target = ImportTarget {
+        islands: Vec::new(),
+        tabs: Vec::new(),
+    };
+    let plan = plan_import(
+        &list,
+        &target,
+        &ImportOptions {
+            naming: IslandNaming::Numbered,
+            ..ImportOptions::default()
+        },
+    );
+    let names: Vec<&str> = plan
+        .islands
+        .iter()
+        .map(|island| island.name.as_str())
+        .collect();
+    assert_eq!(
+        names,
+        vec!["1", "2"],
+        "the markers of the list are replaced"
+    );
+    assert_eq!(plan.islands[1].entries.len(), 2);
+}
+
+#[test]
+fn counting_also_names_the_island_of_the_addresses_without_a_marker() {
+    let list = parse("https://a.example/\n--- Arbeit ---\nhttps://b.example/");
+    let target = ImportTarget {
+        islands: Vec::new(),
+        tabs: Vec::new(),
+    };
+    let plan = plan_import(
+        &list,
+        &target,
+        &ImportOptions {
+            naming: IslandNaming::Numbered,
+            fallback_island: "Importiert".to_owned(),
+            ..ImportOptions::default()
+        },
+    );
+    let names: Vec<&str> = plan
+        .islands
+        .iter()
+        .map(|island| island.name.as_str())
+        .collect();
+    assert_eq!(names, vec!["1", "2"]);
+}

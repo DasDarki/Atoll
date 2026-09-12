@@ -27,10 +27,21 @@ pub enum IslandNamePolicy {
     CreateNew,
 }
 
+/// Where the names of the islands come from.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum IslandNaming {
+    /// The markers of the list, and the fallback island for everything before the first one.
+    #[default]
+    FromList,
+    /// Counted up, starting at one, in the order the islands appear in the list.
+    Numbered,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ImportOptions {
     pub duplicates: DuplicatePolicy,
     pub island_names: IslandNamePolicy,
+    pub naming: IslandNaming,
     /// The island for addresses that appear before the first marker.
     pub fallback_island: String,
 }
@@ -40,6 +51,7 @@ impl Default for ImportOptions {
         Self {
             duplicates: DuplicatePolicy::default(),
             island_names: IslandNamePolicy::default(),
+            naming: IslandNaming::default(),
             fallback_island: String::from("Importiert"),
         }
     }
@@ -153,11 +165,14 @@ pub fn plan_import(
         .collect();
     let mut planned_by_name: HashMap<String, usize> = HashMap::new();
 
-    for group in &list.groups {
-        let name = group
-            .name
-            .clone()
-            .unwrap_or_else(|| options.fallback_island.clone());
+    for (number, group) in list.groups.iter().enumerate() {
+        let name = match options.naming {
+            IslandNaming::Numbered => (number + 1).to_string(),
+            IslandNaming::FromList => group
+                .name
+                .clone()
+                .unwrap_or_else(|| options.fallback_island.clone()),
+        };
         let index = island_index(&mut plan, &mut planned_by_name, target, options, &name);
 
         for url in &group.urls {

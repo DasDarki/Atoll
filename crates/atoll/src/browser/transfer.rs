@@ -5,8 +5,8 @@ use atoll_storage::NewIsland;
 use atoll_storage::prelude::*;
 use atoll_transfer::{
     DuplicatePolicy, ExistingIsland, ExistingTab, ExportGroup, ExportOptions, ImportOptions,
-    ImportPlan, ImportTarget, IslandDestination, IslandNamePolicy, PlannedEntry, SkipReason,
-    export, parse, plan_import,
+    ImportPlan, ImportTarget, IslandDestination, IslandNamePolicy, IslandNaming, PlannedEntry,
+    SkipReason, export, parse, plan_import,
 };
 use slint::{ComponentHandle, Model, ModelRc, SharedString, VecModel};
 
@@ -40,6 +40,7 @@ impl Browser {
         state.set_import_workspace_name(t!("Import").into());
         state.set_import_duplicates(1);
         state.set_import_islands(0);
+        state.set_import_naming(0);
         state.set_import_fallback(t!("Importiert").into());
         state.set_import_visible(true);
         self.import_text_edited(text);
@@ -203,6 +204,11 @@ impl Browser {
                 IslandNamePolicy::CreateNew
             } else {
                 IslandNamePolicy::Merge
+            },
+            naming: if state.get_import_naming() == 1 {
+                IslandNaming::Numbered
+            } else {
+                IslandNaming::FromList
             },
             fallback_island: if fallback.is_empty() {
                 t!("Importiert").to_owned()

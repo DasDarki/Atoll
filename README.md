@@ -219,6 +219,8 @@ https://example.org/without-island
 - Invalid lines are listed after the import instead of being dropped silently.
 - Imported tabs start sleeping. Duplicates can be kept, skipped or merged (the existing tab moves
   into the imported island). Islands with the same name can be merged or created anew.
+- Islands take their names from the markers, or are simply counted up from one, which also names
+  the islands an import from Opera brings along.
 
 Export works per island, per workspace, for all workspaces or for a selection, with or without
 island markers, optionally including archived islands, to the clipboard or a `.txt` file.

@@ -232,6 +232,9 @@ msgstr "Paste from clipboard"
 msgid "Aus dem Erweiterungsordner"
 msgstr "From the extension folder"
 
+msgid "Aus der Liste"
+msgstr "From the list"
+
 msgid "Aus einem Archiv installiert"
 msgstr "Installed from an archive"
 
@@ -481,6 +484,9 @@ msgstr "You will be signed out on every website."
 msgid "Duplizieren"
 msgstr "Duplicate"
 
+msgid "Durchnummerieren"
+msgstr "Count up"
+
 msgid "ERWEITERUNGEN"
 msgstr "EXTENSIONS"
 
@@ -645,6 +651,9 @@ msgstr "Today"
 
 msgid "INSEL FÜR ADRESSEN OHNE MARKIERUNG"
 msgstr "ISLAND FOR ADDRESSES WITHOUT A MARKER"
+
+msgid "INSELNAMEN"
+msgstr "ISLAND NAMES"
 
 msgid "Im Verlauf suchen"
 msgstr "Search the history"

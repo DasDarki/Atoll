@@ -78,6 +78,16 @@ export component ImportDialog inherits Modal {
 
     VerticalLayout {
         spacing: 6px;
+        FieldLabel { text: @tr("INSELNAMEN"); }
+        Segmented {
+            options: [@tr("Aus der Liste"), @tr("Durchnummerieren")];
+            selected <=> OverlayState.import-naming;
+            changed-by-user => { OverlayState.import-text-edited(OverlayState.import-text); }
+        }
+    }
+
+    if OverlayState.import-naming == 0 : VerticalLayout {
+        spacing: 6px;
         FieldLabel { text: @tr("INSEL FÜR ADRESSEN OHNE MARKIERUNG"); }
         TextField {
             text <=> OverlayState.import-fallback;

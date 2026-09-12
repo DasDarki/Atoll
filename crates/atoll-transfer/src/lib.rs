@@ -21,6 +21,6 @@ pub use export::{ExportGroup, ExportOptions, export};
 pub use parse::{InvalidLine, ParsedGroup, ParsedList, parse};
 pub use plan::{
     DuplicatePolicy, ExistingIsland, ExistingTab, ImportOptions, ImportPlan, ImportTarget,
-    IslandDestination, IslandNamePolicy, PlannedEntry, PlannedIsland, SkipReason, SkippedUrl,
-    plan_import,
+    IslandDestination, IslandNamePolicy, IslandNaming, PlannedEntry, PlannedIsland, SkipReason,
+    SkippedUrl, plan_import,
 };
