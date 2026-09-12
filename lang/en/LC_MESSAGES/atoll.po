@@ -874,6 +874,12 @@ msgstr "Monday"
 msgid "NAME"
 msgstr "NAME"
 
+msgid "Nach ganz oben"
+msgstr "To the very top"
+
+msgid "Nach ganz unten"
+msgstr "To the very bottom"
+
 msgid "Nach links verschieben"
 msgstr "Move left"
 

@@ -5,8 +5,24 @@ import { IconButton } from "../widgets/icon-button.slint";
 
 export component IslandHeader inherits Rectangle {
     in property <SidebarRow> entry;
+    in property <length> drag-y;
+    callback drag-moved(length);
+
+    property <bool> dragged;
+    property <length> top: self.absolute-position.y;
+    property <bool> drag-running: SidebarState.island-drag-id != -1;
+    property <int> drag-mode: !root.drag-running || SidebarState.island-drag-id == root.entry.island-id
+        || root.drag-y < root.top || root.drag-y >= root.top + root.height ? -1
+        : root.drag-y < root.top + root.height / 2 ? 0 : 1;
+
+    changed drag-mode => {
+        if (self.drag-mode >= 0) {
+            SidebarState.island-drag-hover(root.entry.island-id, self.drag-mode == 1);
+        }
+    }
 
     height: 34px;
+    opacity: SidebarState.island-drag-id == root.entry.island-id ? 0.45 : 1.0;
 
     menu := ContextMenuArea {
         Menu {
@@ -47,6 +63,14 @@ export component IslandHeader inherits Rectangle {
                 activated => { SidebarState.island-action(root.entry.island-id, "move-down"); }
             }
             MenuItem {
+                title: @tr("Nach ganz oben");
+                activated => { SidebarState.island-action(root.entry.island-id, "move-top"); }
+            }
+            MenuItem {
+                title: @tr("Nach ganz unten");
+                activated => { SidebarState.island-action(root.entry.island-id, "move-bottom"); }
+            }
+            MenuItem {
                 title: @tr("In neues Fenster verschieben");
                 activated => { SidebarState.island-action(root.entry.island-id, "new-window"); }
             }
@@ -70,11 +94,34 @@ export component IslandHeader inherits Rectangle {
         }
 
         touch := TouchArea {
-            mouse-cursor: pointer;
-            clicked => { SidebarState.toggle-island(root.entry.island-id); }
+            mouse-cursor: root.dragged ? MouseCursor.grabbing : MouseCursor.pointer;
+            clicked => {
+                if (!root.dragged) {
+                    SidebarState.toggle-island(root.entry.island-id);
+                }
+            }
             pointer-event(event) => {
+                if (event.button == PointerEventButton.left) {
+                    if (event.kind == PointerEventKind.down) {
+                        root.dragged = false;
+                    } else if (event.kind == PointerEventKind.up && root.dragged) {
+                        SidebarState.island-drag-ended();
+                        root.dragged = false;
+                    }
+                    return;
+                }
                 if (event.kind == PointerEventKind.up && event.button == PointerEventButton.right) {
                     menu.show({ x: self.mouse-x, y: self.mouse-y });
+                }
+            }
+            moved => {
+                if (!root.dragged && self.pressed && abs(self.mouse-y - self.pressed-y) > 6px) {
+                    root.dragged = true;
+                    SidebarState.hovering = false;
+                    SidebarState.island-drag-started(root.entry.island-id);
+                }
+                if (root.dragged) {
+                    root.drag-moved(root.top + self.mouse-y);
                 }
             }
         }

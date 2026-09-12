@@ -107,7 +107,9 @@ saved tabs therefore cost nothing at startup.
 - **Developer tools** docked below or next to the page, see *Architecture*.
 - **Settings** (`Ctrl+,`): start page and home button, search engine, sidebar and bookmarks bar
   (optionally hidden while empty), the number of frozen tabs, downloads and privacy.
-- **Collapsible sidebar** (`Ctrl+B`). Hovering a tab shows its full title and address.
+- **Collapsible sidebar** (`Ctrl+B`). Hovering a tab shows its full title and address. Islands are
+  dragged into another order, with a line showing where the island would land, and their menu
+  moves them one place or all the way to the top or bottom.
 - **Taking over from Opera** (menu or palette): Atoll reads Opera's profile and takes over its
   open tabs with their tab islands, its bookmarks and its history. An island Opera never named is
   named after the site most of its tabs belong to. Opera is only read, nothing in its profile

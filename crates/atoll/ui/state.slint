@@ -28,6 +28,11 @@ export global SidebarState {
 
     callback toggle-island(int);
     callback island-action(int, string);
+    in property <int> island-drag-id: -1;
+    in property <int> island-drop-before: -2;
+    callback island-drag-started(int);
+    callback island-drag-hover(int, bool);
+    callback island-drag-ended();
     callback set-island-color(int, int);
     callback create-island();
 

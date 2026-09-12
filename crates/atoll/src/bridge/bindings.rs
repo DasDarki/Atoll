@@ -121,6 +121,13 @@ fn connect_sidebar(window: &AppWindow, browser: &Rc<Browser>) {
     });
     on!(state, on_create_island, browser, |target| target
         .create_island());
+    on!(state, on_island_drag_started, browser, |target, id| target
+        .island_drag_started(island(id)));
+    on!(state, on_island_drag_hover, browser, |target, id, after| {
+        target.island_drag_hover(island(id), after)
+    });
+    on!(state, on_island_drag_ended, browser, |target| target
+        .island_drag_ended());
     on!(state, on_open_archive, browser, |target| target
         .open_archive());
     on!(state, on_open_import, browser, |target| target

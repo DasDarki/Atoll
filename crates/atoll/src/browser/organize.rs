@@ -286,6 +286,8 @@ impl Browser {
             "export" => self.open_export(Some(island)),
             "move-up" => self.shift_island(island, -1),
             "move-down" => self.shift_island(island, 1),
+            "move-top" => self.move_island_to(island, 0),
+            "move-bottom" => self.move_island_to(island, usize::MAX),
             "archive" => self.archive_island(island),
             "delete" => self.delete_island(island),
             _ => tracing::warn!(action, "unknown island action"),
@@ -332,13 +334,16 @@ impl Browser {
     }
 
     fn shift_island(&self, island: IslandId, offset: isize) {
-        let (workspace, index) = {
-            let session = self.session.borrow();
-            (session.workspace, session.island_index(island))
-        };
+        let index = self.session.borrow().island_index(island);
         let Some(index) = index else { return };
-        let target = (index as isize + offset).max(0) as usize;
-        let result = self.storage.move_island(island, workspace, target);
+        self.move_island_to(island, (index as isize + offset).max(0) as usize);
+    }
+
+    /// Puts the island at `index` among the islands of its workspace. The index counts the
+    /// islands without this one, so `0` is the top and anything past the end is the bottom.
+    pub(super) fn move_island_to(&self, island: IslandId, index: usize) {
+        let workspace = self.session.borrow().workspace;
+        let result = self.storage.move_island(island, workspace, index);
         self.report(t!("Insel verschieben"), result);
         self.reload_session();
         self.refresh_sidebar();

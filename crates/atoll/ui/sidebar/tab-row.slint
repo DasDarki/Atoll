@@ -4,11 +4,23 @@ import { SidebarRow, TabLoadState } from "../structs.slint";
 import { IconButton } from "../widgets/icon-button.slint";
 
 export component TabRow inherits Rectangle {
+    in property <length> island-drag-y;
     in property <SidebarRow> entry;
 
     property <length> press-x;
     property <length> press-y;
     property <bool> dragging;
+    property <length> top: self.absolute-position.y;
+    // While an island is dragged over the tabs of an island, it would land below that island.
+    property <bool> island-target: SidebarState.island-drag-id != -1
+        && SidebarState.island-drag-id != root.entry.island-id
+        && root.island-drag-y >= root.top && root.island-drag-y < root.top + root.height;
+
+    changed island-target => {
+        if (self.island-target) {
+            SidebarState.island-drag-hover(root.entry.island-id, true);
+        }
+    }
 
     height: 32px;
     opacity: root.dragging ? 0.5 : 1.0;

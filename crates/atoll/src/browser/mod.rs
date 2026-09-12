@@ -23,6 +23,7 @@ mod palette;
 mod passwords;
 mod plugins;
 mod preferences;
+mod reorder;
 mod session;
 mod settings;
 mod sidebar;
@@ -67,6 +68,7 @@ use palette::PaletteState;
 use passwords::{PasswordPopup, PasswordVault, PendingFill};
 use plugins::{OpenPanel, Plugins};
 pub use preferences::Preferences;
+use reorder::IslandDrag;
 use session::Session;
 use sidebar::SidebarModels;
 use suggestions::SuggestionState;
@@ -157,6 +159,7 @@ pub struct Browser {
     favicons: Rc<RefCell<FaviconCache>>,
     history: RefCell<HistoryView>,
     opera: RefCell<OperaImport>,
+    island_drag: RefCell<IslandDrag>,
     page: RefCell<PageState>,
     dialogs: RefCell<DialogQueue>,
     context_menu: Cell<Option<(ViewId, RequestId)>>,
@@ -220,6 +223,7 @@ impl Browser {
             favicons: shared.favicons.clone(),
             history: RefCell::default(),
             opera: RefCell::default(),
+            island_drag: RefCell::default(),
             page: RefCell::default(),
             dialogs: RefCell::default(),
             context_menu: Cell::new(None),
