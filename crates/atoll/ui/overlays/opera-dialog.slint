@@ -1,0 +1,84 @@
+import { Theme } from "../theme.slint";
+import { OverlayState } from "../state.slint";
+import { Modal } from "modal.slint";
+import { ActionButton, ButtonKind } from "../widgets/button.slint";
+import { Toggle } from "../widgets/toggle.slint";
+
+component Part inherits HorizontalLayout {
+    in property <string> text;
+    in property <bool> available;
+    in-out property <bool> checked;
+
+    spacing: 10px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+
+    Text {
+        text: root.text;
+        color: root.available ? Theme.text : Theme.text-faint;
+        font-size: Theme.font-normal;
+        vertical-alignment: center;
+        horizontal-stretch: 1;
+    }
+    if root.available : Toggle {
+        checked <=> root.checked;
+    }
+}
+
+export component OperaDialog inherits Modal {
+    title: @tr("Aus Opera übernehmen");
+    card-width: 560px;
+    dismissed => { OverlayState.opera-cancel(); }
+
+    Text {
+        text: OverlayState.opera-profile;
+        color: Theme.text-faint;
+        font-size: Theme.font-small + 1px;
+        wrap: word-wrap;
+    }
+
+    Part {
+        text: OverlayState.opera-tabs-text;
+        available: OverlayState.opera-tabs-available;
+        checked <=> OverlayState.opera-take-tabs;
+    }
+    Part {
+        text: OverlayState.opera-bookmarks-text;
+        available: OverlayState.opera-bookmarks-available;
+        checked <=> OverlayState.opera-take-bookmarks;
+    }
+    Part {
+        text: OverlayState.opera-history-text;
+        available: OverlayState.opera-history-available;
+        checked <=> OverlayState.opera-take-history;
+    }
+
+    if OverlayState.opera-problems != "" : Text {
+        text: OverlayState.opera-problems;
+        color: Theme.danger;
+        font-size: Theme.font-small + 1px;
+        wrap: word-wrap;
+    }
+
+    Text {
+        text: @tr("Opera wird nur gelesen, dort ändert sich nichts. Die Tabs landen danach im Import-Fenster, wo du Workspace und Umgang mit Duplikaten wählst.");
+        color: Theme.text-faint;
+        font-size: Theme.font-small + 1px;
+        wrap: word-wrap;
+    }
+
+    HorizontalLayout {
+        spacing: 8px;
+        alignment: end;
+        ActionButton {
+            text: @tr("Abbrechen");
+            clicked => { OverlayState.opera-cancel(); }
+        }
+        ActionButton {
+            text: @tr("Übernehmen");
+            kind: ButtonKind.primary;
+            enabled: OverlayState.opera-take-tabs || OverlayState.opera-take-bookmarks || OverlayState.opera-take-history;
+            clicked => { OverlayState.opera-confirm(); }
+        }
+    }
+}

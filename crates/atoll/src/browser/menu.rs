@@ -15,6 +15,7 @@ impl Browser {
             "zoom-out" => self.zoom(ZoomCommand::Out),
             "zoom-reset" => self.zoom(ZoomCommand::Reset),
             "import" => self.open_import(),
+            "opera" => self.import_from_opera(),
             "export" => self.open_export(None),
             "archive" => self.open_archive(),
             "devtools" => self.toggle_dev_tools(),

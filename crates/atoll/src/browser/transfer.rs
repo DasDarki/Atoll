@@ -28,16 +28,21 @@ pub struct TransferState {
 
 impl Browser {
     pub fn open_import(&self) {
+        self.open_import_with("");
+    }
+
+    /// Opens the import window with `text` already in it, for lists Atoll put together itself.
+    pub(super) fn open_import_with(&self, text: &str) {
         let Some(window) = self.window() else { return };
         let state = window.global::<OverlayState>();
-        state.set_import_text("".into());
+        state.set_import_text(text.into());
         state.set_import_target(0);
         state.set_import_workspace_name(t!("Import").into());
         state.set_import_duplicates(1);
         state.set_import_islands(0);
         state.set_import_fallback(t!("Importiert").into());
         state.set_import_visible(true);
-        self.import_text_edited("");
+        self.import_text_edited(text);
     }
 
     pub fn import_text_edited(&self, text: &str) {
@@ -284,8 +289,8 @@ impl Browser {
         let mut summary = t!(
             "{} {} importiert, {} neue {}.",
             created,
-            islands,
             plural(created, t!("Tab"), t!("Tabs")),
+            islands,
             plural(islands, t!("Insel"), t!("Inseln"))
         );
         if moved > 0 {
@@ -310,7 +315,7 @@ impl Browser {
         }
         for skipped in &plan.skipped {
             let reason = match skipped.reason {
-                SkipReason::AlreadyPresent => "bereits vorhanden",
+                SkipReason::AlreadyPresent => t!("bereits vorhanden"),
                 SkipReason::RepeatedInList => t!("doppelt in der Liste"),
             };
             lines.push(t!("Übersprungen, {}: {}", reason, skipped.url).into());
@@ -320,8 +325,8 @@ impl Browser {
         summary.push_str(&t!(
             " {} {}, {} {}:",
             invalid,
-            skipped,
             plural(invalid, t!("ungültige Zeile"), t!("ungültige Zeilen")),
+            skipped,
             plural(
                 skipped,
                 t!("übersprungene Adresse"),
@@ -414,8 +419,9 @@ impl Browser {
             .iter()
             .map(|group| group.urls.iter().filter(|url| !url.is_empty()).count())
             .sum();
-        let summary = format!(
-            "{urls} {} in {} {}",
+        let summary = t!(
+            "{} {} in {} {}",
+            urls,
             plural(urls, t!("Adresse"), t!("Adressen")),
             groups.len(),
             plural(groups.len(), t!("Insel"), t!("Inseln"))

@@ -231,6 +231,10 @@ export component Toolbar inherits Rectangle {
                 activated => { BrowserState.menu-action("import"); }
             }
             MenuItem {
+                title: @tr("Aus Opera übernehmen…");
+                activated => { BrowserState.menu-action("opera"); }
+            }
+            MenuItem {
                 title: @tr("URL-Liste exportieren");
                 activated => { BrowserState.menu-action("export"); }
             }

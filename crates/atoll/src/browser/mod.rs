@@ -15,6 +15,7 @@ mod lifecycle;
 mod memory;
 mod menu;
 mod navigation;
+mod opera;
 mod organize;
 mod overlays;
 mod page;
@@ -59,6 +60,7 @@ use downloads::{Downloads, VideoSearch};
 use favicons::FaviconCache;
 use history::HistoryView;
 use memory::MemoryWatcher;
+use opera::OperaImport;
 use overlays::DialogQueue;
 use page::PageState;
 use palette::PaletteState;
@@ -154,6 +156,7 @@ pub struct Browser {
     input_target: Cell<InputTarget>,
     favicons: Rc<RefCell<FaviconCache>>,
     history: RefCell<HistoryView>,
+    opera: RefCell<OperaImport>,
     page: RefCell<PageState>,
     dialogs: RefCell<DialogQueue>,
     context_menu: Cell<Option<(ViewId, RequestId)>>,
@@ -216,6 +219,7 @@ impl Browser {
             input_target: Cell::default(),
             favicons: shared.favicons.clone(),
             history: RefCell::default(),
+            opera: RefCell::default(),
             page: RefCell::default(),
             dialogs: RefCell::default(),
             context_menu: Cell::new(None),

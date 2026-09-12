@@ -11,6 +11,7 @@
 mod address;
 mod bookmarks;
 mod export;
+pub mod opera;
 mod parse;
 mod plan;
 

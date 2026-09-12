@@ -41,6 +41,7 @@ enum Command {
     NewBookmarkFolder,
     OpenDownloads,
     OpenHistory,
+    ImportFromOpera,
     OpenDownloadFolder,
     ImportList,
     ExportList,
@@ -491,6 +492,12 @@ impl Browser {
                 t!("bookmarks ordner folder"),
             ),
             (
+                Command::ImportFromOpera,
+                t!("Aus Opera übernehmen").to_owned(),
+                "",
+                t!("opera import tabs inseln lesezeichen verlauf"),
+            ),
+            (
                 Command::OpenHistory,
                 t!("Verlauf").to_owned(),
                 t!("Strg+H"),
@@ -779,6 +786,7 @@ impl Browser {
             Command::NewBookmarkFolder => self.new_bookmark_folder(),
             Command::OpenDownloads => self.open_downloads(),
             Command::OpenHistory => self.open_history(),
+            Command::ImportFromOpera => self.import_from_opera(),
             Command::OpenDownloadFolder => self.open_download_folder(),
             Command::ImportList => self.open_import(),
             Command::ExportList => self.open_export(None),

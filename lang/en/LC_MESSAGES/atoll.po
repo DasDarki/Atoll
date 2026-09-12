@@ -217,6 +217,15 @@ msgstr "From Git"
 msgid "Aus HTML importieren…"
 msgstr "Import from HTML…"
 
+msgid "Aus Opera übernehmen"
+msgstr "Take over from Opera"
+
+msgid "Aus Opera übernehmen…"
+msgstr "Take over from Opera…"
+
+msgid "Aus Opera übernommen: {}"
+msgstr "Taken over from Opera: {}"
+
 msgid "Aus Zwischenablage einfügen"
 msgstr "Paste from clipboard"
 
@@ -658,6 +667,9 @@ msgstr "Move to window"
 msgid "In Insel verschieben"
 msgstr "Move to island"
 
+msgid "In Opera ist nichts zum Übernehmen"
+msgstr "There is nothing to take over from Opera"
+
 msgid "In Workspace verschieben"
 msgstr "Move to workspace"
 
@@ -744,6 +756,9 @@ msgstr "Update now"
 
 msgid "Kein Login gefunden"
 msgstr "No login found"
+
+msgid "Kein Opera-Profil gefunden"
+msgstr "No Opera profile found"
 
 msgid "Kein passender Befehl"
 msgstr "No matching command"
@@ -939,6 +954,15 @@ msgstr "OK"
 
 msgid "ORDNER"
 msgstr "FOLDER"
+
+msgid "Opera wird gelesen …"
+msgstr "Reading Opera …"
+
+msgid "Opera wird nur gelesen, dort ändert sich nichts. Die Tabs landen danach im Import-Fenster, wo du Workspace und Umgang mit Duplikaten wählst."
+msgstr "Opera is only read, nothing there changes. The tabs land in the import window afterwards, where you choose the workspace and what happens to duplicates."
+
+msgid "Opera: {}"
+msgstr "Opera: {}"
 
 msgid "Ordner anlegen"
 msgstr "Create folder"
@@ -1255,6 +1279,9 @@ msgstr "Delete history"
 msgid "Verlauf löschen?"
 msgstr "Delete history?"
 
+msgid "Verlauf übernehmen"
+msgstr "Take over the history"
+
 msgid "Video gespeichert: {}"
 msgstr "Video saved: {}"
 
@@ -1432,6 +1459,9 @@ msgstr "Clipboard not available"
 msgid "adblock werbung seite ausnahme"
 msgstr "adblock ads page exception"
 
+msgid "bereits vorhanden"
+msgstr "already there"
+
 msgid "bookmarks ordner folder"
 msgstr "bookmarks folder"
 
@@ -1504,6 +1534,9 @@ msgstr "{} min left"
 msgid "noch {} s"
 msgstr "{} s left"
 
+msgid "opera import tabs inseln lesezeichen verlauf"
+msgstr "opera import tabs islands bookmarks history"
+
 msgid "passwort login zugangsdaten ausfüllen"
 msgstr "password login credentials fill"
 
@@ -1572,11 +1605,20 @@ msgstr "{} B"
 msgid "{} Inseln archiviert"
 msgstr "{} islands archived"
 
+msgid "{} Lesezeichen"
+msgstr "{} bookmarks"
+
 msgid "{} Lesezeichen importiert"
 msgstr "{} bookmarks imported"
 
 msgid "{} Seiten"
 msgstr "{} pages"
+
+msgid "{} Tabs in {} Inseln"
+msgstr "{} tabs in {} islands"
+
+msgid "{} Verlaufseinträge"
+msgstr "{} history entries"
 
 msgid "{} eingefügt"
 msgstr "{} filled in"
@@ -1611,6 +1653,9 @@ msgstr "{} {} imported, {} new {}."
 msgid "{} {} in die Zwischenablage kopiert"
 msgstr "{} {} copied to the clipboard"
 
+msgid "{} {} in {} {}"
+msgstr "{} {} in {} {}"
+
 msgid "{} · archiviert"
 msgstr "{} · archived"
 
@@ -1637,6 +1682,9 @@ msgstr "Change…"
 
 msgid "Öffnen"
 msgstr "Open"
+
+msgid "Übernehmen"
+msgstr "Take over"
 
 msgid "Überspringen"
 msgstr "Skip"

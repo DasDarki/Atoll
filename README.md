@@ -108,6 +108,12 @@ saved tabs therefore cost nothing at startup.
 - **Settings** (`Ctrl+,`): start page and home button, search engine, sidebar and bookmarks bar
   (optionally hidden while empty), the number of frozen tabs, downloads and privacy.
 - **Collapsible sidebar** (`Ctrl+B`). Hovering a tab shows its full title and address.
+- **Taking over from Opera** (menu or palette): Atoll reads Opera's profile and takes over its
+  open tabs with their tab islands, its bookmarks and its history. An island Opera never named is
+  named after the site most of its tabs belong to. Opera is only read, nothing in its profile
+  changes, and its history is copied away first so a running Opera is left alone. The tabs land in
+  the import window, where the workspace and the way duplicates are handled are chosen as for any
+  other list. `ATOLL_OPERA_DIR` points at another profile.
 - **URL list import and export** in a plain text format, see below.
 - **Fast startup**: the window shows the stored session in roughly 100 ms, the engine starts once
   the first frame is on screen.

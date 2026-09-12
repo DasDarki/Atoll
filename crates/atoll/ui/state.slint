@@ -235,6 +235,21 @@ export global OverlayState {
     callback history-clear();
     callback history-close();
 
+    in property <bool> opera-visible;
+    in property <string> opera-profile;
+    in property <string> opera-tabs-text;
+    in property <string> opera-bookmarks-text;
+    in property <string> opera-history-text;
+    in property <string> opera-problems;
+    in property <bool> opera-tabs-available;
+    in property <bool> opera-bookmarks-available;
+    in property <bool> opera-history-available;
+    in-out property <bool> opera-take-tabs;
+    in-out property <bool> opera-take-bookmarks;
+    in-out property <bool> opera-take-history;
+    callback opera-confirm();
+    callback opera-cancel();
+
     in property <bool> import-visible;
     in-out property <string> import-text;
     in property <string> import-summary;

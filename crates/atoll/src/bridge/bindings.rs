@@ -326,6 +326,10 @@ fn connect_overlays(window: &AppWindow, browser: &Rc<Browser>) {
         .close_history());
     on!(state, on_archive_close, browser, |target| target
         .close_archive());
+    on!(state, on_opera_confirm, browser, |target| target
+        .opera_confirm());
+    on!(state, on_opera_cancel, browser, |target| target
+        .opera_cancel());
     on!(state, on_import_text_edited, browser, |target, text| target
         .import_text_edited(&text));
     on!(state, on_import_choose_file, browser, |target| target

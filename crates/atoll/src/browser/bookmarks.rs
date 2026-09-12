@@ -455,8 +455,8 @@ impl Browser {
             t!("Ordner löschen?"),
             &t!(
                 "„{}“ wird mit {} enthaltenen Einträgen gelöscht.",
-                count,
-                bookmark.title
+                bookmark.title,
+                count
             ),
             t!("Löschen"),
             move || {
@@ -588,6 +588,15 @@ impl Browser {
             self.show_toast(t!("Die Datei enthält keine Lesezeichen"));
             return;
         }
+        let imported = self.import_bookmark_nodes(&nodes);
+        if imported > 0 {
+            self.show_toast(&t!("{} Lesezeichen importiert", imported));
+        }
+    }
+
+    /// Puts a bookmark tree of another browser in, skipping what is already there. Answers with
+    /// how many were added.
+    pub(super) fn import_bookmark_nodes(&self, nodes: &[BookmarkNode]) -> usize {
         let mut known: HashSet<String> = self
             .bookmarks
             .borrow()
@@ -598,15 +607,18 @@ impl Browser {
         let now = Self::now();
         let result = self.storage.transaction(|transaction| {
             let mut imported = 0;
-            import_nodes(transaction, None, &nodes, &mut known, now, &mut imported)?;
+            import_nodes(transaction, None, nodes, &mut known, now, &mut imported)?;
             Ok(imported)
         });
         match result {
             Ok(imported) => {
                 self.refresh_bookmarks();
-                self.show_toast(&t!("{} Lesezeichen importiert", imported));
+                imported
             }
-            Err(error) => self.report(t!("Lesezeichen importieren"), Err::<(), _>(error)),
+            Err(error) => {
+                self.report(t!("Lesezeichen importieren"), Err::<(), _>(error));
+                0
+            }
         }
     }
 

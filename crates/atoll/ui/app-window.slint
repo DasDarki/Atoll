@@ -15,6 +15,7 @@ import { ImportReport } from "overlays/import-report.slint";
 import { ExportDialog } from "overlays/export-dialog.slint";
 import { ArchivePanel } from "overlays/archive-panel.slint";
 import { HistoryPanel } from "overlays/history-panel.slint";
+import { OperaDialog } from "overlays/opera-dialog.slint";
 import { UploadPicker } from "overlays/upload-picker.slint";
 import { Toast } from "overlays/toast.slint";
 import { SuggestionList } from "overlays/suggestion-list.slint";
@@ -67,6 +68,7 @@ export component AppWindow inherits Window {
         || OverlayState.export-visible
         || OverlayState.archive-visible
         || OverlayState.history-visible
+        || OverlayState.opera-visible
         || OverlayState.upload-visible
         || OverlayState.passwords-visible
         || OverlayState.report-visible
@@ -257,6 +259,11 @@ export component AppWindow inherits Window {
     }
 
     if OverlayState.history-visible : HistoryPanel {
+        width: root.width;
+        height: root.height;
+    }
+
+    if OverlayState.opera-visible : OperaDialog {
         width: root.width;
         height: root.height;
     }

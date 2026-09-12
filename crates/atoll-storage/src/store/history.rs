@@ -152,6 +152,31 @@ pub trait HistoryStore: Connected {
         Ok(pages)
     }
 
+    /// Adds pages from another browser. A page Atoll already knows keeps the higher count and
+    /// the newer visit, so importing twice changes nothing.
+    fn import_visited_pages(&self, pages: &[VisitedPage]) -> StorageResult<usize> {
+        let mut added = 0;
+        for page in pages {
+            added += self
+                .connection()
+                .prepare_cached(
+                    "INSERT INTO history (url, title, visit_count, last_visited_at)
+                     VALUES (?1, ?2, ?3, ?4)
+                     ON CONFLICT(url) DO UPDATE SET
+                         visit_count = MAX(visit_count, excluded.visit_count),
+                         last_visited_at = MAX(last_visited_at, excluded.last_visited_at),
+                         title = COALESCE(title, excluded.title)",
+                )?
+                .execute(params![
+                    page.url,
+                    page.title,
+                    page.visit_count,
+                    page.last_visited_at.0
+                ])?;
+        }
+        Ok(added)
+    }
+
     /// Forgets all visited pages, including the per-tab logs.
     fn clear_history(&self) -> StorageResult<()> {
         self.connection()

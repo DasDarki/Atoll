@@ -137,8 +137,10 @@ impl Browser {
         self.confirm(
             t!("Login einer anderen Seite verwenden?"),
             &t!(
-                "„{}“ ist für {} gespeichert, nicht für {}. Füge die Zugangsdaten nur ein, wenn du der Seite vertraust.", saved_for, host,
-                login.title
+                "„{}“ ist für {} gespeichert, nicht für {}. Füge die Zugangsdaten nur ein, wenn du der Seite vertraust.",
+                login.title,
+                saved_for,
+                host
             ),
             t!("Trotzdem einfügen"),
             move || {
