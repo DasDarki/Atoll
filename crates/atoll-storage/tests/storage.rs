@@ -8,6 +8,7 @@ fn storage() -> Storage {
 
 fn new_tab(island: atoll_core::IslandId, url: &str) -> NewTab<'_> {
     NewTab {
+        private: false,
         island_id: island,
         url,
         title: None,
@@ -71,6 +72,7 @@ fn tabs_keep_their_order_when_inserted_and_moved() {
         .unwrap();
     storage
         .create_tab(NewTab {
+            private: false,
             index: Some(0),
             ..new_tab(island.id, "https://c.example/")
         })
@@ -296,5 +298,53 @@ fn new_islands_count_as_used_when_created() {
     assert_eq!(
         storage.islands_unused_since(Timestamp(101)).unwrap().len(),
         1
+    );
+}
+
+#[test]
+fn private_tabs_keep_nothing_and_go_away_with_the_run() {
+    let storage = Storage::open_in_memory().unwrap();
+    let workspace = storage.create_workspace("Arbeit").unwrap();
+    let island = storage
+        .create_island(NewIsland {
+            workspace_id: workspace.id,
+            name: "A",
+            color: IslandColor::Blue,
+            index: None,
+            created_at: Timestamp(0),
+        })
+        .unwrap();
+    let open = storage
+        .create_tab(NewTab {
+            private: false,
+            island_id: island.id,
+            url: "https://example.org/",
+            title: Some("Offen"),
+            index: None,
+            created_at: Timestamp(1),
+        })
+        .unwrap();
+    let hidden = storage
+        .create_tab(NewTab {
+            private: true,
+            island_id: island.id,
+            url: "",
+            title: None,
+            index: None,
+            created_at: Timestamp(2),
+        })
+        .unwrap();
+    assert!(!open.private);
+    assert!(hidden.private);
+    assert_eq!(storage.tabs_in_island(island.id).unwrap().len(), 2);
+
+    assert_eq!(storage.clear_private_tabs().unwrap(), 1);
+    let left = storage.tabs_in_island(island.id).unwrap();
+    assert_eq!(left.len(), 1);
+    assert_eq!(left[0].id, open.id, "only the ordinary tab survives a run");
+    assert_eq!(
+        storage.clear_private_tabs().unwrap(),
+        0,
+        "a second run finds nothing left"
     );
 }

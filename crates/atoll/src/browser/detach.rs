@@ -245,6 +245,7 @@ mod tests {
                         title: None,
                         index: None,
                         created_at: Timestamp(0),
+                        private: false,
                     })
                     .unwrap();
                 tabs.push(tab.id);

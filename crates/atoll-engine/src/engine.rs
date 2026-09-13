@@ -10,7 +10,7 @@ use cef::{
 
 use crate::app;
 use crate::clipboard::ClipboardHelper;
-use crate::config::EngineConfig;
+use crate::config::{EngineConfig, Session};
 use crate::dev_tools::DevToolsSession;
 use crate::error::EngineError;
 use crate::events::{EngineEvent, RequestId};
@@ -84,12 +84,23 @@ impl Engine {
         self.runtime.accelerated.get()
     }
 
-    /// Creates a browser that loads `url`.
+    /// Creates a browser that loads `url` in the ordinary session.
     pub fn create_view(
         &self,
         url: &str,
         geometry: ViewGeometry,
         hidden: bool,
+    ) -> Result<BrowserView, EngineError> {
+        self.create_view_in(url, geometry, hidden, Session::Normal)
+    }
+
+    /// Creates a browser that loads `url` in the given session.
+    pub fn create_view_in(
+        &self,
+        url: &str,
+        geometry: ViewGeometry,
+        hidden: bool,
+        session: Session,
     ) -> Result<BrowserView, EngineError> {
         let state = self.runtime.create_view(geometry, hidden);
         let window_info = WindowInfo {
@@ -102,14 +113,16 @@ impl Engine {
             windowless_frame_rate: self.runtime.frame_rate,
             ..Default::default()
         };
+        state.private.set(session == Session::Private);
         let mut client = build_client(state.id);
+        let mut context = self.runtime.session_context(session);
         let browser = cef::browser_host_create_browser_sync(
             Some(&window_info),
             Some(&mut client),
             Some(&url.into()),
             Some(&browser_settings),
             None,
-            None,
+            context.as_mut(),
         );
         let Some(browser) = browser else {
             self.runtime.remove_view(state.id);

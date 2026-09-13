@@ -63,15 +63,33 @@ impl Browser {
         title: Option<&str>,
         activate: bool,
     ) -> Option<TabId> {
+        self.create_tab_in(island, index, url, title, activate, false)
+    }
+
+    /// Creates a tab, privately when `private` is set. A private tab writes its address nowhere,
+    /// so it goes into the database empty and is remembered in memory.
+    pub(super) fn create_tab_in(
+        &self,
+        island: IslandId,
+        index: Option<usize>,
+        url: &str,
+        title: Option<&str>,
+        activate: bool,
+        private: bool,
+    ) -> Option<TabId> {
         let created = self.storage.create_tab(NewTab {
             island_id: island,
-            url,
-            title,
+            url: if private { "" } else { url },
+            title: if private { None } else { title },
             index,
             created_at: Self::now(),
+            private,
         });
         match created {
             Ok(tab) => {
+                if private {
+                    self.remember_private_page(tab.id, Some(url), title);
+                }
                 self.reload_session();
                 if activate {
                     self.activate_tab(tab.id);
@@ -131,7 +149,15 @@ impl Browser {
             Some((island, _)) => island,
             None => self.ensure_island()?,
         };
-        self.create_tab(island, target.map(|(_, index)| index), url, None, activate)
+        let private = source.is_some_and(|tab| self.is_private(tab));
+        self.create_tab_in(
+            island,
+            target.map(|(_, index)| index),
+            url,
+            None,
+            activate,
+            private,
+        )
     }
 
     pub fn close_tab(&self, tab: TabId) {
@@ -144,7 +170,8 @@ impl Browser {
                 .island(record.island_id)
                 .and_then(|entry| entry.tabs.iter().position(|candidate| candidate.id == tab))
                 .unwrap_or(0);
-            let closed = (!record.is_blank()).then(|| ClosedTab {
+            // A private tab leaves nothing behind, not even a way back.
+            let closed = (!record.is_blank() && !record.private).then(|| ClosedTab {
                 island: record.island_id,
                 index,
                 url: record.url.clone(),
@@ -166,6 +193,7 @@ impl Browser {
         }
 
         self.forget_tabs([tab]);
+        self.forget_private_page(tab);
         if let Err(error) = self.storage.delete_tab(tab) {
             self.report(t!("Tab schließen"), Err::<(), _>(error));
             return;
@@ -263,7 +291,14 @@ impl Browser {
         let Some((island, index)) = self.insertion_point_after(tab) else {
             return;
         };
-        self.create_tab(island, Some(index), &url, title.as_deref(), true);
+        self.create_tab_in(
+            island,
+            Some(index),
+            &url,
+            title.as_deref(),
+            true,
+            self.is_private(tab),
+        );
     }
 
     pub fn copy_tab_address(&self, tab: TabId) {
@@ -451,6 +486,7 @@ impl Browser {
         };
         match super::session::Session::load(&self.storage, workspace) {
             Ok(mut session) => {
+                self.apply_private_pages(&mut session);
                 session.active_tab = active.filter(|tab| session.contains_tab(*tab));
                 *self.session.borrow_mut() = session;
             }

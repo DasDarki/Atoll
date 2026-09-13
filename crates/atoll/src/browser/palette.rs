@@ -41,6 +41,7 @@ enum Command {
     NewBookmarkFolder,
     OpenDownloads,
     OpenHistory,
+    NewPrivateTab,
     ImportFromOpera,
     OpenDownloadFolder,
     ImportList,
@@ -498,6 +499,12 @@ impl Browser {
                 t!("opera import tabs inseln lesezeichen verlauf"),
             ),
             (
+                Command::NewPrivateTab,
+                t!("Neuer privater Tab").to_owned(),
+                t!("Strg+Umschalt+N"),
+                t!("privat inkognito tab ohne spuren"),
+            ),
+            (
                 Command::OpenHistory,
                 t!("Verlauf").to_owned(),
                 t!("Strg+H"),
@@ -786,6 +793,7 @@ impl Browser {
             Command::NewBookmarkFolder => self.new_bookmark_folder(),
             Command::OpenDownloads => self.open_downloads(),
             Command::OpenHistory => self.open_history(),
+            Command::NewPrivateTab => self.new_private_tab(),
             Command::ImportFromOpera => self.import_from_opera(),
             Command::OpenDownloadFolder => self.open_download_folder(),
             Command::ImportList => self.open_import(),

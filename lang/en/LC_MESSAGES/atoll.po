@@ -937,6 +937,9 @@ msgstr "New tab in this island"
 msgid "Neuer Workspace"
 msgstr "New workspace"
 
+msgid "Neuer privater Tab"
+msgstr "New private tab"
+
 msgid "Neues Fenster"
 msgstr "New window"
 
@@ -1023,6 +1026,12 @@ msgstr "Paused · {}"
 
 msgid "Popup öffnen"
 msgstr "Open popup"
+
+msgid "Privat"
+msgstr "Private"
+
+msgid "Privater Tab: nichts davon wird gespeichert, und er weiß nichts von deinen Anmeldungen"
+msgstr "Private tab: nothing of it is kept, and it knows nothing of your sign-ins"
 
 msgid "Protokoll"
 msgstr "Log"
@@ -1176,6 +1185,9 @@ msgstr "Ctrl+Shift+B shows and hides it at any time."
 
 msgid "Strg+Umschalt+L"
 msgstr "Ctrl+Shift+L"
+
+msgid "Strg+Umschalt+N"
+msgstr "Ctrl+Shift+N"
 
 msgid "Strg+Umschalt+O"
 msgstr "Ctrl+Shift+O"
@@ -1554,6 +1566,9 @@ msgstr "opera import tabs islands bookmarks history"
 
 msgid "passwort login zugangsdaten ausfüllen"
 msgstr "password login credentials fill"
+
+msgid "privat inkognito tab ohne spuren"
+msgstr "private incognito tab without traces"
 
 msgid "rückgängig"
 msgstr "undo"

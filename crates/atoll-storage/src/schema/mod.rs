@@ -11,6 +11,7 @@ const MIGRATIONS: &[&str] = &[
     include_str!("v6_island_usage.sql"),
     include_str!("v7_download_kind.sql"),
     include_str!("v8_plugins.sql"),
+    include_str!("v9_private_tabs.sql"),
 ];
 
 pub(crate) fn migrate(connection: &Connection) -> StorageResult<()> {

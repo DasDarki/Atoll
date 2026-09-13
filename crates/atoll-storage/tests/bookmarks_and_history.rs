@@ -131,6 +131,7 @@ fn visits_feed_the_global_history() {
         .unwrap();
     let tab = storage
         .create_tab(NewTab {
+            private: false,
             island_id: island.id,
             url: "https://a.example/",
             title: None,
@@ -186,6 +187,7 @@ fn tab_entries_span_all_workspaces_including_archived_islands() {
             .unwrap();
         storage
             .create_tab(NewTab {
+                private: false,
                 island_id: island.id,
                 url: "https://example.com/",
                 title: Some(name),
@@ -252,6 +254,7 @@ fn the_history_is_read_in_pages_and_single_pages_can_be_forgotten() {
         .unwrap();
     let tab = storage
         .create_tab(NewTab {
+            private: false,
             island_id: island.id,
             url: "https://a.example/",
             title: None,

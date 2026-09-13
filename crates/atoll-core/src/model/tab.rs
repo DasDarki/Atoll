@@ -15,6 +15,8 @@ pub struct Tab {
     pub pinned: bool,
     pub scroll_y: Option<i32>,
     pub last_used_at: Option<Timestamp>,
+    /// Keeps nothing on disk, see [`atoll_storage::NewTab`].
+    pub private: bool,
 }
 
 impl Tab {
@@ -54,6 +56,7 @@ mod tests {
             pinned: false,
             scroll_y: None,
             last_used_at: None,
+            private: false,
         }
     }
 

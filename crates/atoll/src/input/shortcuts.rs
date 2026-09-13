@@ -34,6 +34,7 @@ pub enum Shortcut {
     Home,
     Downloads,
     History,
+    NewPrivateTab,
     Passwords,
     DownloadVideo,
 }
@@ -131,6 +132,7 @@ pub fn detect(event: &KeyEvent, modifiers: ModifiersState) -> Option<Shortcut> {
     if control && !alt {
         let shortcut = match (base.as_str(), shift) {
             ("n", false) => Shortcut::NewWindow,
+            ("n", true) => Shortcut::NewPrivateTab,
             ("w", true) => Shortcut::CloseWindow,
             ("q", true) => Shortcut::Quit,
             ("t", false) => Shortcut::NewTab,

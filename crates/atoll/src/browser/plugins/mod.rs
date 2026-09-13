@@ -395,9 +395,13 @@ impl Browser {
         self.plugins.dispatch(&event);
     }
 
-    /// A page finished loading, which extensions of that site want to know.
+    /// A page finished loading, which extensions of that site want to know. Private tabs stay
+    /// out of this, extensions never hear about them.
     pub(super) fn page_loaded(&self, view: ViewId) {
         let Some(tab) = self.tab_of(view) else { return };
+        if self.is_private(tab) {
+            return;
+        }
         let session = self.session.borrow();
         let Some(record) = session.tab(tab) else {
             return;
@@ -417,7 +421,7 @@ impl Browser {
     /// The tab as extensions see it, for the events about it.
     fn plugin_tab(&self, tab: atoll_core::TabId) -> Option<TabInfo> {
         let session = self.session.borrow();
-        let record = session.tab(tab)?;
+        let record = session.tab(tab).filter(|record| !record.private)?;
         Some(TabInfo {
             id: record.id.0,
             url: record.url.clone(),
@@ -589,6 +593,7 @@ impl Browser {
         let session = self.session.borrow();
         session
             .tabs()
+            .filter(|tab| !tab.private)
             .map(|tab| TabInfo {
                 id: tab.id.0,
                 url: tab.url.clone(),

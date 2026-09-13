@@ -74,9 +74,13 @@ impl Browser {
         let Some(engine) = engine.as_ref() else {
             return;
         };
-        match engine.create_view(&record.url, self.geometry.get(), false) {
+        let session = self.session_of(tab);
+        match engine.create_view_in(&record.url, self.geometry.get(), false, session) {
             Ok(view) => {
-                self.plugin_prepare_view(&view);
+                if session == atoll_engine::Session::Normal {
+                    // Extensions stay out of private pages.
+                    self.plugin_prepare_view(&view);
+                }
                 let pending_scroll = record.scroll_y.filter(|offset| *offset > 0);
                 self.views
                     .borrow_mut()
@@ -95,7 +99,9 @@ impl Browser {
         };
         let (_, offset) = entry.view.scroll_offset();
         let offset = (offset > 0.5).then_some(offset.round() as i32);
-        if let Err(error) = self.storage.set_tab_scroll(tab, offset) {
+        if !self.is_private(tab)
+            && let Err(error) = self.storage.set_tab_scroll(tab, offset)
+        {
             tracing::warn!(%error, "scroll position could not be stored");
         }
         if let Some(dev_tools) = &entry.dev_tools {
@@ -155,6 +161,9 @@ impl Browser {
         for (tab, entry) in self.views.borrow().iter() {
             let (_, offset) = entry.view.scroll_offset();
             let offset = (offset > 0.5).then_some(offset.round() as i32);
+            if self.is_private(*tab) {
+                continue;
+            }
             if let Err(error) = self.storage.set_tab_scroll(*tab, offset) {
                 tracing::warn!(%error, "scroll position could not be stored");
             }

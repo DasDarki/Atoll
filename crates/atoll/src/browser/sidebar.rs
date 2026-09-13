@@ -95,6 +95,7 @@ impl Browser {
                     .is_some_and(|entry| entry.view.is_loading());
                 rows.push(SidebarRow {
                     kind: RowKind::Tab,
+                    private: tab.private,
                     island_id: entry.island.id.0 as i32,
                     tab_id: tab.id.0 as i32,
                     title: tab.display_title().into(),

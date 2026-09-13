@@ -271,6 +271,7 @@ impl Browser {
                     match entry {
                         PlannedEntry::Create { url } => {
                             transaction.create_tab(atoll_storage::NewTab {
+                                private: false,
                                 island_id: island,
                                 url,
                                 title: None,

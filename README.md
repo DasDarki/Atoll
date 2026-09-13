@@ -99,6 +99,13 @@ saved tabs therefore cost nothing at startup.
   crate `atoll-i18n` compiles it into a catalog for the strings Atoll puts together in Rust.
   `scripts/translations.py report` says what is missing, `update` adds new strings to the files,
   and a test fails when a string has no translation.
+- **Private tabs** (`Ctrl+Shift+N`) live in the same window as every other tab, marked with their
+  own icon and a badge in the address bar, and are dragged out into a window of their own like any
+  tab. They keep nothing: the database only holds the bare row that one is there, address and
+  title stay in memory, no history, no favicon, no scroll position, no way to reopen them, and
+  extensions never see them. Their pages run in a session without a cache folder, shared among the
+  private tabs, so a sign-in reaches the next one and everything is gone when the last one closes.
+  A page opened from a private tab stays private.
 - **History** (`Ctrl+H`): the visited pages by day, with a search of its own, a way to forget a
   single page and one to throw the whole history away. The address bar and the palette search the
   same pages, the view is the place that shows all of them.

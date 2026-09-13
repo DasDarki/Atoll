@@ -4,6 +4,7 @@ use std::time::{Duration, Instant};
 use anyhow::{Context, Result};
 use atoll_engine::GpuContext;
 use atoll_storage::Storage;
+use atoll_storage::prelude::*;
 use slint::wgpu_30::WGPUConfiguration;
 use slint::winit_030::WinitWindowAccessor;
 use slint::{ComponentHandle, RenderingState};
@@ -40,6 +41,11 @@ pub fn run() -> Result<()> {
     })?;
     tracing::debug!(elapsed = ?launched.elapsed(), "database open");
     atoll_i18n::set_language(Preferences::load(&storage).language());
+    match storage.clear_private_tabs() {
+        Ok(0) => {}
+        Ok(removed) => tracing::info!(removed, "private tabs of the last run thrown away"),
+        Err(error) => tracing::warn!(%error, "private tabs could not be thrown away"),
+    }
     let gpu = Rc::new(GpuContext::create().context(t!("keine geeignete Grafikkarte gefunden"))?);
     let gpu_handle = gpu.clone();
     tracing::debug!(elapsed = ?launched.elapsed(), "graphics device ready");

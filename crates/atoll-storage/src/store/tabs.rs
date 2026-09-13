@@ -15,6 +15,9 @@ pub struct NewTab<'a> {
     /// Position inside the island, appended when `None`.
     pub index: Option<usize>,
     pub created_at: Timestamp,
+    /// A private tab keeps nothing on disk: only this row says that it is there, its address and
+    /// its title stay in memory and the row goes away with the tab.
+    pub private: bool,
 }
 
 /// A tab together with where it lives, for searches across all workspaces.
@@ -39,8 +42,8 @@ pub trait TabStore: Connected {
             .query_map([], |row| {
                 Ok(TabEntry {
                     tab: rows::tab(row)?,
-                    island: rows::island_at(row, 9)?,
-                    workspace_name: row.get(17)?,
+                    island: rows::island_at(row, 10)?,
+                    workspace_name: row.get(18)?,
                 })
             })?
             .collect::<Result<_, _>>()?;
@@ -94,6 +97,16 @@ pub trait TabStore: Connected {
             })
     }
 
+    /// Throws away what is left of private tabs. They keep nothing, so there is nothing to
+    /// restore, and a crash must not leave them behind either.
+    fn clear_private_tabs(&self) -> StorageResult<usize> {
+        let removed = self
+            .connection()
+            .prepare_cached("DELETE FROM tab WHERE private = 1")?
+            .execute([])?;
+        Ok(removed)
+    }
+
     fn create_tab(&self, new: NewTab<'_>) -> StorageResult<Tab> {
         let position = match new.index {
             Some(_) => 0,
@@ -106,15 +119,16 @@ pub trait TabStore: Connected {
         };
         self.connection()
             .prepare_cached(
-                "INSERT INTO tab (island_id, url, title, position, created_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5)",
+                "INSERT INTO tab (island_id, url, title, position, created_at, private)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
             )?
             .execute(params![
                 new.island_id.0,
                 new.url,
                 new.title,
                 position,
-                new.created_at.0
+                new.created_at.0,
+                i64::from(new.private)
             ])?;
         let id = TabId(self.connection().last_insert_rowid());
         if new.index.is_some() {

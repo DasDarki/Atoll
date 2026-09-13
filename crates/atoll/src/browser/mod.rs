@@ -23,6 +23,7 @@ mod palette;
 mod passwords;
 mod plugins;
 mod preferences;
+mod private;
 mod reorder;
 mod session;
 mod settings;
@@ -68,6 +69,7 @@ use palette::PaletteState;
 use passwords::{PasswordPopup, PasswordVault, PendingFill};
 use plugins::{OpenPanel, Plugins};
 pub use preferences::Preferences;
+use private::PrivatePages;
 use reorder::IslandDrag;
 use session::Session;
 use sidebar::SidebarModels;
@@ -92,6 +94,7 @@ struct Shared {
     lifecycle: Rc<RefCell<TabLifecycle>>,
     views: Rc<RefCell<ViewRegistry>>,
     favicons: Rc<RefCell<FaviconCache>>,
+    private: Rc<RefCell<PrivatePages>>,
     closed_tabs: Rc<RefCell<Vec<ClosedTab>>>,
     clipboard: Rc<Clipboard>,
     clipboard_sync: Rc<RefCell<ClipboardSync>>,
@@ -123,6 +126,7 @@ impl Shared {
             lifecycle: Rc::new(RefCell::new(lifecycle)),
             views: Rc::default(),
             favicons: Rc::default(),
+            private: Rc::default(),
             closed_tabs: Rc::default(),
             clipboard: Rc::default(),
             clipboard_sync: Rc::default(),
@@ -157,6 +161,7 @@ pub struct Browser {
     dev_tools_presentation: RefCell<DevToolsPresentation>,
     input_target: Cell<InputTarget>,
     favicons: Rc<RefCell<FaviconCache>>,
+    private: Rc<RefCell<PrivatePages>>,
     history: RefCell<HistoryView>,
     opera: RefCell<OperaImport>,
     island_drag: RefCell<IslandDrag>,
@@ -221,6 +226,7 @@ impl Browser {
             dev_tools_presentation: RefCell::default(),
             input_target: Cell::default(),
             favicons: shared.favicons.clone(),
+            private: shared.private.clone(),
             history: RefCell::default(),
             opera: RefCell::default(),
             island_drag: RefCell::default(),

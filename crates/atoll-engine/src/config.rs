@@ -30,3 +30,13 @@ pub struct EngineConfig {
     /// Blocks requests and hides elements of every page.
     pub content_filter: Option<Arc<dyn ContentFilter>>,
 }
+
+/// Which session a view runs in.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum Session {
+    /// The ordinary one, which keeps cookies and cache on disk.
+    #[default]
+    Normal,
+    /// Keeps nothing on disk and shares nothing with the ordinary session.
+    Private,
+}

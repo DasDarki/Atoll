@@ -37,7 +37,9 @@ impl Browser {
                 })
                 .is_some();
         if !loaded {
-            if let Err(error) = self.storage.update_tab_address(tab, &url) {
+            if self.is_private(tab) {
+                self.remember_private_page(tab, Some(&url), None);
+            } else if let Err(error) = self.storage.update_tab_address(tab, &url) {
                 self.report(t!("Navigation"), Err::<(), _>(error));
                 return;
             }

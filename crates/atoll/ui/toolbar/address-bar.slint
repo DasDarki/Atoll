@@ -79,6 +79,23 @@ export component AddressBar inherits Rectangle {
                 }
             }
 
+            if BrowserState.private-tab : Rectangle {
+                width: label.preferred-width + 14px;
+                height: 20px;
+                y: (parent.height - self.height) / 2;
+                border-radius: self.height / 2;
+                background: Theme.accent-cyan.transparentize(0.85);
+
+                label := Text {
+                    text: @tr("Privat");
+                    color: Theme.accent-cyan;
+                    font-size: Theme.font-small;
+                    font-weight: 600;
+                    vertical-alignment: center;
+                    horizontal-alignment: center;
+                }
+            }
+
             Rectangle {
                 clip: true;
                 horizontal-stretch: 1;

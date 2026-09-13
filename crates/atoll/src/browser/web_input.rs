@@ -227,6 +227,7 @@ impl Browser {
             Shortcut::Home => self.go_home(),
             Shortcut::Downloads => self.open_downloads(),
             Shortcut::History => self.open_history(),
+            Shortcut::NewPrivateTab => self.new_private_tab(),
             Shortcut::Passwords => self.show_passwords(),
             Shortcut::DownloadVideo => self.download_video(),
         }

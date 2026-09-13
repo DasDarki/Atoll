@@ -26,7 +26,7 @@ mod view;
 
 pub use autofill::{FilledFields, LoginFill};
 pub use clipboard::ClipboardHelper;
-pub use config::EngineConfig;
+pub use config::{EngineConfig, Session};
 pub use dev_tools::DevToolsSession;
 pub use engine::Engine;
 pub use error::EngineError;

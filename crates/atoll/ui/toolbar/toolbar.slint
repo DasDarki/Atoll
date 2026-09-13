@@ -163,6 +163,10 @@ export component Toolbar inherits Rectangle {
                 activated => { BrowserState.menu-action("new-tab"); }
             }
             MenuItem {
+                title: @tr("Neuer privater Tab");
+                activated => { BrowserState.menu-action("new-private-tab"); }
+            }
+            MenuItem {
                 title: @tr("Geschlossenen Tab wiederherstellen");
                 activated => { BrowserState.menu-action("reopen-tab"); }
             }

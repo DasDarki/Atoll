@@ -157,12 +157,18 @@ export component TabRow inherits Rectangle {
                 y: (parent.height - self.height) / 2;
                 opacity: root.entry.state == TabLoadState.sleeping ? 0.55 : 1.0;
 
-                if root.entry.has-icon : Image {
+                if root.entry.private : Image {
+                    source: @image-url("../icons/incognito.svg");
+                    width: 15px;
+                    height: 15px;
+                    colorize: Theme.accent-cyan;
+                }
+                if !root.entry.private && root.entry.has-icon : Image {
                     source: root.entry.icon;
                     width: 16px;
                     height: 16px;
                 }
-                if !root.entry.has-icon : Image {
+                if !root.entry.private && !root.entry.has-icon : Image {
                     source: @image-url("../icons/globe.svg");
                     width: 14px;
                     height: 14px;

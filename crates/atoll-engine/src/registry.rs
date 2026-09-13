@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::Arc;
 
+use crate::config::Session;
 use crate::dev_tools::DevToolsBridge;
 use crate::events::{EngineEvent, RequestId};
 use crate::filter::ContentFilter;
@@ -37,6 +38,10 @@ pub(crate) struct Runtime {
     dev_tools: RefCell<HashMap<ViewId, Rc<DevToolsBridge>>>,
     next_view: Cell<u64>,
     next_request: Cell<u64>,
+    /// The session private views share, built when the first one asks for it.
+    private: RefCell<Option<cef::RequestContext>>,
+    /// How many views use the private session right now.
+    private_views: Cell<usize>,
 }
 
 thread_local! {
@@ -67,6 +72,42 @@ impl Runtime {
             dev_tools: RefCell::default(),
             next_view: Cell::new(0),
             next_request: Cell::new(0),
+            private: RefCell::default(),
+            private_views: Cell::new(0),
+        }
+    }
+
+    /// The request context a view of `session` runs in. The private one keeps nothing on disk,
+    /// and every private view shares it, so a sign-in reaches the next private tab.
+    pub(crate) fn session_context(&self, session: Session) -> Option<cef::RequestContext> {
+        match session {
+            Session::Normal => None,
+            Session::Private => {
+                self.private_views.set(self.private_views.get() + 1);
+                let mut held = self.private.borrow_mut();
+                if held.is_none() {
+                    let settings = cef::RequestContextSettings {
+                        size: size_of::<cef::sys::_cef_request_context_settings_t>(),
+                        cache_path: cef::CefString::from(""),
+                        persist_session_cookies: 0,
+                        accept_language_list: cef::CefString::from(""),
+                        cookieable_schemes_list: cef::CefString::from(""),
+                        cookieable_schemes_exclude_defaults: 0,
+                    };
+                    *held = cef::request_context_create_context(Some(&settings), None);
+                }
+                held.clone()
+            }
+        }
+    }
+
+    /// A private view is gone. With the last one the session goes too, so the next private tab
+    /// starts without anything the previous ones left behind.
+    pub(crate) fn private_view_closed(&self) {
+        let left = self.private_views.get().saturating_sub(1);
+        self.private_views.set(left);
+        if left == 0 {
+            self.private.borrow_mut().take();
         }
     }
 
@@ -91,6 +132,14 @@ impl Runtime {
     }
 
     pub(crate) fn remove_view(&self, id: ViewId) -> Option<Rc<ViewState>> {
+        if self
+            .views
+            .borrow()
+            .get(&id)
+            .is_some_and(|view| view.private.get())
+        {
+            self.private_view_closed();
+        }
         self.popups.borrow_mut().retain(|_, view| *view != id);
         self.pending.borrow_mut().retain(
             |_, pending| !matches!(pending, PendingCallback::JsDialog { view, .. } if *view == id),

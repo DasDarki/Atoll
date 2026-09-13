@@ -7,6 +7,7 @@ impl Browser {
     pub fn menu_action(&self, action: &str) {
         match action {
             "new-tab" => self.new_tab(),
+            "new-private-tab" => self.new_private_tab(),
             "new-window" => self.open_new_window(),
             "quit" => self.quit(),
             "reopen-tab" => self.reopen_closed_tab(),

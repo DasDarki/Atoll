@@ -360,17 +360,21 @@ impl Browser {
             }
             (changed, record.title.clone())
         };
-        let stored = if changed {
-            self.storage.update_tab_address(tab, &url)
+        if self.is_private(tab) {
+            self.remember_private_page(tab, Some(&url), None);
         } else {
-            Ok(())
-        };
-        let result = stored.and_then(|()| {
-            self.storage
-                .record_visit(tab, &url, title.as_deref(), Self::now())
-        });
-        if let Err(error) = result {
-            tracing::warn!(%error, "address could not be stored");
+            let stored = if changed {
+                self.storage.update_tab_address(tab, &url)
+            } else {
+                Ok(())
+            };
+            let result = stored.and_then(|()| {
+                self.storage
+                    .record_visit(tab, &url, title.as_deref(), Self::now())
+            });
+            if let Err(error) = result {
+                tracing::warn!(%error, "address could not be stored");
+            }
         }
         Effect {
             sidebar: changed,
@@ -393,12 +397,16 @@ impl Browser {
             record.title = Some(title.clone());
             record.url.clone()
         };
-        let result = self
-            .storage
-            .update_tab_title(tab, Some(&title))
-            .and_then(|()| self.storage.update_visit_title(tab, &url, &title));
-        if let Err(error) = result {
-            tracing::warn!(%error, "title could not be stored");
+        if self.is_private(tab) {
+            self.remember_private_page(tab, None, Some(&title));
+        } else {
+            let result = self
+                .storage
+                .update_tab_title(tab, Some(&title))
+                .and_then(|()| self.storage.update_visit_title(tab, &url, &title));
+            if let Err(error) = result {
+                tracing::warn!(%error, "title could not be stored");
+            }
         }
         Effect {
             sidebar: true,
@@ -410,6 +418,10 @@ impl Browser {
         let Some(tab) = self.tab_of(view) else {
             return Effect::NONE;
         };
+        if self.is_private(tab) {
+            // The icon belongs to a site the tab is not supposed to remember having seen.
+            return Effect::NONE;
+        }
         let Some(host) = host_of(page_url) else {
             return Effect::NONE;
         };
@@ -477,15 +489,21 @@ impl Browser {
             None => self.ensure_island(),
         };
         let Some(island) = island else { return };
+        // A page opened by a private tab stays private, it runs in that session anyway.
+        let private = source.is_some_and(|tab| self.is_private(tab));
         let created = self.storage.create_tab(atoll_storage::NewTab {
             island_id: island,
-            url,
+            url: if private { "" } else { url },
             title: None,
             index: target.map(|(_, index)| index),
             created_at: Self::now(),
+            private,
         });
         match created {
             Ok(tab) => {
+                if private {
+                    self.remember_private_page(tab.id, Some(url), None);
+                }
                 self.views
                     .borrow_mut()
                     .insert(tab.id, TabView::new(adopted, None));
