@@ -7,7 +7,8 @@ use slint::{ComponentHandle, ModelRc, SharedString, VecModel};
 use super::Browser;
 use super::navigation::resolve_input;
 use super::preferences::{
-    MAX_ARCHIVE_SUGGESTION_WEEKS, MAX_FROZEN_LIMIT, PreferenceKey, Preferences, SEARCH_ENGINES,
+    ArchiveFallback, MAX_ARCHIVE_SUGGESTION_WEEKS, MAX_FROZEN_LIMIT, PreferenceKey, Preferences,
+    SEARCH_ENGINES,
 };
 use crate::platform::dialogs::{self, FileDialogKind, FileDialogOptions};
 use crate::ui::{BrowserState, SettingsState};
@@ -52,6 +53,12 @@ impl Browser {
         state.set_max_frozen_limit(MAX_FROZEN_LIMIT as i32);
         state.set_archive_suggestion_weeks(preferences.archive_suggestion_weeks as i32);
         state.set_max_archive_suggestion_weeks(MAX_ARCHIVE_SUGGESTION_WEEKS as i32);
+        state.set_archive_fallback(match preferences.archive_fallback {
+            ArchiveFallback::Off => 0,
+            ArchiveFallback::Ask => 1,
+            ArchiveFallback::Automatic => 2,
+        });
+        state.set_archive_on_missing(preferences.archive_on_missing);
         state.set_download_ask(preferences.download_ask);
         state.set_download_panel(preferences.download_panel);
         self.show_download_directory();
@@ -86,6 +93,22 @@ impl Browser {
                 });
             }
             "home-button" => self.set_home_button(state.get_home_button()),
+            "archive-fallback" => {
+                let mode = match state.get_archive_fallback() {
+                    0 => ArchiveFallback::Off,
+                    2 => ArchiveFallback::Automatic,
+                    _ => ArchiveFallback::Ask,
+                };
+                self.update_preference(PreferenceKey::ArchiveFallback, |preferences| {
+                    preferences.archive_fallback = mode;
+                });
+            }
+            "archive-on-missing" => {
+                let enabled = state.get_archive_on_missing();
+                self.update_preference(PreferenceKey::ArchiveOnMissing, |preferences| {
+                    preferences.archive_on_missing = enabled;
+                });
+            }
             "language" => {
                 let index = usize::try_from(state.get_language()).unwrap_or_default();
                 self.set_language(

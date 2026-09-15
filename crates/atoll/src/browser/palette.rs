@@ -43,6 +43,7 @@ enum Command {
     OpenHistory,
     NewPrivateTab,
     NewTorTab,
+    OpenArchivedPage,
     ImportFromOpera,
     OpenDownloadFolder,
     ImportList,
@@ -512,6 +513,12 @@ impl Browser {
                 t!("tor privat anonym zwiebel"),
             ),
             (
+                Command::OpenArchivedPage,
+                t!("Archivfassung dieser Seite öffnen").to_owned(),
+                "",
+                t!("archiv wayback kopie alte fassung"),
+            ),
+            (
                 Command::OpenHistory,
                 t!("Verlauf").to_owned(),
                 t!("Strg+H"),
@@ -802,6 +809,7 @@ impl Browser {
             Command::OpenHistory => self.open_history(),
             Command::NewPrivateTab => self.new_private_tab(),
             Command::NewTorTab => self.new_tor_tab(),
+            Command::OpenArchivedPage => self.open_archived_page(),
             Command::ImportFromOpera => self.import_from_opera(),
             Command::OpenDownloadFolder => self.open_download_folder(),
             Command::ImportList => self.open_import(),

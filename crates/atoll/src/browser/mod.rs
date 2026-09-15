@@ -35,6 +35,7 @@ mod tabs;
 mod transfer;
 mod upload;
 mod views;
+mod wayback;
 mod web_input;
 mod windows;
 

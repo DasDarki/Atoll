@@ -86,9 +86,27 @@ impl Browser {
                 }
                 Effect::NONE
             }
-            EngineEvent::MainFrameLoaded { view, .. } => {
+            EngineEvent::MainFrameLoaded { view, http_status } => {
                 self.restore_scroll(view);
                 self.page_loaded(view);
+                if matches!(http_status, 404 | 410)
+                    && let Some(tab) = self.tab_of(view)
+                {
+                    let url = self
+                        .session
+                        .borrow()
+                        .tab(tab)
+                        .map(|record| record.url.clone())
+                        .unwrap_or_default();
+                    self.page_missing(tab, &url);
+                }
+                Effect::NONE
+            }
+            EngineEvent::MainFrameFailed { view, url, reason } => {
+                tracing::debug!(%url, %reason, "a page could not be loaded");
+                if let Some(tab) = self.tab_of(view) {
+                    self.page_unreachable(tab, &url);
+                }
                 Effect::NONE
             }
             EngineEvent::CursorChanged { view, cursor } => {

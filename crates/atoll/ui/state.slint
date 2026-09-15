@@ -325,6 +325,8 @@ export global SettingsState {
     callback reset-download-directory();
 
     in-out property <bool> adblock-enabled;
+    in-out property <int> archive-fallback;
+    in-out property <bool> archive-on-missing;
     in property <string> adblock-status;
     in property <bool> adblock-updating;
     in property <string> adblock-exceptions;

@@ -112,6 +112,11 @@ saved tabs therefore cost nothing at startup.
   installed. Starting Tor takes a moment, and the tab loads nothing before it is through, so no
   request of such a tab ever leaves unprotected. This is not the Tor Browser: it hides the
   address, not what a page can read about fonts, screen or canvas.
+- **Pages that are gone**: when nothing answers at an address, Atoll asks the Internet Archive
+  whether it kept a copy and offers it, by default with a question, or opens it right away when
+  the settings say so, or not at all. A second switch extends this to pages that answer that they
+  are not there. The palette finds the copy of any page on request. Asking sends the address to
+  archive.org, so it never happens in a private tab.
 - **History** (`Ctrl+H`): the visited pages by day, with a search of its own, a way to forget a
   single page and one to throw the whole history away. The address bar and the palette search the
   same pages, the view is the place that shows all of them.

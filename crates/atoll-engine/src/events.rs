@@ -43,6 +43,14 @@ pub enum EngineEvent {
         view: ViewId,
         http_status: i32,
     },
+    /// The main frame of a view could not be loaded at all, for example because the name does
+    /// not resolve or nothing answers.
+    MainFrameFailed {
+        view: ViewId,
+        url: String,
+        /// What the engine calls the error, for the log.
+        reason: String,
+    },
     CursorChanged {
         view: ViewId,
         cursor: CursorKind,
@@ -176,6 +184,7 @@ impl EngineEvent {
             | EngineEvent::LoadingStateChanged { view, .. }
             | EngineEvent::LoadProgress { view, .. }
             | EngineEvent::MainFrameLoaded { view, .. }
+            | EngineEvent::MainFrameFailed { view, .. }
             | EngineEvent::CursorChanged { view, .. }
             | EngineEvent::StatusMessage { view, .. }
             | EngineEvent::Tooltip { view, .. }

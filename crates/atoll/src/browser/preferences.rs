@@ -12,6 +12,37 @@ pub const MAX_ARCHIVE_SUGGESTION_WEEKS: u32 = 52;
 const DEFAULT_MEMORY_LIMIT_GB: u32 = 4;
 pub const MAX_MEMORY_LIMIT_GB: u32 = 64;
 
+/// What Atoll does when a page is not there any more.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum ArchiveFallback {
+    /// Nothing, and the archive is never asked.
+    Off,
+    /// Asks whether the copy of the Internet Archive should be opened.
+    #[default]
+    Ask,
+    /// Opens the copy right away.
+    Automatic,
+}
+
+impl ArchiveFallback {
+    fn parse(text: &str) -> Option<Self> {
+        match text {
+            "off" => Some(ArchiveFallback::Off),
+            "ask" => Some(ArchiveFallback::Ask),
+            "automatic" => Some(ArchiveFallback::Automatic),
+            _ => None,
+        }
+    }
+
+    fn as_str(self) -> &'static str {
+        match self {
+            ArchiveFallback::Off => "off",
+            ArchiveFallback::Ask => "ask",
+            ArchiveFallback::Automatic => "automatic",
+        }
+    }
+}
+
 /// A search provider offered in the settings.
 pub struct SearchEngine {
     pub name: &'static str,
@@ -81,6 +112,10 @@ pub struct Preferences {
     pub memory_limit_gb: u32,
     /// The language of the user interface, `None` to follow the system.
     pub language: Option<Language>,
+    /// What happens when a page cannot be reached any more.
+    pub archive_fallback: ArchiveFallback,
+    /// Whether a page that answers "not there" counts as gone too.
+    pub archive_on_missing: bool,
 }
 
 /// A single preference, used to store exactly what changed.
@@ -104,6 +139,8 @@ pub enum PreferenceKey {
     MemoryLimitEnabled,
     MemoryLimitGb,
     Language,
+    ArchiveFallback,
+    ArchiveOnMissing,
 }
 
 impl PreferenceKey {
@@ -127,6 +164,8 @@ impl PreferenceKey {
             PreferenceKey::MemoryLimitEnabled => "memory_limit_enabled",
             PreferenceKey::MemoryLimitGb => "memory_limit_gb",
             PreferenceKey::Language => "language",
+            PreferenceKey::ArchiveFallback => "archive_fallback",
+            PreferenceKey::ArchiveOnMissing => "archive_on_missing",
         }
     }
 }
@@ -152,6 +191,8 @@ impl Default for Preferences {
             memory_limit_enabled: true,
             memory_limit_gb: DEFAULT_MEMORY_LIMIT_GB,
             language: None,
+            archive_fallback: ArchiveFallback::default(),
+            archive_on_missing: false,
         }
     }
 }
@@ -209,6 +250,10 @@ impl Preferences {
                     gigabytes.clamp(1, MAX_MEMORY_LIMIT_GB)
                 }),
             language: text(PreferenceKey::Language).and_then(|name| Language::parse(&name)),
+            archive_fallback: text(PreferenceKey::ArchiveFallback)
+                .and_then(|name| ArchiveFallback::parse(&name))
+                .unwrap_or(defaults.archive_fallback),
+            archive_on_missing: flag(PreferenceKey::ArchiveOnMissing, defaults.archive_on_missing),
         }
     }
 
@@ -241,6 +286,8 @@ impl Preferences {
                 .language
                 .map(|language| language.tag().to_owned())
                 .unwrap_or_default(),
+            PreferenceKey::ArchiveFallback => self.archive_fallback.as_str().to_owned(),
+            PreferenceKey::ArchiveOnMissing => flag(self.archive_on_missing),
         };
         if let Err(error) = storage.set_setting(key.storage_key(), &value) {
             tracing::warn!(%error, key = key.storage_key(), "preference could not be stored");
@@ -292,6 +339,8 @@ mod tests {
             memory_limit_enabled: false,
             memory_limit_gb: 12,
             language: Some(Language::English),
+            archive_fallback: ArchiveFallback::Automatic,
+            archive_on_missing: true,
         };
         for key in [
             PreferenceKey::SearchUrl,
@@ -312,6 +361,8 @@ mod tests {
             PreferenceKey::MemoryLimitEnabled,
             PreferenceKey::MemoryLimitGb,
             PreferenceKey::Language,
+            PreferenceKey::ArchiveFallback,
+            PreferenceKey::ArchiveOnMissing,
         ] {
             preferences.store(&storage, key);
         }

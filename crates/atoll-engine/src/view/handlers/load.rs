@@ -71,6 +71,32 @@ wrap_load_handler! {
             });
         }
 
+        fn on_load_error(
+            &self,
+            _browser: Option<&mut Browser>,
+            frame: Option<&mut Frame>,
+            error_code: cef::Errorcode,
+            error_text: Option<&CefString>,
+            failed_url: Option<&CefString>,
+        ) {
+            if frame.is_none_or(|frame| frame.is_main() == 0) {
+                return;
+            }
+            // A load the user themselves stopped is no failure.
+            if error_code == cef::Errorcode::from(cef::sys::cef_errorcode_t::ERR_ABORTED) {
+                return;
+            }
+            let url = failed_url.map(CefString::to_string).unwrap_or_default();
+            if url.is_empty() {
+                return;
+            }
+            registry::emit(EngineEvent::MainFrameFailed {
+                view: self.view,
+                url,
+                reason: error_text.map(CefString::to_string).unwrap_or_default(),
+            });
+        }
+
         fn on_load_end(&self, _browser: Option<&mut Browser>, frame: Option<&mut Frame>, http_status_code: c_int) {
             if frame.is_some_and(|frame| frame.is_main() != 0) {
                 registry::emit(EngineEvent::MainFrameLoaded {

@@ -178,6 +178,15 @@ msgstr "Archive"
 msgid "Archiv öffnen"
 msgstr "Open archive"
 
+msgid "Archivfassung dieser Seite öffnen"
+msgstr "Open the archived copy of this page"
+
+msgid "Archivfassung vom {} geladen"
+msgstr "Loaded the archived copy from {}"
+
+msgid "Archivfassung öffnen"
+msgstr "Open the archived copy"
+
 msgid "Archivieren"
 msgstr "Archive"
 
@@ -199,6 +208,9 @@ msgstr "Quit Atoll"
 msgid "Atoll konnte nicht gestartet werden: {}"
 msgstr "Atoll could not be started: {}"
 
+msgid "Auch wenn die Seite „nicht gefunden“ meldet"
+msgstr "Also when the page says “not found”"
+
 msgid "Auf Seite suchen"
 msgstr "Find on page"
 
@@ -207,6 +219,9 @@ msgstr "No video found on this page"
 
 msgid "Auf dieser Seite wurde nichts blockiert"
 msgstr "Nothing was blocked on this page"
+
+msgid "Aus"
+msgstr "Off"
 
 msgid "Aus Archiv"
 msgstr "From archive"
@@ -261,6 +276,9 @@ msgstr "Remove exception"
 
 msgid "Auswahl"
 msgstr "Selection"
+
+msgid "Automatisch"
+msgstr "Automatically"
 
 msgid "Bearbeiten"
 msgstr "Edit"
@@ -340,11 +358,20 @@ msgstr "Appearance"
 msgid "Das Anmeldefeld gehört zu einer anderen Seite, es wurde nichts eingefügt"
 msgstr "The login field belongs to another site, nothing was filled in"
 
+msgid "Das Archiv hat keine Fassung dieser Seite"
+msgstr "The archive has no copy of this page"
+
 msgid "Das Archiv ist leer."
 msgstr "The archive is empty."
 
+msgid "Das Archiv wird gefragt …"
+msgstr "Asking the archive …"
+
 msgid "Das Bild konnte nicht gespeichert werden"
 msgstr "The image could not be saved"
+
+msgid "Das Internet Archive hat eine Fassung vom {}. Soll Atoll sie öffnen?"
+msgstr "The Internet Archive has a copy from {}. Shall Atoll open it?"
 
 msgid "Datei auswählen"
 msgstr "Choose file"
@@ -574,6 +601,9 @@ msgstr "Colour"
 msgid "Farbe ändern"
 msgstr "Change colour"
 
+msgid "Fassung im Archiv"
+msgstr "Copy in the archive"
+
 msgid "Fehler: "
 msgstr "Error: "
 
@@ -603,6 +633,9 @@ msgstr "Updating the filter lists…"
 
 msgid "Filterlisten werden geladen…"
 msgstr "Loading the filter lists…"
+
+msgid "Fragen"
+msgstr "Ask"
 
 msgid "Freitag"
 msgstr "Friday"
@@ -688,6 +721,9 @@ msgstr "Switched off in the settings"
 msgid "In die Zwischenablage kopiert"
 msgstr "Copied to the clipboard"
 
+msgid "In einem privaten Tab fragt Atoll das Archiv nicht, die Adresse bliebe sonst dort"
+msgstr "In a private tab Atoll does not ask the archive, the address would stay there"
+
 msgid "In neue Insel verschieben"
 msgstr "Move to a new island"
 
@@ -759,6 +795,9 @@ msgstr "Install"
 
 msgid "Interne Seite"
 msgstr "Internal page"
+
+msgid "Ist eine Seite nicht erreichbar, fragt Atoll das Internet Archive nach einer Kopie. Dabei wandert die Adresse der Seite dorthin. In privaten Tabs passiert das nie."
+msgstr "When a page cannot be reached, Atoll asks the Internet Archive for a copy. That sends the address of the page there. In private tabs it never happens."
 
 msgid "Jetzt aktualisieren"
 msgstr "Update now"
@@ -1045,6 +1084,9 @@ msgstr "Log of \"{}\""
 msgid "Rosa"
 msgstr "Pink"
 
+msgid "SEITEN, DIE ES NICHT MEHR GIBT"
+msgstr "PAGES THAT ARE GONE"
+
 msgid "SPEICHERORT"
 msgstr "LOCATION"
 
@@ -1087,6 +1129,12 @@ msgstr "Bookmark page"
 msgid "Seite neu laden?"
 msgstr "Reload page?"
 
+msgid "Seite nicht erreichbar"
+msgstr "Page cannot be reached"
+
+msgid "Seite nicht gefunden"
+msgstr "Page not found"
+
 msgid "Seite verlassen?"
 msgstr "Leave page?"
 
@@ -1107,6 +1155,9 @@ msgstr "Sunday"
 
 msgid "Sonst erscheint nur eine kurze Meldung. Die Übersicht öffnet Strg+J."
 msgstr "Otherwise only a short message appears. Ctrl+J opens the list."
+
+msgid "Sonst nur, wenn die Seite gar nicht antwortet."
+msgstr "Otherwise only when the page does not answer at all."
 
 msgid "Sonst zeigen neue Tabs die Atoll-Startseite mit der Suche."
 msgstr "Otherwise new tabs show the Atoll start page with the search."
@@ -1503,6 +1554,9 @@ msgstr "Clipboard not available"
 
 msgid "adblock werbung seite ausnahme"
 msgstr "adblock ads page exception"
+
+msgid "archiv wayback kopie alte fassung"
+msgstr "archive wayback copy old version"
 
 msgid "bereits vorhanden"
 msgstr "already there"

@@ -6,6 +6,7 @@ import { ActionButton, ButtonKind } from "../widgets/button.slint";
 import { TextField } from "../widgets/text-field.slint";
 import { FieldLabel } from "../widgets/field-label.slint";
 import { Toggle } from "../widgets/toggle.slint";
+import { Segmented } from "../widgets/segmented.slint";
 import { PluginItem } from "../structs.slint";
 
 component SectionButton inherits Rectangle {
@@ -404,6 +405,32 @@ export component SettingsPage inherits Modal {
                     SettingRow {
                         title: @tr("Anmeldungen mit 1Password ausfüllen");
                         description: SettingsState.onepassword-status;
+                    }
+                    Divider { }
+                    SectionTitle { text: @tr("SEITEN, DIE ES NICHT MEHR GIBT"); }
+                    VerticalLayout {
+                        spacing: 6px;
+                        padding-top: 4px;
+                        padding-bottom: 8px;
+                        Segmented {
+                            options: [@tr("Aus"), @tr("Fragen"), @tr("Automatisch")];
+                            selected <=> SettingsState.archive-fallback;
+                            changed-by-user => { SettingsState.changed("archive-fallback"); }
+                        }
+                        Text {
+                            text: @tr("Ist eine Seite nicht erreichbar, fragt Atoll das Internet Archive nach einer Kopie. Dabei wandert die Adresse der Seite dorthin. In privaten Tabs passiert das nie.");
+                            color: Theme.text-faint;
+                            font-size: Theme.font-small + 1px;
+                            wrap: word-wrap;
+                        }
+                    }
+                    if SettingsState.archive-fallback != 0 : SettingRow {
+                        title: @tr("Auch wenn die Seite „nicht gefunden“ meldet");
+                        description: @tr("Sonst nur, wenn die Seite gar nicht antwortet.");
+                        Toggle {
+                            checked <=> SettingsState.archive-on-missing;
+                            toggled => { SettingsState.changed("archive-on-missing"); }
+                        }
                     }
                     Divider { }
                     SectionTitle { text: @tr("DATEN"); }

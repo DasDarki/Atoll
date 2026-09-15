@@ -75,11 +75,34 @@ impl Browser {
         });
     }
 
+    /// Asks before something is lost, so the agreeing answer is marked as the weighty one.
     pub(super) fn confirm(
         &self,
         title: &str,
         message: &str,
         accept_label: &str,
+        on_accept: impl FnOnce() + 'static,
+    ) {
+        self.ask(title, message, accept_label, true, on_accept);
+    }
+
+    /// Asks the same way, for a step that takes nothing away.
+    pub(super) fn offer(
+        &self,
+        title: &str,
+        message: &str,
+        accept_label: &str,
+        on_accept: impl FnOnce() + 'static,
+    ) {
+        self.ask(title, message, accept_label, false, on_accept);
+    }
+
+    fn ask(
+        &self,
+        title: &str,
+        message: &str,
+        accept_label: &str,
+        destructive: bool,
         on_accept: impl FnOnce() + 'static,
     ) {
         self.enqueue_dialog(Dialog {
@@ -90,7 +113,7 @@ impl Browser {
                 input: "".into(),
                 accept_label: accept_label.into(),
                 cancel_label: t!("Abbrechen").into(),
-                destructive: true,
+                destructive,
             },
             on_close: Box::new(move |_, accepted, _| {
                 if accepted {
