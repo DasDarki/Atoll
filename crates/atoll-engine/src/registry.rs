@@ -40,8 +40,11 @@ pub(crate) struct Runtime {
     next_request: Cell<u64>,
     /// The session private views share, built when the first one asks for it.
     private: RefCell<Option<cef::RequestContext>>,
+    /// The same for views that go through Tor, with the port they were built for.
+    tor: RefCell<Option<(u16, cef::RequestContext)>>,
     /// How many views use the private session right now.
     private_views: Cell<usize>,
+    tor_views: Cell<usize>,
 }
 
 thread_local! {
@@ -73,7 +76,9 @@ impl Runtime {
             next_view: Cell::new(0),
             next_request: Cell::new(0),
             private: RefCell::default(),
+            tor: RefCell::default(),
             private_views: Cell::new(0),
+            tor_views: Cell::new(0),
         }
     }
 
@@ -86,28 +91,49 @@ impl Runtime {
                 self.private_views.set(self.private_views.get() + 1);
                 let mut held = self.private.borrow_mut();
                 if held.is_none() {
-                    let settings = cef::RequestContextSettings {
-                        size: size_of::<cef::sys::_cef_request_context_settings_t>(),
-                        cache_path: cef::CefString::from(""),
-                        persist_session_cookies: 0,
-                        accept_language_list: cef::CefString::from(""),
-                        cookieable_schemes_list: cef::CefString::from(""),
-                        cookieable_schemes_exclude_defaults: 0,
-                    };
-                    *held = cef::request_context_create_context(Some(&settings), None);
+                    *held = forgetful_context();
                 }
                 held.clone()
+            }
+            Session::Tor(port) => {
+                self.tor_views.set(self.tor_views.get() + 1);
+                let mut held = self.tor.borrow_mut();
+                if held.as_ref().is_some_and(|(known, _)| *known != port) {
+                    held.take();
+                }
+                if held.is_none() {
+                    let context = forgetful_context()?;
+                    if let Err(error) = send_through_proxy(&context, port) {
+                        tracing::warn!(error, "the Tor proxy could not be set");
+                        return None;
+                    }
+                    *held = Some((port, context));
+                }
+                held.as_ref().map(|(_, context)| context.clone())
             }
         }
     }
 
     /// A private view is gone. With the last one the session goes too, so the next private tab
     /// starts without anything the previous ones left behind.
-    pub(crate) fn private_view_closed(&self) {
-        let left = self.private_views.get().saturating_sub(1);
-        self.private_views.set(left);
-        if left == 0 {
-            self.private.borrow_mut().take();
+    pub(crate) fn private_view_closed(&self, through_tor: bool) {
+        let (count, held) = if through_tor {
+            (&self.tor_views, None)
+        } else {
+            (&self.private_views, Some(&self.private))
+        };
+        let left = count.get().saturating_sub(1);
+        count.set(left);
+        if left > 0 {
+            return;
+        }
+        match held {
+            Some(private) => {
+                private.borrow_mut().take();
+            }
+            None => {
+                self.tor.borrow_mut().take();
+            }
         }
     }
 
@@ -132,13 +158,15 @@ impl Runtime {
     }
 
     pub(crate) fn remove_view(&self, id: ViewId) -> Option<Rc<ViewState>> {
-        if self
+        let gone = self
             .views
             .borrow()
             .get(&id)
-            .is_some_and(|view| view.private.get())
+            .map(|view| (view.private.get(), view.through_tor.get()));
+        if let Some((private, through_tor)) = gone
+            && (private || through_tor)
         {
-            self.private_view_closed();
+            self.private_view_closed(through_tor);
         }
         self.popups.borrow_mut().retain(|_, view| *view != id);
         self.pending.borrow_mut().retain(
@@ -229,4 +257,47 @@ pub(crate) fn emit(event: EngineEvent) {
     if let Some(runtime) = runtime() {
         runtime.emit(event);
     }
+}
+
+/// A session that keeps nothing on disk.
+fn forgetful_context() -> Option<cef::RequestContext> {
+    let settings = cef::RequestContextSettings {
+        size: size_of::<cef::sys::_cef_request_context_settings_t>(),
+        cache_path: cef::CefString::from(""),
+        persist_session_cookies: 0,
+        accept_language_list: cef::CefString::from(""),
+        cookieable_schemes_list: cef::CefString::from(""),
+        cookieable_schemes_exclude_defaults: 0,
+    };
+    cef::request_context_create_context(Some(&settings), None)
+}
+
+/// Points a session at the SOCKS proxy on `port`, which is how the engine reaches Tor.
+fn send_through_proxy(context: &cef::RequestContext, port: u16) -> Result<(), String> {
+    use cef::{ImplDictionaryValue, ImplPreferenceManager, ImplValue};
+
+    let name = cef::CefString::from("proxy");
+    if context.can_set_preference(Some(&name)) == 0 {
+        return Err("the engine does not take a proxy for this session".to_owned());
+    }
+    let settings = cef::dictionary_value_create().ok_or("no settings could be built")?;
+    let mode = cef::value_create().ok_or("no value could be built")?;
+    mode.set_string(Some(&cef::CefString::from("fixed_servers")));
+    settings.set_value(Some(&cef::CefString::from("mode")), Some(&mut mode.clone()));
+    let server = cef::value_create().ok_or("no value could be built")?;
+    server.set_string(Some(&cef::CefString::from(
+        format!("socks5://127.0.0.1:{port}").as_str(),
+    )));
+    settings.set_value(
+        Some(&cef::CefString::from("server")),
+        Some(&mut server.clone()),
+    );
+    let value = cef::value_create().ok_or("no value could be built")?;
+    value.set_dictionary(Some(&mut settings.clone()));
+    let mut problem = cef::CefString::from("");
+    let set = context.set_preference(Some(&name), Some(&mut value.clone()), Some(&mut problem));
+    if set == 0 {
+        return Err(problem.to_string());
+    }
+    Ok(())
 }

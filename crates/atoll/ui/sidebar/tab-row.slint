@@ -158,10 +158,12 @@ export component TabRow inherits Rectangle {
                 opacity: root.entry.state == TabLoadState.sleeping ? 0.55 : 1.0;
 
                 if root.entry.private : Image {
-                    source: @image-url("../icons/incognito.svg");
+                    source: root.entry.through-tor
+                        ? @image-url("../icons/shield.svg")
+                        : @image-url("../icons/incognito.svg");
                     width: 15px;
                     height: 15px;
-                    colorize: Theme.accent-cyan;
+                    colorize: root.entry.through-tor ? Theme.accent : Theme.accent-cyan;
                 }
                 if !root.entry.private && root.entry.has-icon : Image {
                     source: root.entry.icon;

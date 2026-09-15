@@ -167,6 +167,10 @@ export component Toolbar inherits Rectangle {
                 activated => { BrowserState.menu-action("new-private-tab"); }
             }
             MenuItem {
+                title: @tr("Neuer Tab über Tor");
+                activated => { BrowserState.menu-action("new-tor-tab"); }
+            }
+            MenuItem {
                 title: @tr("Geschlossenen Tab wiederherstellen");
                 activated => { BrowserState.menu-action("reopen-tab"); }
             }

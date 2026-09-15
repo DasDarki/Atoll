@@ -42,6 +42,7 @@ enum Command {
     OpenDownloads,
     OpenHistory,
     NewPrivateTab,
+    NewTorTab,
     ImportFromOpera,
     OpenDownloadFolder,
     ImportList,
@@ -505,6 +506,12 @@ impl Browser {
                 t!("privat inkognito tab ohne spuren"),
             ),
             (
+                Command::NewTorTab,
+                t!("Neuer Tab über Tor").to_owned(),
+                "",
+                t!("tor privat anonym zwiebel"),
+            ),
+            (
                 Command::OpenHistory,
                 t!("Verlauf").to_owned(),
                 t!("Strg+H"),
@@ -794,6 +801,7 @@ impl Browser {
             Command::OpenDownloads => self.open_downloads(),
             Command::OpenHistory => self.open_history(),
             Command::NewPrivateTab => self.new_private_tab(),
+            Command::NewTorTab => self.new_tor_tab(),
             Command::ImportFromOpera => self.import_from_opera(),
             Command::OpenDownloadFolder => self.open_download_folder(),
             Command::ImportList => self.open_import(),

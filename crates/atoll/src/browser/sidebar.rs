@@ -96,6 +96,7 @@ impl Browser {
                 rows.push(SidebarRow {
                     kind: RowKind::Tab,
                     private: tab.private,
+                    through_tor: tab.private && self.is_tor(tab.id),
                     island_id: entry.island.id.0 as i32,
                     tab_id: tab.id.0 as i32,
                     title: tab.display_title().into(),

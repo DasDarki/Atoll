@@ -487,6 +487,9 @@ impl WindowManager {
         };
         self.shared.plugins.report_rule_hits();
         self.shared.plugins.poll_workers();
+        for browser in self.browsers() {
+            browser.watch_tor();
+        }
         if events.is_empty() {
             return;
         }

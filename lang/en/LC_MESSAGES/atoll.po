@@ -934,6 +934,9 @@ msgstr "New tab"
 msgid "Neuer Tab in dieser Insel"
 msgstr "New tab in this island"
 
+msgid "Neuer Tab über Tor"
+msgstr "New tab through Tor"
+
 msgid "Neuer Workspace"
 msgstr "New workspace"
 
@@ -1248,6 +1251,21 @@ msgstr "Text file (.txt)"
 
 msgid "Textdateien"
 msgstr "Text files"
+
+msgid "Tor"
+msgstr "Tor"
+
+msgid "Tor ist verbunden"
+msgstr "Tor is connected"
+
+msgid "Tor konnte nicht gestartet werden: {}"
+msgstr "Tor could not be started: {}"
+
+msgid "Tor wird verbunden, die Seite lädt danach"
+msgstr "Tor is connecting, the page loads afterwards"
+
+msgid "Tor-Tab: die Seite sieht nicht, woher du kommst. Gegen Wiedererkennung am Browser selbst hilft das nicht."
+msgstr "Tor tab: the site does not see where you come from. It does not help against being recognised by the browser itself."
 
 msgid "Trotzdem einfügen"
 msgstr "Fill in anyway"
@@ -1578,6 +1596,9 @@ msgstr "search setting"
 
 msgid "tab öffnen"
 msgstr "open tab"
+
+msgid "tor privat anonym zwiebel"
+msgstr "tor private anonymous onion"
 
 msgid "ungültige Zeile"
 msgstr "invalid line"

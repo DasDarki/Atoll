@@ -14,6 +14,7 @@ use atoll_engine::Session;
 use atoll_i18n::t;
 use atoll_storage::NewTab;
 use atoll_storage::prelude::*;
+use atoll_tor::Status as TorStatus;
 
 use super::Browser;
 use super::session::Session as BrowserSession;
@@ -28,6 +29,8 @@ pub struct PrivatePages {
 struct Page {
     url: String,
     title: Option<String>,
+    /// Whether the tab goes through Tor, which only this run knows.
+    through_tor: bool,
 }
 
 impl PrivatePages {
@@ -37,6 +40,10 @@ impl PrivatePages {
 
     pub fn forget(&mut self, tab: TabId) {
         self.pages.remove(&tab);
+    }
+
+    fn through_tor(&self, tab: TabId) -> bool {
+        self.pages.get(&tab).is_some_and(|page| page.through_tor)
     }
 
     /// Fills in what the database does not hold, after the session was read.
@@ -58,6 +65,16 @@ impl PrivatePages {
 impl Browser {
     /// Opens a private tab next to the active one.
     pub fn new_private_tab(&self) {
+        self.open_private_tab(false);
+    }
+
+    /// Opens a private tab whose pages go through the Tor network.
+    pub fn new_tor_tab(&self) {
+        self.tor.start();
+        self.open_private_tab(true);
+    }
+
+    fn open_private_tab(&self, through_tor: bool) {
         let target = self.insertion_point_after_active();
         let island = match target {
             Some((island, _)) => Some(island),
@@ -74,12 +91,22 @@ impl Browser {
         });
         match created {
             Ok(tab) => {
+                if through_tor {
+                    self.private.borrow_mut().page(tab.id).through_tor = true;
+                }
                 self.address_focus_requested.set(true);
                 self.reload_session();
                 self.activate_tab(tab.id);
-                self.show_toast(t!(
-                    "Privater Tab: nichts davon wird gespeichert, und er weiß nichts von deinen Anmeldungen"
-                ));
+                let message = if through_tor {
+                    t!(
+                        "Tor-Tab: die Seite sieht nicht, woher du kommst. Gegen Wiedererkennung am Browser selbst hilft das nicht."
+                    )
+                } else {
+                    t!(
+                        "Privater Tab: nichts davon wird gespeichert, und er weiß nichts von deinen Anmeldungen"
+                    )
+                };
+                self.show_toast(message);
             }
             Err(error) => self.report(t!("Tab anlegen"), Err::<(), _>(error)),
         }
@@ -93,12 +120,64 @@ impl Browser {
             .is_some_and(|record| record.private)
     }
 
+    /// Whether the tab carries its pages through Tor.
+    pub(super) fn is_tor(&self, tab: TabId) -> bool {
+        self.private.borrow().through_tor(tab)
+    }
+
     /// The session a tab's pages run in.
     pub(super) fn session_of(&self, tab: TabId) -> Session {
-        if self.is_private(tab) {
-            Session::Private
-        } else {
-            Session::Normal
+        if !self.is_private(tab) {
+            return Session::Normal;
+        }
+        match self.tor_port(tab) {
+            Some(port) => Session::Tor(port),
+            None => Session::Private,
+        }
+    }
+
+    /// The proxy port a Tor tab uses, if Tor is through.
+    fn tor_port(&self, tab: TabId) -> Option<u16> {
+        self.is_tor(tab).then(|| self.tor.status().port()).flatten()
+    }
+
+    /// Whether the tab may not load anything yet because its Tor is still on its way. Nothing of
+    /// such a tab ever goes out beside Tor, so it waits instead.
+    pub(super) fn waits_for_tor(&self, tab: TabId) -> bool {
+        self.is_tor(tab) && self.tor_port(tab).is_none()
+    }
+
+    /// Looks after the tabs that wait for Tor, called whenever the browser is awake anyway.
+    pub(super) fn watch_tor(&self) {
+        let status = self.tor.status();
+        if self.tor_status.borrow().as_ref() == Some(&status) {
+            return;
+        }
+        *self.tor_status.borrow_mut() = Some(status.clone());
+        match status {
+            TorStatus::Ready(_) => {
+                let waiting: Vec<(TabId, String)> = {
+                    let session = self.session.borrow();
+                    let pages = self.private.borrow();
+                    session
+                        .tabs()
+                        .filter(|tab| tab.private && pages.through_tor(tab.id))
+                        .map(|tab| (tab.id, tab.url.clone()))
+                        .collect()
+                };
+                for (tab, url) in waiting {
+                    if url.trim().is_empty() {
+                        continue;
+                    }
+                    self.load_in_tab(tab, &url);
+                }
+                self.show_toast(t!("Tor ist verbunden"));
+            }
+            TorStatus::Failed(reason) => {
+                self.show_toast(&t!("Tor konnte nicht gestartet werden: {}", reason));
+                self.tor.forget_failure();
+            }
+            TorStatus::Idle | TorStatus::Starting => {}
         }
     }
 

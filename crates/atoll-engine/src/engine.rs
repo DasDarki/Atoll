@@ -114,6 +114,7 @@ impl Engine {
             ..Default::default()
         };
         state.private.set(session == Session::Private);
+        state.through_tor.set(matches!(session, Session::Tor(_)));
         let mut client = build_client(state.id);
         let mut context = self.runtime.session_context(session);
         let browser = cef::browser_host_create_browser_sync(

@@ -39,6 +39,8 @@ pub(crate) struct ViewState {
     pub(crate) clipboard_helper: Cell<bool>,
     /// Whether the view runs in the private session, which is given up with the last of them.
     pub(crate) private: Cell<bool>,
+    /// The same for the session that goes through Tor.
+    pub(crate) through_tor: Cell<bool>,
     /// The view shows a DevTools frontend, see [`crate::DevToolsSession`].
     pub(crate) dev_tools_frontend: Cell<bool>,
     /// Requests blocked by the content filter since the page started loading. Counted on the
@@ -67,6 +69,7 @@ impl ViewState {
             paint_failed: Cell::new(false),
             clipboard_helper: Cell::new(false),
             private: Cell::new(false),
+            through_tor: Cell::new(false),
             dev_tools_frontend: Cell::new(false),
             blocked_requests: Arc::default(),
             activity: RefCell::default(),

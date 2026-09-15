@@ -106,6 +106,12 @@ saved tabs therefore cost nothing at startup.
   extensions never see them. Their pages run in a session without a cache folder, shared among the
   private tabs, so a sign-in reaches the next one and everything is gone when the last one closes.
   A page opened from a private tab stays private.
+- **Tabs through Tor**: a private tab whose pages travel the Tor network, so a site does not see
+  where the request comes from. Tor runs inside Atoll through Arti, the Rust implementation, with
+  a small SOCKS bridge on the loopback address that only the engine talks to; nothing has to be
+  installed. Starting Tor takes a moment, and the tab loads nothing before it is through, so no
+  request of such a tab ever leaves unprotected. This is not the Tor Browser: it hides the
+  address, not what a page can read about fonts, screen or canvas.
 - **History** (`Ctrl+H`): the visited pages by day, with a search of its own, a way to forget a
   single page and one to throw the whole history away. The address bar and the palette search the
   same pages, the view is the place that shows all of them.
@@ -245,6 +251,7 @@ crates/
   atoll-onepassword  logins from the 1Password CLI and matching them to sites
   atoll-video      video downloads through yt-dlp with progress and cancel
   atoll-i18n       the languages: the `t!` macro and the catalogs built from lang/
+  atoll-tor        Tor through Arti, with the SOCKS bridge the engine speaks to
   atoll-plugin     the Luau runtime for extensions, their manifests, permissions and installation
   atoll-engine     CEF integration: off-screen browsers, rendering, input, clipboard bridge
   atoll            the application: Slint user interface and the controller

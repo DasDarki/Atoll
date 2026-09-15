@@ -20,6 +20,23 @@ impl Browser {
             return;
         };
 
+        if self.waits_for_tor(tab) {
+            // Nothing of a Tor tab goes out beside Tor, so the address waits with it.
+            self.remember_private_page(tab, Some(&url), None);
+            if let Some(record) = self.session.borrow_mut().tab_mut(tab) {
+                record.url = url.clone();
+            }
+            self.refresh_sidebar();
+            self.sync_page();
+            self.show_toast(t!("Tor wird verbunden, die Seite lädt danach"));
+            return;
+        }
+        self.load_in_tab(tab, &url);
+    }
+
+    /// Loads `url` in `tab`, which is where navigating ends up once the address is settled.
+    pub(super) fn load_in_tab(&self, tab: TabId, url: &str) {
+        let url = url.to_owned();
         let blank = self
             .session
             .borrow()

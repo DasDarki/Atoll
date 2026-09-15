@@ -74,6 +74,10 @@ impl Browser {
         let Some(engine) = engine.as_ref() else {
             return;
         };
+        if self.waits_for_tor(tab) {
+            // Its pages only ever travel through Tor, so it stays empty until Tor is through.
+            return;
+        }
         let session = self.session_of(tab);
         match engine.create_view_in(&record.url, self.geometry.get(), false, session) {
             Ok(view) => {

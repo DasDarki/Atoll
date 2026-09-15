@@ -28,6 +28,7 @@ impl Browser {
             state.set_address("".into());
             state.set_security(PageSecurity::None);
             state.set_private_tab(false);
+            state.set_tor_tab(false);
             state.set_can_go_back(false);
             state.set_can_go_forward(false);
             state.set_loading(false);
@@ -55,6 +56,7 @@ impl Browser {
             page_security(&address)
         });
         state.set_private_tab(tab.private);
+        state.set_tor_tab(tab.private && self.is_tor(tab.id));
         state.set_title(tab.title.clone().unwrap_or_default().into());
         state.set_address(address.into());
         state.set_can_go_back(

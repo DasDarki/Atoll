@@ -84,11 +84,11 @@ export component AddressBar inherits Rectangle {
                 height: 20px;
                 y: (parent.height - self.height) / 2;
                 border-radius: self.height / 2;
-                background: Theme.accent-cyan.transparentize(0.85);
+                background: BrowserState.tor-tab ? Theme.accent.transparentize(0.82) : Theme.accent-cyan.transparentize(0.85);
 
                 label := Text {
-                    text: @tr("Privat");
-                    color: Theme.accent-cyan;
+                    text: BrowserState.tor-tab ? @tr("Tor") : @tr("Privat");
+                    color: BrowserState.tor-tab ? Theme.accent : Theme.accent-cyan;
                     font-size: Theme.font-small;
                     font-weight: 600;
                     vertical-alignment: center;

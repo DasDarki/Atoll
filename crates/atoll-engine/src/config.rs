@@ -39,4 +39,6 @@ pub enum Session {
     Normal,
     /// Keeps nothing on disk and shares nothing with the ordinary session.
     Private,
+    /// Like [`Session::Private`], and every request goes through the Tor proxy on that port.
+    Tor(u16),
 }

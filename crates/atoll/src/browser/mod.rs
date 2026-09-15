@@ -46,6 +46,7 @@ use atoll_core::{TabLifecycle, Timestamp, WindowId, WorkspaceId};
 use atoll_engine::{Engine, GpuContext, RequestId, ViewGeometry, ViewId};
 use atoll_storage::Storage;
 use atoll_storage::prelude::*;
+use atoll_tor::Tor;
 use atoll_video::YtDlp;
 use slint::ComponentHandle;
 
@@ -95,6 +96,7 @@ struct Shared {
     views: Rc<RefCell<ViewRegistry>>,
     favicons: Rc<RefCell<FaviconCache>>,
     private: Rc<RefCell<PrivatePages>>,
+    tor: Tor,
     closed_tabs: Rc<RefCell<Vec<ClosedTab>>>,
     clipboard: Rc<Clipboard>,
     clipboard_sync: Rc<RefCell<ClipboardSync>>,
@@ -127,6 +129,7 @@ impl Shared {
             views: Rc::default(),
             favicons: Rc::default(),
             private: Rc::default(),
+            tor: Tor::default(),
             closed_tabs: Rc::default(),
             clipboard: Rc::default(),
             clipboard_sync: Rc::default(),
@@ -162,6 +165,9 @@ pub struct Browser {
     input_target: Cell<InputTarget>,
     favicons: Rc<RefCell<FaviconCache>>,
     private: Rc<RefCell<PrivatePages>>,
+    tor: Tor,
+    /// What Tor last said, to notice when it changes.
+    tor_status: RefCell<Option<atoll_tor::Status>>,
     history: RefCell<HistoryView>,
     opera: RefCell<OperaImport>,
     island_drag: RefCell<IslandDrag>,
@@ -227,6 +233,8 @@ impl Browser {
             input_target: Cell::default(),
             favicons: shared.favicons.clone(),
             private: shared.private.clone(),
+            tor: shared.tor.clone(),
+            tor_status: RefCell::default(),
             history: RefCell::default(),
             opera: RefCell::default(),
             island_drag: RefCell::default(),

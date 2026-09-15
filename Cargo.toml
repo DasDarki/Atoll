@@ -18,8 +18,11 @@ atoll-onepassword = { path = "crates/atoll-onepassword" }
 atoll-video = { path = "crates/atoll-video" }
 atoll-plugin = { path = "crates/atoll-plugin" }
 atoll-i18n = { path = "crates/atoll-i18n" }
+atoll-tor = { path = "crates/atoll-tor" }
 adblock = { version = "0.13", default-features = false, features = ["embedded-domain-resolver", "full-regex-handling"] }
 
+arti-client = "0.47"
+tor-rtcompat = "0.47"
 ash = "0.38"
 cef = { version = "152.3", default-features = false }
 directories = "6"
@@ -46,6 +49,7 @@ slint = { version = "1.18", default-features = false, features = [
 ] }
 slint-build = "1.18"
 thiserror = "2"
+tokio = { version = "1", features = ["rt-multi-thread", "net", "io-util", "time", "macros"] }
 toml = { version = "0.9", default-features = false, features = ["parse", "serde"] }
 tracing = "0.1"
 ureq = "3.4"
