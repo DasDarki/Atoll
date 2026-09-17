@@ -14,6 +14,7 @@ atoll-storage = { path = "crates/atoll-storage" }
 atoll-transfer = { path = "crates/atoll-transfer" }
 atoll-engine = { path = "crates/atoll-engine" }
 atoll-adblock = { path = "crates/atoll-adblock" }
+atoll-consent = { path = "crates/atoll-consent" }
 atoll-onepassword = { path = "crates/atoll-onepassword" }
 atoll-video = { path = "crates/atoll-video" }
 atoll-plugin = { path = "crates/atoll-plugin" }

@@ -401,6 +401,24 @@ export component SettingsPage inherits Modal {
                         }
                     }
                     Divider { }
+                    SectionTitle { text: @tr("COOKIE-BANNER"); }
+                    SettingRow {
+                        title: @tr("Banner verstecken");
+                        description: SettingsState.cookie-banners-status;
+                        Toggle {
+                            checked <=> SettingsState.cookie-banners-hide;
+                            toggled => { SettingsState.changed("cookie-banners-hide"); }
+                        }
+                    }
+                    SettingRow {
+                        title: @tr("Banner ablehnen");
+                        description: @tr("Atoll drückt bei den bekannten Einwilligungsdiensten den Knopf, der alles ablehnt. So weiß die Seite, dass du nein gesagt hast, statt nur nicht zu fragen.");
+                        Toggle {
+                            checked <=> SettingsState.cookie-banners-answer;
+                            toggled => { SettingsState.changed("cookie-banners-answer"); }
+                        }
+                    }
+                    Divider { }
                     SectionTitle { text: "1PASSWORD"; }
                     SettingRow {
                         title: @tr("Anmeldungen mit 1Password ausfüllen");

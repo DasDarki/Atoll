@@ -702,6 +702,7 @@ dependencies = [
  "anyhow",
  "arboard",
  "atoll-adblock",
+ "atoll-consent",
  "atoll-core",
  "atoll-engine",
  "atoll-i18n",
@@ -734,6 +735,14 @@ dependencies = [
  "tracing",
  "ureq",
  "url",
+]
+
+[[package]]
+name = "atoll-consent"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

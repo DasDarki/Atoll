@@ -1,9 +1,10 @@
 use std::cell::RefCell;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, SystemTime};
 
-use atoll_adblock::{Blocker, FILTER_LISTS, ListState, ListStatus, Updater, site_of};
+use atoll_adblock::{Blocker, COOKIE_LISTS, FILTER_LISTS, ListState, ListStatus, Updater, site_of};
 use atoll_engine::{ContentFilter, DocumentRules, ResourceKind, ResourceRequest, Verdict};
 use atoll_storage::prelude::*;
 use slint::ComponentHandle;
@@ -17,20 +18,66 @@ thread_local! {
     static STATUS_LISTENER: RefCell<Option<Box<dyn Fn()>>> = const { RefCell::new(None) };
 }
 
-/// The ad blocker all windows share.
+/// The ad blocker all windows share, together with what it does about cookie banners.
 pub struct Adblock {
     blocker: Arc<Blocker>,
+    /// A blocker of its own for the list that hides cookie banners, so hiding them does not
+    /// depend on whether advertising is blocked.
+    banners: Arc<Blocker>,
+    /// Whether a banner Atoll recognises is answered with a refusal.
+    answer_banners: Arc<AtomicBool>,
     updater: RefCell<Option<Updater>>,
+    banner_updater: RefCell<Option<Updater>>,
     directory: PathBuf,
 }
 
 impl Adblock {
-    pub fn new(enabled: bool, allowed_sites: Vec<String>, directory: PathBuf) -> Self {
+    pub fn new(
+        enabled: bool,
+        allowed_sites: Vec<String>,
+        directory: PathBuf,
+        hide_banners: bool,
+        answer_banners: bool,
+    ) -> Self {
         Self {
-            blocker: Arc::new(Blocker::new(enabled, allowed_sites)),
+            blocker: Arc::new(Blocker::new(enabled, allowed_sites.clone())),
+            banners: Arc::new(Blocker::new(hide_banners, allowed_sites)),
+            answer_banners: Arc::new(AtomicBool::new(answer_banners)),
             updater: RefCell::new(None),
+            banner_updater: RefCell::new(None),
             directory,
         }
+    }
+
+    /// The directory of the cookie banner list, which is kept apart from the blocking lists.
+    fn banner_directory(&self) -> PathBuf {
+        self.directory.join("cookies")
+    }
+
+    /// Starts loading and updating the cookie banner list, unless that already happened.
+    fn start_banner_lists(&self) {
+        if self.banner_updater.borrow().is_some() {
+            return;
+        }
+        let updater = Updater::start_lists(
+            self.banners.clone(),
+            self.banner_directory(),
+            COOKIE_LISTS,
+            |_| {
+                let _ = slint::invoke_from_event_loop(|| {
+                    STATUS_LISTENER.with_borrow(|listener| {
+                        if let Some(listener) = listener {
+                            listener();
+                        }
+                    });
+                });
+            },
+        );
+        *self.banner_updater.borrow_mut() = Some(updater);
+    }
+
+    fn banner_status(&self) -> Option<ListStatus> {
+        self.banner_updater.borrow().as_ref().map(Updater::status)
     }
 
     /// Starts loading and updating the filter lists and returns the filter for the engine.
@@ -49,8 +96,13 @@ impl Adblock {
             });
             *self.updater.borrow_mut() = Some(updater);
         }
+        if self.banners.is_enabled() {
+            self.start_banner_lists();
+        }
         Arc::new(AdblockFilter {
             blocker: self.blocker.clone(),
+            banners: self.banners.clone(),
+            answer_banners: self.answer_banners.clone(),
         })
     }
 
@@ -62,16 +114,25 @@ impl Adblock {
 /// Connects the ad blocker to the engine.
 struct AdblockFilter {
     blocker: Arc<Blocker>,
+    banners: Arc<Blocker>,
+    answer_banners: Arc<AtomicBool>,
+}
+
+impl AdblockFilter {
+    /// Whether the banner of the page at `url` is answered. A site the user switched filtering
+    /// off for is left to answer for itself.
+    fn answers_banners(&self, url: &str) -> bool {
+        self.answer_banners.load(Ordering::Relaxed)
+            && !site_of(url).is_some_and(|site| self.blocker.is_site_allowed(&site))
+    }
 }
 
 impl ContentFilter for AdblockFilter {
     fn verdict(&self, request: &ResourceRequest<'_>) -> Verdict {
-        let blocked = self.blocker.blocks(
-            request.url,
-            request.source_url,
-            request.page_url,
-            request_type(request.kind),
-        );
+        let kind = request_type(request.kind);
+        let blocked = [&self.blocker, &self.banners]
+            .iter()
+            .any(|blocker| blocker.blocks(request.url, request.source_url, request.page_url, kind));
         if blocked {
             Verdict::Block
         } else {
@@ -81,15 +142,35 @@ impl ContentFilter for AdblockFilter {
 
     fn document_rules(&self, url: &str) -> DocumentRules {
         let cosmetics = self.blocker.cosmetics(url);
+        let banners = self.banners.cosmetics(url);
+        let mut script = cosmetics.script;
+        script.push_str(&banners.script);
+        if self.answers_banners(url) {
+            script.push_str(atoll_consent::answer_script());
+        }
         DocumentRules {
-            stylesheet: cosmetics.css,
-            script: cosmetics.script,
-            observe_elements: cosmetics.generic,
+            stylesheet: cosmetics.css + &banners.css,
+            script,
+            observe_elements: cosmetics.generic || banners.generic,
         }
     }
 
     fn element_rules(&self, url: &str, classes: &[String], ids: &[String]) -> String {
-        self.blocker.element_css(url, classes, ids)
+        self.blocker.element_css(url, classes, ids) + &self.banners.element_css(url, classes, ids)
+    }
+}
+
+/// What the settings say about the list that hides cookie banners.
+fn cookie_banner_status(status: Option<ListStatus>) -> String {
+    match status.map(|status| status.state) {
+        None => t!("Die Liste wird geladen, sobald das Verstecken eingeschaltet ist").to_owned(),
+        Some(ListState::Loading) => t!("Die Liste wird geladen…").to_owned(),
+        Some(ListState::Failed { .. }) => {
+            t!("Die Liste konnte nicht geladen werden, Atoll versucht es weiter").to_owned()
+        }
+        Some(ListState::Ready | ListState::Updating) => {
+            t!("Versteckt die Banner, die die EasyList-Cookie-Liste kennt").to_owned()
+        }
     }
 }
 
@@ -146,6 +227,7 @@ impl Browser {
             .set_adblock_site_allowed(&site, allowed, Self::now());
         self.report(t!("Werbeblocker umschalten"), stored);
         self.adblock.blocker.set_site_allowed(&site, allowed);
+        self.adblock.banners.set_site_allowed(&site, allowed);
         self.reload(true);
         if self
             .window()
@@ -174,8 +256,40 @@ impl Browser {
                 .set_adblock_site_allowed(site, false, Self::now());
             self.report(t!("Ausnahme entfernen"), result);
             self.adblock.blocker.set_site_allowed(site, false);
+            self.adblock.banners.set_site_allowed(site, false);
         }
         self.for_all_windows(Browser::show_adblock_settings);
+    }
+
+    /// Settings: hides the cookie banners of the sites the list knows.
+    pub(super) fn set_hide_cookie_banners(&self, hide: bool) {
+        self.update_preference(PreferenceKey::CookieBannersHide, |preferences| {
+            preferences.cookie_banners_hide = hide;
+        });
+        self.adblock.banners.set_enabled(hide);
+        if hide {
+            self.adblock.start_banner_lists();
+        }
+        self.for_all_windows(Browser::show_adblock_settings);
+        self.show_toast(if hide {
+            t!("Cookie-Banner werden versteckt, ab dem nächsten Laden einer Seite")
+        } else {
+            t!("Cookie-Banner werden wieder gezeigt")
+        });
+    }
+
+    /// Settings: answers the banners Atoll recognises with a refusal.
+    pub(super) fn set_answer_cookie_banners(&self, answer: bool) {
+        self.update_preference(PreferenceKey::CookieBannersAnswer, |preferences| {
+            preferences.cookie_banners_answer = answer;
+        });
+        self.adblock.answer_banners.store(answer, Ordering::Relaxed);
+        self.for_all_windows(Browser::show_adblock_settings);
+        self.show_toast(if answer {
+            t!("Cookie-Banner werden abgelehnt, ab dem nächsten Laden einer Seite")
+        } else {
+            t!("Cookie-Banner werden nicht mehr beantwortet")
+        });
     }
 
     /// Settings and palette: downloads the filter lists now.
@@ -203,6 +317,11 @@ impl Browser {
         }));
         let sites = self.storage.adblock_allowed_sites().unwrap_or_default();
         state.set_adblock_exceptions(sites.join(", ").into());
+        let preferences = self.preferences.borrow();
+        state.set_cookie_banners_hide(preferences.cookie_banners_hide);
+        state.set_cookie_banners_answer(preferences.cookie_banners_answer);
+        drop(preferences);
+        state.set_cookie_banners_status(cookie_banner_status(self.adblock.banner_status()).into());
     }
 
     /// Refreshes what shows the state of the filter lists.

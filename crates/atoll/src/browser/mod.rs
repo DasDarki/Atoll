@@ -117,6 +117,8 @@ impl Shared {
             preferences.adblock_enabled,
             storage.adblock_allowed_sites().unwrap_or_default(),
             paths.adblock.clone(),
+            preferences.cookie_banners_hide,
+            preferences.cookie_banners_answer,
         );
         let storage = Rc::new(storage);
         let plugins = Plugins::new(storage.clone(), paths.plugins.clone());

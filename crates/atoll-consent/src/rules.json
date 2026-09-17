@@ -1,0 +1,197 @@
+[
+  {
+    "id": "onetrust",
+    "name": "OneTrust",
+    "detect": "#onetrust-banner-sdk, #onetrust-consent-sdk, .onetrust-pc-dark-filter",
+    "steps": [
+      { "any": ["#onetrust-reject-all-handler", ".ot-pc-refuse-all-handler"], "final": true },
+      { "any": ["#onetrust-pc-btn-handler", ".ot-sdk-show-settings"], "optional": true },
+      { "any": [".ot-pc-refuse-all-handler", ".save-preference-btn-handler"], "optional": true }
+    ]
+  },
+  {
+    "id": "cookiebot",
+    "name": "Cookiebot",
+    "detect": "#CybotCookiebotDialog",
+    "steps": [
+      {
+        "any": [
+          "#CybotCookiebotDialogBodyButtonDecline",
+          "#CybotCookiebotDialogBodyLevelButtonLevelOptinDeclineAll",
+          "#CybotCookiebotDialogBodyButtonAccept + #CybotCookiebotDialogBodyButtonDecline"
+        ],
+        "final": true
+      }
+    ]
+  },
+  {
+    "id": "didomi",
+    "name": "Didomi",
+    "detect": "#didomi-popup, .didomi-popup-open, #didomi-host",
+    "steps": [
+      {
+        "any": [
+          "#didomi-notice-disagree-button",
+          ".didomi-continue-without-agreeing",
+          "button[aria-label='Ablehnen']"
+        ],
+        "final": true
+      },
+      { "any": ["#didomi-notice-learn-more-button"], "optional": true },
+      { "any": [".didomi-components-button--secondary", "button.didomi-button-standard"], "optional": true }
+    ]
+  },
+  {
+    "id": "usercentrics",
+    "name": "Usercentrics",
+    "detect": "#usercentrics-root, #uc-center-container, [data-testid='uc-container']",
+    "steps": [
+      {
+        "root": "#usercentrics-root",
+        "any": ["[data-testid='uc-deny-all-button']", "button.sc-dcJsrY", "#uc-btn-deny-banner"],
+        "final": true
+      },
+      { "any": ["#uc-btn-deny-banner", "[data-testid='uc-deny-all-button']"], "final": true }
+    ]
+  },
+  {
+    "id": "quantcast",
+    "name": "Quantcast Choice",
+    "detect": ".qc-cmp2-container, .qc-cmp-ui-container",
+    "steps": [
+      { "any": [".qc-cmp2-summary-buttons button[mode='secondary']", ".qc-cmp2-footer button[mode='secondary']"], "final": true }
+    ]
+  },
+  {
+    "id": "sourcepoint",
+    "name": "Sourcepoint",
+    "detect": ".message-container, .sp_message_container, .sp-message-open",
+    "steps": [
+      {
+        "any": [
+          "button.sp_choice_type_REJECT_ALL",
+          "button[title='Reject All']",
+          "button[title='Alle ablehnen']",
+          ".sp_choice_type_13"
+        ],
+        "final": true
+      }
+    ]
+  },
+  {
+    "id": "cookieyes",
+    "name": "CookieYes",
+    "detect": ".cky-consent-container, .cky-modal",
+    "steps": [{ "any": [".cky-btn-reject", "[data-cky-tag='reject-button']"], "final": true }]
+  },
+  {
+    "id": "complianz",
+    "name": "Complianz",
+    "detect": "#cmplz-cookiebanner-container, .cmplz-cookiebanner",
+    "steps": [{ "any": [".cmplz-deny", ".cmplz-btn.cmplz-deny"], "final": true }]
+  },
+  {
+    "id": "borlabs",
+    "name": "Borlabs Cookie",
+    "detect": "#BorlabsCookieBox, .borlabs-cookie-box, #brlbs-cookie-box",
+    "steps": [
+      {
+        "any": [
+          "#brlbs-btn-refuse-all",
+          "a.borlabs-cookie-refuse",
+          "#CookieBoxSaveButton[data-cookie-refuse]",
+          "[data-borlabs-cookie-refuse]"
+        ],
+        "final": true
+      }
+    ]
+  },
+  {
+    "id": "osano",
+    "name": "Osano",
+    "detect": ".osano-cm-window, .osano-cm-dialog",
+    "steps": [{ "any": [".osano-cm-denyAll", ".osano-cm-button--type-deny"], "final": true }]
+  },
+  {
+    "id": "klaro",
+    "name": "Klaro",
+    "detect": ".klaro .cookie-notice, #klaro",
+    "steps": [{ "any": [".cm-btn-decline", ".cn-decline", ".cm-btn-danger"], "final": true }]
+  },
+  {
+    "id": "cookie-script",
+    "name": "CookieScript",
+    "detect": "#cookiescript_injected",
+    "steps": [{ "any": ["#cookiescript_reject", "#cookiescript_reject_all"], "final": true }]
+  },
+  {
+    "id": "iubenda",
+    "name": "Iubenda",
+    "detect": "#iubenda-cs-banner, .iubenda-cs-container",
+    "steps": [{ "any": [".iubenda-cs-reject-btn", ".iub-cmp-reject"], "final": true }]
+  },
+  {
+    "id": "tarteaucitron",
+    "name": "tarteaucitron",
+    "detect": "#tarteaucitronAlertBig, #tarteaucitronRoot",
+    "steps": [{ "any": ["#tarteaucitronAllDenied2", "#tarteaucitronAllDenied"], "final": true }]
+  },
+  {
+    "id": "civic",
+    "name": "Civic Cookie Control",
+    "detect": "#ccc, #ccc-module",
+    "steps": [{ "any": ["#ccc-reject-settings", "#ccc-notify-reject"], "final": true }]
+  },
+  {
+    "id": "piwik-pro",
+    "name": "Piwik PRO",
+    "detect": ".ppms_cm_popup_overlay, #ppms_cm_consent_screen",
+    "steps": [{ "any": [".ppms_cm_reject-button", "#ppms_cm_reject-all"], "final": true }]
+  },
+  {
+    "id": "google-funding-choices",
+    "name": "Google Funding Choices",
+    "detect": ".fc-consent-root, .fc-dialog-container",
+    "steps": [{ "any": [".fc-cta-do-not-consent", ".fc-secondary-button"], "final": true }]
+  },
+  {
+    "id": "termly",
+    "name": "Termly",
+    "detect": "#termly-code-snippet-support, .t-declineAllButton",
+    "steps": [{ "any": [".t-declineAllButton", "[data-tid='banner-decline']"], "final": true }]
+  },
+  {
+    "id": "trustarc",
+    "name": "TrustArc",
+    "detect": "#truste-consent-track, .truste_box_overlay",
+    "steps": [
+      { "any": ["#truste-consent-required"], "final": true },
+      { "any": ["#truste-show-consent"], "optional": true },
+      { "any": [".pdynamicbutton .call"], "optional": true }
+    ]
+  },
+  {
+    "id": "cookie-information",
+    "name": "Cookie Information",
+    "detect": "#coi-banner-wrapper, #coiOverlay",
+    "steps": [{ "any": ["#declineButton", "[data-coi-decline]"], "final": true }]
+  },
+  {
+    "id": "cookiefirst",
+    "name": "CookieFirst",
+    "detect": "[data-cookiefirst-widget], #cookiefirst-root",
+    "steps": [{ "any": ["[data-cookiefirst-action='reject']"], "final": true }]
+  },
+  {
+    "id": "axeptio",
+    "name": "Axeptio",
+    "detect": "#axeptio_overlay, .axeptio_widget",
+    "steps": [{ "any": ["button#axeptio_btn_dismiss", ".ax-button--secondary"], "final": true }]
+  },
+  {
+    "id": "hu-manity",
+    "name": "Cookie Notice",
+    "detect": "#cookie-notice, #cn-notice-text",
+    "steps": [{ "any": ["#cn-refuse-cookie", "#cn-close-notice"], "final": true }]
+  }
+]

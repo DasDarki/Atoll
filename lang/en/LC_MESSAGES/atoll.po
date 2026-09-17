@@ -205,6 +205,9 @@ msgstr "Suggest archiving after weeks"
 msgid "Atoll beenden"
 msgstr "Quit Atoll"
 
+msgid "Atoll drückt bei den bekannten Einwilligungsdiensten den Knopf, der alles ablehnt. So weiß die Seite, dass du nein gesagt hast, statt nur nicht zu fragen."
+msgstr "With the consent tools Atoll knows, it presses the button that refuses everything. The site then knows that you said no, instead of simply not asking."
+
 msgid "Atoll konnte nicht gestartet werden: {}"
 msgstr "Atoll could not be started: {}"
 
@@ -280,6 +283,12 @@ msgstr "Selection"
 msgid "Automatisch"
 msgstr "Automatically"
 
+msgid "Banner ablehnen"
+msgstr "Refuse banners"
+
+msgid "Banner verstecken"
+msgstr "Hide banners"
+
 msgid "Bearbeiten"
 msgstr "Edit"
 
@@ -321,6 +330,21 @@ msgstr "Hides the bar while it is empty."
 
 msgid "Budget in GB"
 msgstr "Budget in GB"
+
+msgid "COOKIE-BANNER"
+msgstr "COOKIE BANNERS"
+
+msgid "Cookie-Banner werden abgelehnt, ab dem nächsten Laden einer Seite"
+msgstr "Cookie banners are refused, from the next page load on"
+
+msgid "Cookie-Banner werden nicht mehr beantwortet"
+msgstr "Cookie banners are no longer answered"
+
+msgid "Cookie-Banner werden versteckt, ab dem nächsten Laden einer Seite"
+msgstr "Cookie banners are hidden, from the next page load on"
+
+msgid "Cookie-Banner werden wieder gezeigt"
+msgstr "Cookie banners are shown again"
 
 msgid "Cookies gelöscht"
 msgstr "Cookies deleted"
@@ -432,6 +456,15 @@ msgstr "The file was moved or deleted"
 
 msgid "Die Lesezeichenleiste erscheint, sobald sie Lesezeichen enthält"
 msgstr "The bookmarks bar appears as soon as it holds bookmarks"
+
+msgid "Die Liste konnte nicht geladen werden, Atoll versucht es weiter"
+msgstr "The list could not be loaded, Atoll keeps trying"
+
+msgid "Die Liste wird geladen, sobald das Verstecken eingeschaltet ist"
+msgstr "The list is loaded as soon as hiding is switched on"
+
+msgid "Die Liste wird geladen…"
+msgstr "The list is being loaded…"
 
 msgid "Die Seite hat sich geändert, es wurde nichts eingefügt"
 msgstr "The page changed, nothing was filled in"
@@ -1377,6 +1410,9 @@ msgstr "Delete history?"
 
 msgid "Verlauf übernehmen"
 msgstr "Take over the history"
+
+msgid "Versteckt die Banner, die die EasyList-Cookie-Liste kennt"
+msgstr "Hides the banners the EasyList Cookie List knows"
 
 msgid "Video gespeichert: {}"
 msgstr "Video saved: {}"

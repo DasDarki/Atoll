@@ -104,6 +104,10 @@ pub struct Preferences {
     pub dev_tools_size: u32,
     /// Blocks ads and trackers.
     pub adblock_enabled: bool,
+    /// Hides the cookie banners the filter list knows.
+    pub cookie_banners_hide: bool,
+    /// Answers the cookie banners Atoll recognises with a refusal.
+    pub cookie_banners_answer: bool,
     /// Islands unused for this many weeks are suggested for the archive, `0` suggests none.
     pub archive_suggestion_weeks: u32,
     /// Puts background tabs to sleep while the pages use more memory than the budget.
@@ -141,6 +145,8 @@ pub enum PreferenceKey {
     Language,
     ArchiveFallback,
     ArchiveOnMissing,
+    CookieBannersHide,
+    CookieBannersAnswer,
 }
 
 impl PreferenceKey {
@@ -166,6 +172,8 @@ impl PreferenceKey {
             PreferenceKey::Language => "language",
             PreferenceKey::ArchiveFallback => "archive_fallback",
             PreferenceKey::ArchiveOnMissing => "archive_on_missing",
+            PreferenceKey::CookieBannersHide => "cookie_banners_hide",
+            PreferenceKey::CookieBannersAnswer => "cookie_banners_answer",
         }
     }
 }
@@ -187,6 +195,8 @@ impl Default for Preferences {
             dev_tools_docked_right: false,
             dev_tools_size: DEFAULT_DEV_TOOLS_SIZE,
             adblock_enabled: true,
+            cookie_banners_hide: true,
+            cookie_banners_answer: true,
             archive_suggestion_weeks: DEFAULT_ARCHIVE_SUGGESTION_WEEKS,
             memory_limit_enabled: true,
             memory_limit_gb: DEFAULT_MEMORY_LIMIT_GB,
@@ -235,6 +245,14 @@ impl Preferences {
                 .and_then(|size| size.parse().ok())
                 .unwrap_or(defaults.dev_tools_size),
             adblock_enabled: flag(PreferenceKey::AdblockEnabled, defaults.adblock_enabled),
+            cookie_banners_hide: flag(
+                PreferenceKey::CookieBannersHide,
+                defaults.cookie_banners_hide,
+            ),
+            cookie_banners_answer: flag(
+                PreferenceKey::CookieBannersAnswer,
+                defaults.cookie_banners_answer,
+            ),
             archive_suggestion_weeks: text(PreferenceKey::ArchiveSuggestionWeeks)
                 .and_then(|weeks| weeks.parse::<u32>().ok())
                 .map_or(defaults.archive_suggestion_weeks, |weeks| {
@@ -279,6 +297,8 @@ impl Preferences {
             PreferenceKey::DevToolsDockedRight => flag(self.dev_tools_docked_right),
             PreferenceKey::DevToolsSize => self.dev_tools_size.to_string(),
             PreferenceKey::AdblockEnabled => flag(self.adblock_enabled),
+            PreferenceKey::CookieBannersHide => flag(self.cookie_banners_hide),
+            PreferenceKey::CookieBannersAnswer => flag(self.cookie_banners_answer),
             PreferenceKey::ArchiveSuggestionWeeks => self.archive_suggestion_weeks.to_string(),
             PreferenceKey::MemoryLimitEnabled => flag(self.memory_limit_enabled),
             PreferenceKey::MemoryLimitGb => self.memory_limit_gb.to_string(),
@@ -335,6 +355,8 @@ mod tests {
             dev_tools_docked_right: true,
             dev_tools_size: 480,
             adblock_enabled: false,
+            cookie_banners_hide: false,
+            cookie_banners_answer: false,
             archive_suggestion_weeks: 9,
             memory_limit_enabled: false,
             memory_limit_gb: 12,
@@ -357,6 +379,8 @@ mod tests {
             PreferenceKey::DevToolsDockedRight,
             PreferenceKey::DevToolsSize,
             PreferenceKey::AdblockEnabled,
+            PreferenceKey::CookieBannersHide,
+            PreferenceKey::CookieBannersAnswer,
             PreferenceKey::ArchiveSuggestionWeeks,
             PreferenceKey::MemoryLimitEnabled,
             PreferenceKey::MemoryLimitGb,

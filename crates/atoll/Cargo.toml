@@ -10,6 +10,7 @@ description = "A fast desktop browser that treats tabs as records until they are
 anyhow.workspace = true
 arboard.workspace = true
 atoll-adblock.workspace = true
+atoll-consent.workspace = true
 atoll-core.workspace = true
 atoll-engine.workspace = true
 atoll-onepassword.workspace = true

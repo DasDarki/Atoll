@@ -33,6 +33,14 @@ pub const FILTER_LISTS: &[FilterList] = &[
     },
 ];
 
+/// The list that hides cookie banners. It is kept apart from the blocking lists because the user
+/// switches banners and advertising separately, and each set has an engine of its own.
+pub const COOKIE_LISTS: &[FilterList] = &[FilterList {
+    name: "EasyList Cookie List",
+    url: "https://ublockorigin.github.io/uAssetsCDN/thirdparties/easylist-cookies.txt",
+    file: "easylist-cookies.txt",
+}];
+
 /// File of the prepared engine, which loads much faster than the lists.
 const ENGINE_FILE: &str = "engine.bin";
 

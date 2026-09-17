@@ -10,5 +10,5 @@ mod lists;
 mod updater;
 
 pub use blocker::{Blocker, Cosmetics, site_of};
-pub use lists::{FILTER_LISTS, FilterList};
+pub use lists::{COOKIE_LISTS, FILTER_LISTS, FilterList};
 pub use updater::{ListState, ListStatus, Updater};

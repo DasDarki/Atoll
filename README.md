@@ -45,6 +45,12 @@ saved tabs therefore cost nothing at startup.
   Brave's `adblock` engine, and ad elements are hidden with the lists' cosmetic rules, including
   elements pages add later. The lists are updated every four days. The blocker can be switched
   off per site in the site information or everywhere in the settings.
+- **Cookie banners**: two switches, both on from the start. Hiding takes the banners away that the
+  EasyList Cookie List knows, with a list and an engine of its own, so it works whether or not
+  advertising is blocked. Refusing presses the button that declines everything at the consent
+  tools Atoll knows, from OneTrust and Cookiebot to Didomi and Usercentrics, so the site learns
+  that the answer is no instead of never hearing one. A site the ad blocker is switched off for
+  answers for itself.
 - **1Password**: on pages with a login form a key appears in the address bar. It, `Ctrl+Shift+L`
   and the command palette list the 1Password logins saved for the site and fill the chosen one
   into every frame of that site, including fields inside shadow roots, and a message says what
@@ -253,6 +259,7 @@ crates/
   atoll-storage    SQLite persistence (WAL), migrations, store traits
   atoll-transfer   URL list parser, exporter and import planner
   atoll-adblock    ad blocking: filter lists, their updates and the per-site switch
+  atoll-consent    what Atoll knows about consent tools and the script that refuses them
   atoll-onepassword  logins from the 1Password CLI and matching them to sites
   atoll-video      video downloads through yt-dlp with progress and cancel
   atoll-i18n       the languages: the `t!` macro and the catalogs built from lang/
@@ -319,5 +326,7 @@ Known limitations:
   sites such as Reddit serve, only play with a CEF built by `scripts/build-cef.sh`.
 - The ad blocker applies no scriptlets and none of the procedural cosmetic rules that need
   script, such as `:has-text()`.
+- Cookie banners are only refused where a consent tool Atoll knows is in use and a refusing button
+  exists. A site that only offers agreeing or paying is left to the user.
 - Under Wayland, new windows are placed by the compositor, not at the point where a tab was
   dropped.

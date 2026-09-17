@@ -154,6 +154,12 @@ impl Browser {
                 });
             }
             "adblock-enabled" => self.set_adblock_enabled(state.get_adblock_enabled()),
+            "cookie-banners-hide" => {
+                self.set_hide_cookie_banners(state.get_cookie_banners_hide());
+            }
+            "cookie-banners-answer" => {
+                self.set_answer_cookie_banners(state.get_cookie_banners_answer());
+            }
             "memory-limit" => self.set_memory_limit(
                 state.get_memory_limit_enabled(),
                 u32::try_from(state.get_memory_limit_gb()).unwrap_or(1),

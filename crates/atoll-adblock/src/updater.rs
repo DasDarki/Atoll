@@ -65,10 +65,21 @@ impl Updater {
         directory: PathBuf,
         notify: impl Fn(&ListStatus) + Send + 'static,
     ) -> Self {
+        Self::start_lists(blocker, directory, FILTER_LISTS, notify)
+    }
+
+    /// The same for a set of lists of its own, which keeps its lists and its prepared engine in
+    /// `directory` and feeds its own blocker, see [`crate::COOKIE_LISTS`].
+    pub fn start_lists(
+        blocker: Arc<Blocker>,
+        directory: PathBuf,
+        lists: &'static [FilterList],
+        notify: impl Fn(&ListStatus) + Send + 'static,
+    ) -> Self {
         Self::start_with(
             blocker,
             directory,
-            FILTER_LISTS,
+            lists,
             Box::new(download::fetch),
             Box::new(notify),
         )
