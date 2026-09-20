@@ -53,6 +53,27 @@ export component AddressBar inherits Rectangle {
             padding-right: 4px;
             spacing: 4px;
 
+            if BrowserState.has-page : Rectangle {
+                width: 22px;
+                height: 22px;
+                y: (parent.height - self.height) / 2;
+                border-radius: self.height / 2;
+                background: shield.pressed ? Theme.pressed : shield.has-hover ? Theme.hover : transparent;
+
+                Image {
+                    width: 14px;
+                    height: 14px;
+                    source: BrowserState.protection-off ? @image-url("../icons/shield-off.svg")
+                        : @image-url("../icons/shield.svg");
+                    colorize: BrowserState.protection-off ? Theme.text-faint : #8b9dff;
+                }
+
+                shield := TouchArea {
+                    mouse-cursor: pointer;
+                    clicked => { BrowserState.show-shield(); }
+                }
+            }
+
             Rectangle {
                 width: 22px;
                 height: 22px;

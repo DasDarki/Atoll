@@ -43,8 +43,16 @@ saved tabs therefore cost nothing at startup.
   download starts are configurable.
 - **Ad blocker**: requests are checked against EasyList, EasyPrivacy and EasyList Germany with
   Brave's `adblock` engine, and ad elements are hidden with the lists' cosmetic rules, including
-  elements pages add later. The lists are updated every four days. The blocker can be switched
-  off per site in the site information or everywhere in the settings.
+  elements pages add later. The lists are updated every four days.
+- **The shield** in the address bar, left of the lock: what this page is protected from, in two
+  clicks, because a site that notices the blocker has to be dealt with right away. Five switches -
+  protection at all, advertising, popups, being sent to another site unasked, tabs another site
+  opens unasked - on one of three levels: everywhere, this site, or this address alone. The
+  narrower level wins and only says what it was asked to say, so switching popups on for one shop
+  leaves everything else as it was. Advertising and the switch above the others take effect with a
+  reload, which the shield does itself; the rest counts for the next thing the page tries.
+  Redirects and new tabs are stopped only where the page acts on its own: a link the user clicks
+  is always followed, so signing in through another site keeps working.
 - **Cookie banners**: two switches, both on from the start. Hiding takes the banners away that the
   EasyList Cookie List knows, with a list and an engine of its own, so it works whether or not
   advertising is blocked. Refusing presses the button that declines everything at the consent
@@ -258,7 +266,7 @@ crates/
   atoll-core       domain model and the tab lifecycle state machine
   atoll-storage    SQLite persistence (WAL), migrations, store traits
   atoll-transfer   URL list parser, exporter and import planner
-  atoll-adblock    ad blocking: filter lists, their updates and the per-site switch
+  atoll-adblock    ad blocking: filter lists, their updates and the rules of the shield
   atoll-consent    what Atoll knows about consent tools and the script that refuses them
   atoll-onepassword  logins from the 1Password CLI and matching them to sites
   atoll-video      video downloads through yt-dlp with progress and cancel
@@ -326,6 +334,8 @@ Known limitations:
   sites such as Reddit serve, only play with a CEF built by `scripts/build-cef.sh`.
 - The ad blocker applies no scriptlets and none of the procedural cosmetic rules that need
   script, such as `:has-text()`.
+- A window a page opens without a click is stopped by the engine itself, before the shield is
+  asked, so such a popup is never reported as blocked.
 - Cookie banners are only refused where a consent tool Atoll knows is in use and a refusing button
   exists. A site that only offers agreeing or paying is left to the user.
 - Under Wayland, new windows are placed by the compositor, not at the point where a tab was

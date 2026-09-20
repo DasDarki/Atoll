@@ -43,6 +43,12 @@ pub enum EngineEvent {
         view: ViewId,
         http_status: i32,
     },
+    /// A page wanted to open something the user forbade it, see [`crate::Opening`].
+    OpeningBlocked {
+        view: ViewId,
+        opening: crate::Opening,
+        url: String,
+    },
     /// The main frame of a view could not be loaded at all, for example because the name does
     /// not resolve or nothing answers.
     MainFrameFailed {
@@ -185,6 +191,7 @@ impl EngineEvent {
             | EngineEvent::LoadProgress { view, .. }
             | EngineEvent::MainFrameLoaded { view, .. }
             | EngineEvent::MainFrameFailed { view, .. }
+            | EngineEvent::OpeningBlocked { view, .. }
             | EngineEvent::CursorChanged { view, .. }
             | EngineEvent::StatusMessage { view, .. }
             | EngineEvent::Tooltip { view, .. }

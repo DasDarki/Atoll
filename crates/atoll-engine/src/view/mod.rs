@@ -87,6 +87,7 @@ impl BrowserView {
     }
 
     pub fn load_url(&self, url: &str) {
+        self.state.asked_for.set(true);
         if let Some(frame) = self
             .state
             .browser()
@@ -111,18 +112,21 @@ impl BrowserView {
     }
 
     pub fn go_back(&self) {
+        self.state.asked_for.set(true);
         if let Some(browser) = self.state.browser() {
             browser.go_back();
         }
     }
 
     pub fn go_forward(&self) {
+        self.state.asked_for.set(true);
         if let Some(browser) = self.state.browser() {
             browser.go_forward();
         }
     }
 
     pub fn reload(&self, ignore_cache: bool) {
+        self.state.asked_for.set(true);
         if let Some(browser) = self.state.browser() {
             if ignore_cache {
                 browser.reload_ignore_cache();

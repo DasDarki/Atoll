@@ -1,0 +1,207 @@
+import { Theme } from "../theme.slint";
+import { OverlayState } from "../state.slint";
+import { Toggle } from "../widgets/toggle.slint";
+import { Segmented } from "../widgets/segmented.slint";
+
+component SwitchRow inherits Rectangle {
+    in property <string> title;
+    in property <string> description;
+    in property <bool> checked;
+    in property <bool> enabled: true;
+    callback toggled(bool);
+
+    height: layout.preferred-height;
+    opacity: root.enabled ? 1.0 : 0.45;
+
+    layout := HorizontalLayout {
+        padding-top: 7px;
+        padding-bottom: 7px;
+        spacing: 10px;
+
+        VerticalLayout {
+            horizontal-stretch: 1;
+            alignment: center;
+            spacing: 2px;
+            Text {
+                text: root.title;
+                color: Theme.text;
+                font-size: Theme.font-normal;
+                wrap: word-wrap;
+            }
+            if root.description != "" : Text {
+                text: root.description;
+                color: Theme.text-faint;
+                font-size: Theme.font-small;
+                wrap: word-wrap;
+            }
+        }
+
+        VerticalLayout {
+            alignment: center;
+            Toggle {
+                checked: root.checked;
+                enabled: root.enabled;
+                toggled => { root.toggled(self.checked); }
+            }
+        }
+    }
+}
+
+export component ShieldPopup inherits Rectangle {
+    in property <length> anchor-x;
+    in property <length> anchor-y;
+
+    TouchArea {
+        pointer-event(event) => {
+            if (event.kind == PointerEventKind.down) {
+                OverlayState.shield-close();
+            }
+        }
+    }
+
+    FocusScope {
+        init => { self.focus(); }
+        key-pressed(event) => {
+            if (event.text == Key.Escape) {
+                OverlayState.shield-close();
+            }
+            return accept;
+        }
+    }
+
+    card := Rectangle {
+        x: min(root.anchor-x, root.width - self.width - 8px);
+        y: root.anchor-y;
+        width: 380px;
+        height: layout.preferred-height;
+        border-radius: Theme.radius;
+        background: Theme.surface-raised;
+        border-width: 1px;
+        border-color: Theme.border-strong;
+        drop-shadow-blur: 24px;
+        drop-shadow-color: #000000a8;
+        clip: true;
+
+        TouchArea { }
+
+        layout := VerticalLayout {
+            padding: 16px;
+            padding-bottom: 12px;
+            spacing: 10px;
+
+            HorizontalLayout {
+                spacing: 12px;
+                Rectangle {
+                    width: 34px;
+                    height: 34px;
+                    border-radius: self.height / 2;
+                    background: OverlayState.shield-active ? #8b9dff24 : Theme.hover;
+                    Image {
+                        width: 17px;
+                        height: 17px;
+                        source: OverlayState.shield-active ? @image-url("../icons/shield.svg")
+                            : @image-url("../icons/shield-off.svg");
+                        colorize: OverlayState.shield-active ? #8b9dff : Theme.text-faint;
+                    }
+                }
+                VerticalLayout {
+                    alignment: center;
+                    spacing: 2px;
+                    Text {
+                        text: @tr("Schutz");
+                        color: Theme.text;
+                        font-size: Theme.font-large;
+                        font-weight: 700;
+                    }
+                    Text {
+                        text: OverlayState.shield-blocked;
+                        color: Theme.text-muted;
+                        font-size: Theme.font-small;
+                        overflow: elide;
+                    }
+                }
+            }
+
+            Segmented {
+                options: [
+                    @tr("Überall"),
+                    OverlayState.shield-site-known ? OverlayState.shield-site : @tr("Diese Seite"),
+                    @tr("Nur diese Adresse"),
+                ];
+                selected: OverlayState.shield-scope;
+                changed-by-user(index) => { OverlayState.shield-scope-chosen(index); }
+            }
+
+            Text {
+                text: OverlayState.shield-scope == 0 ? @tr("Gilt für alle Seiten, solange nichts anderes gesagt ist.")
+                    : OverlayState.shield-scope == 1 ? @tr("Gilt für alles auf {}.", OverlayState.shield-site)
+                    : @tr("Gilt nur für {}.", OverlayState.shield-page);
+                color: Theme.text-faint;
+                font-size: Theme.font-small;
+                wrap: word-wrap;
+            }
+
+            Rectangle {
+                height: 1px;
+                background: Theme.border;
+            }
+
+            SwitchRow {
+                title: @tr("Schutz aktiv");
+                description: @tr("Ist er aus, lässt Atoll diese Seite in Ruhe.");
+                checked: OverlayState.shield-active;
+                toggled(value) => { OverlayState.shield-toggled("active", value); }
+            }
+            SwitchRow {
+                title: @tr("Werbung blockieren");
+                description: @tr("Werbung, Tracker und was die Filterlisten verstecken.");
+                checked: OverlayState.shield-banners;
+                enabled: OverlayState.shield-active;
+                toggled(value) => { OverlayState.shield-toggled("banners", value); }
+            }
+            SwitchRow {
+                title: @tr("Popups blockieren");
+                description: @tr("Fenster, die die Seite aufmacht, auch nach einem Klick.");
+                checked: OverlayState.shield-popups;
+                enabled: OverlayState.shield-active;
+                toggled(value) => { OverlayState.shield-toggled("popups", value); }
+            }
+            SwitchRow {
+                title: @tr("Weiterleitungen verhindern");
+                description: @tr("Wenn dich die Seite ungefragt zu einer fremden Seite schickt.");
+                checked: OverlayState.shield-redirects;
+                enabled: OverlayState.shield-active;
+                toggled(value) => { OverlayState.shield-toggled("redirects", value); }
+            }
+            SwitchRow {
+                title: @tr("Neue Tabs verhindern");
+                description: @tr("Tabs, die die Seite ungefragt auf einer fremden Seite aufmacht.");
+                checked: OverlayState.shield-new-tabs;
+                enabled: OverlayState.shield-active;
+                toggled(value) => { OverlayState.shield-toggled("new-tabs", value); }
+            }
+
+            if OverlayState.shield-own : Rectangle {
+                height: 1px;
+                background: Theme.border;
+            }
+            if OverlayState.shield-own : Rectangle {
+                height: 30px;
+                border-radius: Theme.radius-small;
+                background: reset.pressed ? Theme.pressed : reset.has-hover ? Theme.hover : transparent;
+                Text {
+                    text: OverlayState.shield-scope == 0 ? @tr("Auf Atolls Vorgaben zurücksetzen")
+                        : @tr("Dieser Ebene nichts mehr vorschreiben");
+                    color: Theme.accent;
+                    font-size: Theme.font-small + 1px;
+                    vertical-alignment: center;
+                    horizontal-alignment: center;
+                }
+                reset := TouchArea {
+                    mouse-cursor: pointer;
+                    clicked => { OverlayState.shield-reset(); }
+                }
+            }
+        }
+    }
+}

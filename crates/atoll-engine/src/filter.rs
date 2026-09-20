@@ -87,6 +87,17 @@ pub enum Verdict {
     Redirect(String),
 }
 
+/// What a page wants to open, which the user may have forbidden it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Opening {
+    /// A window of its own.
+    Popup,
+    /// A tab or window with a page of its own.
+    NewTab,
+    /// Sending the user to another address in the same tab.
+    Navigation,
+}
+
 pub trait ContentFilter: Send + Sync {
     /// Whether `request` is blocked. Called on the network thread for every request except
     /// navigations of the top level document, so it has to be fast.
@@ -98,6 +109,20 @@ pub trait ContentFilter: Send + Sync {
     /// CSS rules for elements with the given class names and ids on the page at `url`, called on
     /// the main thread as elements appear.
     fn element_rules(&self, url: &str, classes: &[String], ids: &[String]) -> String;
+
+    /// Whether the page at `page_url` may open `target_url` that way, called on the browser's
+    /// main thread. What the user asked for themselves is never stopped, so `user_gesture` is
+    /// part of the question.
+    fn allows(
+        &self,
+        opening: Opening,
+        page_url: &str,
+        target_url: &str,
+        user_gesture: bool,
+    ) -> bool {
+        let _ = (opening, page_url, target_url, user_gesture);
+        true
+    }
 }
 
 /// The script applying `rules` to a document.

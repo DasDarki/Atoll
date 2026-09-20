@@ -5,7 +5,7 @@
 
 use std::sync::Arc;
 
-use atoll_engine::{ContentFilter, DocumentRules, ResourceKind, ResourceRequest, Verdict};
+use atoll_engine::{ContentFilter, DocumentRules, Opening, ResourceKind, ResourceRequest, Verdict};
 use atoll_plugin::{RuleAction, RuleSet};
 
 /// The ad blocker and the extensions, asked in that order.
@@ -39,6 +39,17 @@ impl ContentFilter for FilterChain {
 
     fn element_rules(&self, url: &str, classes: &[String], ids: &[String]) -> String {
         self.adblock.element_rules(url, classes, ids)
+    }
+
+    fn allows(
+        &self,
+        opening: Opening,
+        page_url: &str,
+        target_url: &str,
+        user_gesture: bool,
+    ) -> bool {
+        self.adblock
+            .allows(opening, page_url, target_url, user_gesture)
     }
 }
 

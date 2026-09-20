@@ -27,6 +27,7 @@ mod private;
 mod reorder;
 mod session;
 mod settings;
+mod shield;
 mod sidebar;
 mod site_info;
 mod startup;
@@ -114,8 +115,7 @@ impl Shared {
         let preferences = Preferences::load(&storage);
         let lifecycle = TabLifecycle::new(preferences.frozen_limit);
         let adblock = Adblock::new(
-            preferences.adblock_enabled,
-            storage.adblock_allowed_sites().unwrap_or_default(),
+            storage.adblock_rules().unwrap_or_default(),
             paths.adblock.clone(),
             preferences.cookie_banners_hide,
             preferences.cookie_banners_answer,

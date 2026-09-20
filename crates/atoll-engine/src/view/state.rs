@@ -43,6 +43,9 @@ pub(crate) struct ViewState {
     pub(crate) through_tor: Cell<bool>,
     /// The view shows a DevTools frontend, see [`crate::DevToolsSession`].
     pub(crate) dev_tools_frontend: Cell<bool>,
+    /// Whether the next navigation of the main frame is one Atoll itself asked for. Such a
+    /// navigation is never stopped, whatever a page is otherwise allowed to do.
+    pub(crate) asked_for: Cell<bool>,
     /// Requests blocked by the content filter since the page started loading. Counted on the
     /// network thread.
     pub(crate) blocked_requests: Arc<AtomicU32>,
@@ -71,6 +74,7 @@ impl ViewState {
             private: Cell::new(false),
             through_tor: Cell::new(false),
             dev_tools_frontend: Cell::new(false),
+            asked_for: Cell::new(false),
             blocked_requests: Arc::default(),
             activity: RefCell::default(),
             bridge: RefCell::default(),

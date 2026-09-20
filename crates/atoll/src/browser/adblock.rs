@@ -4,8 +4,12 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, SystemTime};
 
-use atoll_adblock::{Blocker, COOKIE_LISTS, FILTER_LISTS, ListState, ListStatus, Updater, site_of};
-use atoll_engine::{ContentFilter, DocumentRules, ResourceKind, ResourceRequest, Verdict};
+use atoll_adblock::{
+    Blocker, COOKIE_LISTS, FILTER_LISTS, ListState, ListStatus, Policy, Protection, Protections,
+    Scope, Updater, site_of,
+};
+use atoll_engine::{ContentFilter, DocumentRules, Opening, ResourceKind, ResourceRequest, Verdict};
+use atoll_storage::AdblockRule;
 use atoll_storage::prelude::*;
 use slint::ComponentHandle;
 
@@ -20,10 +24,14 @@ thread_local! {
 
 /// The ad blocker all windows share, together with what it does about cookie banners.
 pub struct Adblock {
+    /// What the user decided, everywhere, per site and per address.
+    pub(super) policy: Arc<Policy>,
     blocker: Arc<Blocker>,
     /// A blocker of its own for the list that hides cookie banners, so hiding them does not
     /// depend on whether advertising is blocked.
-    banners: Arc<Blocker>,
+    cookies: Arc<Blocker>,
+    /// Whether the cookie banner list is used, which is a setting of its own.
+    hide_cookie_banners: Arc<AtomicBool>,
     /// Whether a banner Atoll recognises is answered with a refusal.
     answer_banners: Arc<AtomicBool>,
     updater: RefCell<Option<Updater>>,
@@ -33,15 +41,34 @@ pub struct Adblock {
 
 impl Adblock {
     pub fn new(
-        enabled: bool,
-        allowed_sites: Vec<String>,
+        rules: Vec<AdblockRule>,
         directory: PathBuf,
         hide_banners: bool,
         answer_banners: bool,
     ) -> Self {
+        let policy = Arc::new(Policy::new());
+        for rule in &rules {
+            let (Some(scope), protections) = (Scope::from_key(&rule.scope), protections_of(rule))
+            else {
+                continue;
+            };
+            policy.set(scope, &rule.pattern, protections);
+        }
+        let hide_cookie_banners = Arc::new(AtomicBool::new(hide_banners));
+        let blocker = {
+            let policy = policy.clone();
+            Blocker::new(move |url| policy.effective(url).does(Protection::Banners))
+        };
+        let cookies = {
+            let policy = policy.clone();
+            let hide = hide_cookie_banners.clone();
+            Blocker::new(move |url| hide.load(Ordering::Relaxed) && policy.effective(url).active)
+        };
         Self {
-            blocker: Arc::new(Blocker::new(enabled, allowed_sites.clone())),
-            banners: Arc::new(Blocker::new(hide_banners, allowed_sites)),
+            policy,
+            blocker: Arc::new(blocker),
+            cookies: Arc::new(cookies),
+            hide_cookie_banners,
             answer_banners: Arc::new(AtomicBool::new(answer_banners)),
             updater: RefCell::new(None),
             banner_updater: RefCell::new(None),
@@ -60,7 +87,7 @@ impl Adblock {
             return;
         }
         let updater = Updater::start_lists(
-            self.banners.clone(),
+            self.cookies.clone(),
             self.banner_directory(),
             COOKIE_LISTS,
             |_| {
@@ -96,12 +123,13 @@ impl Adblock {
             });
             *self.updater.borrow_mut() = Some(updater);
         }
-        if self.banners.is_enabled() {
+        if self.hide_cookie_banners.load(Ordering::Relaxed) {
             self.start_banner_lists();
         }
         Arc::new(AdblockFilter {
+            policy: self.policy.clone(),
             blocker: self.blocker.clone(),
-            banners: self.banners.clone(),
+            cookies: self.cookies.clone(),
             answer_banners: self.answer_banners.clone(),
         })
     }
@@ -113,24 +141,24 @@ impl Adblock {
 
 /// Connects the ad blocker to the engine.
 struct AdblockFilter {
+    policy: Arc<Policy>,
     blocker: Arc<Blocker>,
-    banners: Arc<Blocker>,
+    cookies: Arc<Blocker>,
     answer_banners: Arc<AtomicBool>,
 }
 
 impl AdblockFilter {
-    /// Whether the banner of the page at `url` is answered. A site the user switched filtering
-    /// off for is left to answer for itself.
+    /// Whether the cookie banner of the page at `url` is answered. A page without protection is
+    /// left to answer for itself.
     fn answers_banners(&self, url: &str) -> bool {
-        self.answer_banners.load(Ordering::Relaxed)
-            && !site_of(url).is_some_and(|site| self.blocker.is_site_allowed(&site))
+        self.answer_banners.load(Ordering::Relaxed) && self.policy.effective(url).active
     }
 }
 
 impl ContentFilter for AdblockFilter {
     fn verdict(&self, request: &ResourceRequest<'_>) -> Verdict {
         let kind = request_type(request.kind);
-        let blocked = [&self.blocker, &self.banners]
+        let blocked = [&self.blocker, &self.cookies]
             .iter()
             .any(|blocker| blocker.blocks(request.url, request.source_url, request.page_url, kind));
         if blocked {
@@ -142,7 +170,7 @@ impl ContentFilter for AdblockFilter {
 
     fn document_rules(&self, url: &str) -> DocumentRules {
         let cosmetics = self.blocker.cosmetics(url);
-        let banners = self.banners.cosmetics(url);
+        let banners = self.cookies.cosmetics(url);
         let mut script = cosmetics.script;
         script.push_str(&banners.script);
         if self.answers_banners(url) {
@@ -156,7 +184,64 @@ impl ContentFilter for AdblockFilter {
     }
 
     fn element_rules(&self, url: &str, classes: &[String], ids: &[String]) -> String {
-        self.blocker.element_css(url, classes, ids) + &self.banners.element_css(url, classes, ids)
+        self.blocker.element_css(url, classes, ids) + &self.cookies.element_css(url, classes, ids)
+    }
+
+    fn allows(
+        &self,
+        opening: Opening,
+        page_url: &str,
+        target_url: &str,
+        user_gesture: bool,
+    ) -> bool {
+        let protection = match opening {
+            Opening::Popup => Protection::Popups,
+            Opening::NewTab => Protection::NewTabs,
+            Opening::Navigation => Protection::Redirects,
+        };
+        if !self.policy.effective(page_url).does(protection) {
+            return true;
+        }
+        // A window a page opens is stopped whether or not a click set it off: the click usually
+        // meant something else, and the engine stops the ones without a click by itself anyway.
+        if opening == Opening::Popup {
+            return false;
+        }
+        user_gesture || !leads_elsewhere(page_url, target_url)
+    }
+}
+
+/// Whether the two addresses belong to different sites. A page that opens something of its own
+/// is never in the way, the protections are about being sent somewhere else.
+fn leads_elsewhere(page_url: &str, target_url: &str) -> bool {
+    match (site_of(page_url), site_of(target_url)) {
+        (Some(page), Some(target)) => page != target,
+        (_, None) => false,
+        (None, Some(_)) => false,
+    }
+}
+
+/// What a stored rule says, in the words of the policy.
+fn protections_of(rule: &AdblockRule) -> Protections {
+    Protections {
+        active: rule.active,
+        banners: rule.banners,
+        popups: rule.popups,
+        redirects: rule.redirects,
+        new_tabs: rule.new_tabs,
+    }
+}
+
+/// The same the other way round, ready to be stored.
+fn rule_of(scope: Scope, pattern: &str, protections: Protections) -> AdblockRule {
+    AdblockRule {
+        scope: scope.key().to_owned(),
+        pattern: pattern.to_owned(),
+        active: protections.active,
+        banners: protections.banners,
+        popups: protections.popups,
+        redirects: protections.redirects,
+        new_tabs: protections.new_tabs,
     }
 }
 
@@ -200,13 +285,53 @@ struct SiteAdblock {
 }
 
 impl Browser {
-    /// Settings, palette: switches the ad blocker on or off everywhere.
+    /// What the page at `url` is protected from, after all three levels had their say.
+    pub(super) fn protections_on(&self, url: &str) -> atoll_adblock::Effective {
+        self.adblock.policy.effective(url)
+    }
+
+    /// Writes down what one level is to do about the page at `url`. A switch that says the same
+    /// as the wider levels is left to them, so no rule is kept that decides nothing.
+    pub(super) fn set_protection(
+        &self,
+        scope: Scope,
+        url: &str,
+        protection: Protection,
+        value: bool,
+    ) {
+        let Some(pattern) = scope.pattern_of(url) else {
+            return;
+        };
+        let inherited = self.adblock.policy.inherited(scope, url).get(protection);
+        let mut protections = self.adblock.policy.protections(scope, url);
+        protections.set(protection, (value != inherited).then_some(value));
+        self.adblock.policy.set(scope, &pattern, protections);
+        let stored = self
+            .storage
+            .set_adblock_rule(&rule_of(scope, &pattern, protections), Self::now());
+        self.report(t!("Schutz ändern"), stored);
+        self.for_all_windows(Browser::protections_changed);
+    }
+
+    /// Lets one level decide nothing again, so the page follows the wider levels.
+    pub(super) fn forget_protections(&self, scope: Scope, url: &str) {
+        let Some(pattern) = scope.pattern_of(url) else {
+            return;
+        };
+        self.adblock
+            .policy
+            .set(scope, &pattern, Protections::default());
+        let stored = self.storage.set_adblock_rule(
+            &rule_of(scope, &pattern, Protections::default()),
+            Self::now(),
+        );
+        self.report(t!("Schutz ändern"), stored);
+        self.for_all_windows(Browser::protections_changed);
+    }
+
+    /// Settings, palette: blocks advertising everywhere, or stops doing so.
     pub(super) fn set_adblock_enabled(&self, enabled: bool) {
-        self.update_preference(PreferenceKey::AdblockEnabled, |preferences| {
-            preferences.adblock_enabled = enabled;
-        });
-        self.adblock.blocker.set_enabled(enabled);
-        self.show_adblock_settings();
+        self.set_protection(Scope::Global, "", Protection::Banners, enabled);
         self.show_toast(if enabled {
             t!("Werbeblocker eingeschaltet, wirkt ab dem nächsten Laden einer Seite")
         } else {
@@ -214,20 +339,16 @@ impl Browser {
         });
     }
 
-    /// Site information and palette: switches the ad blocker off for the current site, or on
+    /// Site information and palette: switches the protection off for the current site, or on
     /// again, and reloads the page. The reload bypasses the cache, the page would otherwise keep
     /// resources it loaded before.
     pub fn toggle_site_adblock(&self) {
-        let Some(site) = self.current_page_url().as_deref().and_then(site_of) else {
+        let Some(url) = self.current_page_url() else {
             return;
         };
-        let allowed = !self.adblock.blocker.is_site_allowed(&site);
-        let stored = self
-            .storage
-            .set_adblock_site_allowed(&site, allowed, Self::now());
-        self.report(t!("Werbeblocker umschalten"), stored);
-        self.adblock.blocker.set_site_allowed(&site, allowed);
-        self.adblock.banners.set_site_allowed(&site, allowed);
+        let Some(site) = site_of(&url) else { return };
+        let active = !self.adblock.policy.effective(&url).active;
+        self.set_protection(Scope::Site, &url, Protection::Active, active);
         self.reload(true);
         if self
             .window()
@@ -235,30 +356,32 @@ impl Browser {
         {
             self.show_site_info();
         }
-        self.show_toast(&if allowed {
-            t!("Werbeblocker für {} ausgeschaltet", site)
+        self.show_toast(&if active {
+            t!("Schutz für {} eingeschaltet", site)
         } else {
-            t!("Werbeblocker für {} eingeschaltet", site)
+            t!("Schutz für {} ausgeschaltet", site)
         });
-        self.for_all_windows(Browser::show_adblock_settings);
     }
 
-    pub(super) fn adblock_allows_site(&self, site: &str) -> bool {
-        self.adblock.blocker.is_site_allowed(site)
-    }
-
-    /// Settings: switches the ad blocker on again for every site it was switched off for.
+    /// Settings: lets every site and every address follow the settings that count everywhere.
     pub fn clear_adblock_exceptions(&self) {
-        let sites = self.storage.adblock_allowed_sites().unwrap_or_default();
-        for site in &sites {
-            let result = self
-                .storage
-                .set_adblock_site_allowed(site, false, Self::now());
-            self.report(t!("Ausnahme entfernen"), result);
-            self.adblock.blocker.set_site_allowed(site, false);
-            self.adblock.banners.set_site_allowed(site, false);
+        self.adblock.policy.forget_exceptions();
+        let cleared = self.storage.clear_adblock_exceptions();
+        self.report(t!("Ausnahmen entfernen"), cleared);
+        self.for_all_windows(Browser::protections_changed);
+    }
+
+    /// Refreshes everything that shows what a page is protected from.
+    pub(super) fn protections_changed(&self) {
+        self.show_adblock_settings();
+        self.sync_shield();
+        if self
+            .window()
+            .is_some_and(|window| window.global::<OverlayState>().get_site_info_visible())
+            && let Some(url) = self.current_page_url()
+        {
+            self.show_site_adblock(&url);
         }
-        self.for_all_windows(Browser::show_adblock_settings);
     }
 
     /// Settings: hides the cookie banners of the sites the list knows.
@@ -266,7 +389,9 @@ impl Browser {
         self.update_preference(PreferenceKey::CookieBannersHide, |preferences| {
             preferences.cookie_banners_hide = hide;
         });
-        self.adblock.banners.set_enabled(hide);
+        self.adblock
+            .hide_cookie_banners
+            .store(hide, Ordering::Relaxed);
         if hide {
             self.adblock.start_banner_lists();
         }
@@ -305,7 +430,7 @@ impl Browser {
         let Some(window) = self.window() else { return };
         let state = window.global::<SettingsState>();
         let status = self.adblock.status();
-        state.set_adblock_enabled(self.preferences.borrow().adblock_enabled);
+        state.set_adblock_enabled(self.adblock.policy.effective("").banners);
         state.set_adblock_status(
             status
                 .map(|status| list_status_text(&status, SystemTime::now()))
@@ -315,8 +440,14 @@ impl Browser {
         state.set_adblock_updating(status.is_some_and(|status| {
             matches!(status.state, ListState::Loading | ListState::Updating)
         }));
-        let sites = self.storage.adblock_allowed_sites().unwrap_or_default();
-        state.set_adblock_exceptions(sites.join(", ").into());
+        let exceptions: Vec<String> = self
+            .adblock
+            .policy
+            .exceptions()
+            .into_iter()
+            .map(|(_, pattern)| pattern)
+            .collect();
+        state.set_adblock_exceptions(exceptions.join(", ").into());
         let preferences = self.preferences.borrow();
         state.set_cookie_banners_hide(preferences.cookie_banners_hide);
         state.set_cookie_banners_answer(preferences.cookie_banners_answer);
@@ -346,7 +477,14 @@ impl Browser {
         let Some(site) = site else { return };
         let mut blocked = 0;
         self.with_live_view(|view| blocked = view.blocked_requests());
-        let summary = site_adblock(&self.adblock.blocker, &site, blocked, self.adblock.status());
+        let summary = site_adblock(
+            &self.adblock.policy,
+            &self.adblock.blocker,
+            url,
+            &site,
+            blocked,
+            self.adblock.status(),
+        );
         overlay.set_site_info_adblock_active(summary.active);
         overlay.set_site_info_adblock_switchable(summary.switchable);
         overlay.set_site_info_adblock_detail(summary.detail.into());
@@ -358,23 +496,26 @@ fn is_web_address(url: &str) -> bool {
 }
 
 fn site_adblock(
+    policy: &Policy,
     blocker: &Blocker,
+    url: &str,
     site: &str,
     blocked: u32,
     status: Option<ListStatus>,
 ) -> SiteAdblock {
-    if !blocker.is_enabled() {
-        return SiteAdblock {
-            active: false,
-            switchable: false,
-            detail: t!("In den Einstellungen ausgeschaltet").to_owned(),
-        };
-    }
-    if blocker.is_site_allowed(site) {
+    let effective = policy.effective(url);
+    if !effective.active {
         return SiteAdblock {
             active: false,
             switchable: true,
             detail: t!("Für {} ausgeschaltet", site),
+        };
+    }
+    if !effective.banners {
+        return SiteAdblock {
+            active: false,
+            switchable: true,
+            detail: t!("Werbung wird hier nicht blockiert").to_owned(),
         };
     }
     let detail = if !blocker.is_ready() {
@@ -505,17 +646,25 @@ mod tests {
 
     #[test]
     fn the_site_row_explains_why_nothing_is_blocked() {
-        let blocker = Blocker::new(true, ["quiet.example".to_owned()]);
+        let policy = Policy::new();
+        let blocker = Blocker::new(|_| true);
+        let quiet = "https://quiet.example/page";
+        policy.set(
+            Scope::Site,
+            "quiet.example",
+            Protections::default().with(Protection::Active, Some(false)),
+        );
         assert_eq!(
-            site_adblock(&blocker, "quiet.example", 0, None),
+            site_adblock(&policy, &blocker, quiet, "quiet.example", 0, None),
             SiteAdblock {
                 active: false,
                 switchable: true,
                 detail: "Für quiet.example ausgeschaltet".to_owned(),
             }
         );
+        let page = "https://example.org/";
         assert_eq!(
-            site_adblock(&blocker, "example.org", 0, None).detail,
+            site_adblock(&policy, &blocker, page, "example.org", 0, None).detail,
             "Filterlisten werden geladen…"
         );
         let failed = ListStatus {
@@ -523,10 +672,68 @@ mod tests {
             downloaded_at: None,
         };
         assert_eq!(
-            site_adblock(&blocker, "example.org", 0, Some(failed)).detail,
+            site_adblock(&policy, &blocker, page, "example.org", 0, Some(failed)).detail,
             "EasyList konnte nicht geladen werden"
         );
-        blocker.set_enabled(false);
-        assert!(!site_adblock(&blocker, "example.org", 3, None).switchable);
+        policy.set(
+            Scope::Global,
+            "",
+            Protections::default().with(Protection::Banners, Some(false)),
+        );
+        assert_eq!(
+            site_adblock(&policy, &blocker, page, "example.org", 3, None).detail,
+            "Werbung wird hier nicht blockiert"
+        );
+    }
+
+    #[test]
+    fn a_page_only_opens_what_it_is_allowed_to() {
+        let policy = Arc::new(Policy::new());
+        let filter = AdblockFilter {
+            policy: policy.clone(),
+            blocker: Arc::new(Blocker::new(|_| true)),
+            cookies: Arc::new(Blocker::new(|_| false)),
+            answer_banners: Arc::new(AtomicBool::new(false)),
+        };
+        let page = "https://example.org/artikel";
+        let elsewhere = "https://werbung.example/ziel";
+        assert!(
+            !filter.allows(Opening::Popup, page, elsewhere, false),
+            "a window a page opens by itself is stopped from the start"
+        );
+        assert!(
+            !filter.allows(Opening::Popup, page, elsewhere, true),
+            "a click usually meant something else than a window"
+        );
+        assert!(
+            filter.allows(Opening::Navigation, page, elsewhere, false),
+            "being sent away is only stopped where that is switched on"
+        );
+        policy.set(
+            Scope::Global,
+            "",
+            Protections::default()
+                .with(Protection::Popups, Some(false))
+                .with(Protection::Redirects, Some(true)),
+        );
+        assert!(filter.allows(Opening::Popup, page, elsewhere, false));
+        assert!(!filter.allows(Opening::Navigation, page, elsewhere, false));
+        assert!(
+            filter.allows(Opening::Navigation, page, elsewhere, true),
+            "where the user clicked, they are taken along"
+        );
+        assert!(
+            filter.allows(Opening::Navigation, page, "https://example.org/mehr", false),
+            "a page may move within itself"
+        );
+        policy.set(
+            Scope::Site,
+            "example.org",
+            Protections::default().with(Protection::Active, Some(false)),
+        );
+        assert!(
+            filter.allows(Opening::Navigation, page, elsewhere, false),
+            "a page without protection is left alone"
+        );
     }
 }

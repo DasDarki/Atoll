@@ -214,6 +214,9 @@ msgstr "Atoll could not be started: {}"
 msgid "Auch wenn die Seite „nicht gefunden“ meldet"
 msgstr "Also when the page says “not found”"
 
+msgid "Auf Atolls Vorgaben zurücksetzen"
+msgstr "Back to what Atoll does anyway"
+
 msgid "Auf Seite suchen"
 msgstr "Find on page"
 
@@ -265,17 +268,14 @@ msgstr "From {}"
 msgid "Ausgeschaltet"
 msgstr "Switched off"
 
-msgid "Ausgeschaltet auf"
-msgstr "Switched off on"
-
 msgid "Ausgestellt für"
 msgstr "Issued to"
 
 msgid "Ausgestellt von"
 msgstr "Issued by"
 
-msgid "Ausnahme entfernen"
-msgstr "Remove exception"
+msgid "Ausnahmen entfernen"
+msgstr "Remove the exceptions"
 
 msgid "Auswahl"
 msgstr "Selection"
@@ -442,6 +442,9 @@ msgstr "The whole history will be deleted. Tabs, islands and bookmarks are kept.
 msgid "Die 1Password-CLI wird gesucht…"
 msgstr "Looking for the 1Password CLI…"
 
+msgid "Die Adresse folgt wieder den Einstellungen der Seite"
+msgstr "The address follows the settings of the site again"
+
 msgid "Die Adresse muss {{query}} enthalten, bis dahin bleibt die bisherige Suche aktiv."
 msgstr "The address has to contain {{query}}, until then the previous search stays active."
 
@@ -466,8 +469,14 @@ msgstr "The list is loaded as soon as hiding is switched on"
 msgid "Die Liste wird geladen…"
 msgstr "The list is being loaded…"
 
+msgid "Die Seite folgt wieder den allgemeinen Einstellungen"
+msgstr "The site follows the general settings again"
+
 msgid "Die Seite hat sich geändert, es wurde nichts eingefügt"
 msgstr "The page changed, nothing was filled in"
+
+msgid "Die Seite wird neu geladen"
+msgstr "The page is being reloaded"
 
 msgid "Die Seite wurde nicht über eine geprüfte, verschlüsselte Verbindung geladen."
 msgstr "The page was not loaded over a checked, encrypted connection."
@@ -492,6 +501,9 @@ msgstr "This page crashed."
 
 msgid "Diese Seite wurde nicht aus dem Internet geladen."
 msgstr "This page was not loaded from the internet."
+
+msgid "Dieser Ebene nichts mehr vorschreiben"
+msgstr "Let this level decide nothing"
 
 msgid "Dieser Ordner ist leer."
 msgstr "This folder is empty."
@@ -552,6 +564,9 @@ msgstr "EXTENSIONS"
 
 msgid "Eigene Adresse"
 msgstr "Own address"
+
+msgid "Eigene Einstellungen für"
+msgstr "Own settings for"
 
 msgid "Eingefroren"
 msgstr "Frozen"
@@ -652,6 +667,9 @@ msgstr "Close window"
 msgid "Fenster öffnen"
 msgstr "Open window"
 
+msgid "Fenster, die die Seite aufmacht, auch nach einem Klick."
+msgstr "Windows the page opens, after a click as well."
+
 msgid "Fertig"
 msgstr "Done"
 
@@ -703,6 +721,18 @@ msgstr "Open pages are using {} right now."
 msgid "Gib auf dieser Seite keine Passwörter oder Zahlungsdaten ein, sie werden unverschlüsselt übertragen."
 msgstr "Do not enter passwords or payment details on this page, they are sent unencrypted."
 
+msgid "Gilt ab sofort"
+msgstr "Counts from now on"
+
+msgid "Gilt für alle Seiten, solange nichts anderes gesagt ist."
+msgstr "Counts on every page, as long as nothing else is said."
+
+msgid "Gilt für alles auf {}."
+msgstr "Counts for everything on {}."
+
+msgid "Gilt nur für {}."
+msgstr "Counts for {} alone."
+
 msgid "Gilt sofort, ohne Neustart."
 msgstr "Applies at once, without a restart."
 
@@ -747,9 +777,6 @@ msgstr "There is nothing to take over from Opera"
 
 msgid "In Workspace verschieben"
 msgstr "Move to workspace"
-
-msgid "In den Einstellungen ausgeschaltet"
-msgstr "Switched off in the settings"
 
 msgid "In die Zwischenablage kopiert"
 msgstr "Copied to the clipboard"
@@ -831,6 +858,9 @@ msgstr "Internal page"
 
 msgid "Ist eine Seite nicht erreichbar, fragt Atoll das Internet Archive nach einer Kopie. Dabei wandert die Adresse der Seite dorthin. In privaten Tabs passiert das nie."
 msgstr "When a page cannot be reached, Atoll asks the Internet Archive for a copy. That sends the address of the page there. In private tabs it never happens."
+
+msgid "Ist er aus, lässt Atoll diese Seite in Ruhe."
+msgstr "With this off, Atoll leaves this page alone."
 
 msgid "Jetzt aktualisieren"
 msgstr "Update now"
@@ -988,6 +1018,9 @@ msgstr "Open new tabs with the Atoll start page"
 msgid "Neue Tabs mit der Startseite öffnen"
 msgstr "Open new tabs with the start page"
 
+msgid "Neue Tabs verhindern"
+msgstr "Prevent new tabs"
+
 msgid "Neuer Lesezeichenordner"
 msgstr "New bookmark folder"
 
@@ -1002,6 +1035,9 @@ msgstr "New folder…"
 
 msgid "Neuer Tab"
 msgstr "New tab"
+
+msgid "Neuer Tab auf {} verhindert"
+msgstr "New tab on {} prevented"
 
 msgid "Neuer Tab in dieser Insel"
 msgstr "New tab in this island"
@@ -1041,6 +1077,9 @@ msgstr "Not allowed yet"
 
 msgid "Noch nichts besucht."
 msgstr "Nothing visited yet."
+
+msgid "Nur diese Adresse"
+msgstr "Only this address"
 
 msgid "OK"
 msgstr "OK"
@@ -1099,8 +1138,14 @@ msgstr "Passwords, payment details and everything else are sent to this website 
 msgid "Pausiert · {}"
 msgstr "Paused · {}"
 
+msgid "Popup von {} blockiert"
+msgstr "Popup from {} blocked"
+
 msgid "Popup öffnen"
 msgstr "Open popup"
+
+msgid "Popups blockieren"
+msgstr "Block popups"
 
 msgid "Privat"
 msgstr "Private"
@@ -1149,6 +1194,30 @@ msgstr "Close"
 
 msgid "Schläft, wird beim Öffnen geladen"
 msgstr "Asleep, loads when opened"
+
+msgid "Schutz"
+msgstr "Protection"
+
+msgid "Schutz aktiv"
+msgstr "Protection on"
+
+msgid "Schutz für diese Seite einstellen"
+msgstr "Set the protection for this page"
+
+msgid "Schutz für {} ausgeschaltet"
+msgstr "Protection switched off for {}"
+
+msgid "Schutz für {} ausschalten"
+msgstr "Switch the protection off for {}"
+
+msgid "Schutz für {} eingeschaltet"
+msgstr "Protection switched on for {}"
+
+msgid "Schutz für {} einschalten"
+msgstr "Switch the protection on for {}"
+
+msgid "Schutz ändern"
+msgstr "Change the protection"
 
 msgid "Seit über einer Woche nicht benutzt."
 msgstr "Unused for more than a week."
@@ -1330,6 +1399,9 @@ msgstr "Put the tabs of the current island to sleep"
 msgid "Tabs, Lesezeichen und Verlauf durchsuchen · > für Befehle"
 msgstr "Search tabs, bookmarks and history · > for commands"
 
+msgid "Tabs, die die Seite ungefragt auf einer fremden Seite aufmacht."
+msgstr "Tabs the page opens on another site unasked."
+
 msgid "Textdatei (.txt)"
 msgstr "Text file (.txt)"
 
@@ -1462,8 +1534,14 @@ msgstr "Site data could not be deleted"
 msgid "Websitedaten löschen?"
 msgstr "Delete site data?"
 
-msgid "Werbeblocker"
-msgstr "Ad blocker"
+msgid "Weiterleitung auf {} verhindert"
+msgstr "Redirect to {} prevented"
+
+msgid "Weiterleitungen verhindern"
+msgstr "Prevent redirects"
+
+msgid "Wenn dich die Seite ungefragt zu einer fremden Seite schickt."
+msgstr "When the page sends you to another site unasked."
 
 msgid "Werbeblocker ausgeschaltet"
 msgstr "Ad blocker switched off"
@@ -1477,23 +1555,17 @@ msgstr "Ad blocker switched on, it works from the next page load"
 msgid "Werbeblocker einschalten"
 msgstr "Switch the ad blocker on"
 
-msgid "Werbeblocker für {} ausgeschaltet"
-msgstr "Ad blocker switched off for {}"
-
-msgid "Werbeblocker für {} ausschalten"
-msgstr "Switch the ad blocker off for {}"
-
-msgid "Werbeblocker für {} eingeschaltet"
-msgstr "Ad blocker switched on for {}"
-
-msgid "Werbeblocker für {} einschalten"
-msgstr "Switch the ad blocker on for {}"
-
-msgid "Werbeblocker umschalten"
-msgstr "Toggle the ad blocker"
+msgid "Werbung blockieren"
+msgstr "Block advertising"
 
 msgid "Werbung und Tracker blockieren"
 msgstr "Block ads and trackers"
+
+msgid "Werbung wird hier nicht blockiert"
+msgstr "Advertising is not blocked here"
+
+msgid "Werbung, Tracker und was die Filterlisten verstecken."
+msgstr "Advertising, trackers and what the filter lists hide."
 
 msgid "Wie soll der Workspace heißen?"
 msgstr "What should the workspace be called?"
@@ -1588,8 +1660,8 @@ msgstr "Clipboard"
 msgid "Zwischenablage nicht verfügbar"
 msgstr "Clipboard not available"
 
-msgid "adblock werbung seite ausnahme"
-msgstr "adblock ads page exception"
+msgid "adblock werbung schutz seite ausnahme"
+msgstr "adblock advertising protection site exception"
 
 msgid "archiv wayback kopie alte fassung"
 msgstr "archive wayback copy old version"
@@ -1680,6 +1752,9 @@ msgstr "private incognito tab without traces"
 
 msgid "rückgängig"
 msgstr "undo"
+
+msgid "schutz adblock popups weiterleitungen tabs"
+msgstr "protection adblock popups redirects tabs"
 
 msgid "suche einstellung"
 msgstr "search setting"
@@ -1823,6 +1898,12 @@ msgstr "Change…"
 
 msgid "Öffnen"
 msgstr "Open"
+
+msgid "Überall"
+msgstr "Everywhere"
+
+msgid "Überall gilt wieder, was Atoll vorsieht"
+msgstr "Everywhere follows what Atoll does anyway again"
 
 msgid "Übernehmen"
 msgstr "Take over"

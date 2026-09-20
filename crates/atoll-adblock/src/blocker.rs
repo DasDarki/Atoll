@@ -1,5 +1,4 @@
 use std::collections::{HashSet, VecDeque};
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, RwLock};
 
 use adblock::Engine;
@@ -29,22 +28,23 @@ struct PageExceptions {
     exceptions: HashSet<String>,
 }
 
+/// Answers whether the page at an address is filtered at all, see [`Blocker::new`].
+type Gate = dyn Fn(&str) -> bool + Send + Sync;
+
 /// Checks requests and pages against the filter lists. Safe to share between threads.
 pub struct Blocker {
     engine: RwLock<Option<Arc<Engine>>>,
-    enabled: AtomicBool,
-    allowed_sites: RwLock<HashSet<String>>,
+    gate: Box<Gate>,
     pages: Mutex<VecDeque<PageExceptions>>,
 }
 
 impl Blocker {
-    /// A blocker without filter lists yet, see [`crate::Updater`]. `allowed_sites` are sites the
-    /// user switched filtering off for.
-    pub fn new(enabled: bool, allowed_sites: impl IntoIterator<Item = String>) -> Self {
+    /// A blocker without filter lists yet, see [`crate::Updater`]. `gate` answers for every page
+    /// whether it is filtered, which is where the user's settings come in.
+    pub fn new(gate: impl Fn(&str) -> bool + Send + Sync + 'static) -> Self {
         Self {
             engine: RwLock::new(None),
-            enabled: AtomicBool::new(enabled),
-            allowed_sites: RwLock::new(allowed_sites.into_iter().collect()),
+            gate: Box::new(gate),
             pages: Mutex::default(),
         }
     }
@@ -54,34 +54,9 @@ impl Blocker {
         self.engine().is_some()
     }
 
-    pub fn is_enabled(&self) -> bool {
-        self.enabled.load(Ordering::Relaxed)
-    }
-
-    pub fn set_enabled(&self, enabled: bool) {
-        self.enabled.store(enabled, Ordering::Relaxed);
-    }
-
-    /// Whether filtering is switched off for `site`, see [`site_of`].
-    pub fn is_site_allowed(&self, site: &str) -> bool {
-        self.allowed_sites
-            .read()
-            .is_ok_and(|sites| sites.contains(site))
-    }
-
-    pub fn set_site_allowed(&self, site: &str, allowed: bool) {
-        if let Ok(mut sites) = self.allowed_sites.write() {
-            if allowed {
-                sites.insert(site.to_owned());
-            } else {
-                sites.remove(site);
-            }
-        }
-    }
-
     /// Whether requests and elements of the page at `page_url` are filtered.
     pub fn filters_page(&self, page_url: &str) -> bool {
-        self.is_enabled() && !site_of(page_url).is_some_and(|site| self.is_site_allowed(&site))
+        (self.gate)(page_url)
     }
 
     /// Whether the request for `url` from the document at `source_url` on the page at `page_url`
@@ -212,7 +187,8 @@ news.example##.box:style(margin: 0)
 ";
 
     fn blocker() -> Blocker {
-        let blocker = Blocker::new(true, ["allowed.example".to_owned()]);
+        let blocker =
+            Blocker::new(|page_url| site_of(page_url).is_none_or(|site| site != "allowed.example"));
         blocker.replace_engine(build_engine(vec![LIST.to_owned()]));
         blocker
     }
@@ -223,7 +199,7 @@ news.example##.box:style(margin: 0)
 
     #[test]
     fn nothing_is_blocked_before_the_lists_are_loaded() {
-        let blocker = Blocker::new(true, []);
+        let blocker = Blocker::new(|_| true);
         assert!(!blocker.is_ready());
         assert!(!blocks(
             &blocker,
@@ -268,7 +244,7 @@ news.example##.box:style(margin: 0)
     }
 
     #[test]
-    fn allowed_sites_and_the_switch_turn_blocking_off() {
+    fn a_page_the_gate_keeps_out_is_not_filtered() {
         let blocker = blocker();
         assert!(!blocks(
             &blocker,
@@ -276,29 +252,17 @@ news.example##.box:style(margin: 0)
             "https://www.allowed.example/"
         ));
         assert!(!blocker.filters_page("https://allowed.example/page"));
-
-        blocker.set_site_allowed("example.org", true);
-        assert!(!blocks(
-            &blocker,
-            "https://ads.example.net/ad.js",
-            "https://example.org/"
-        ));
-        blocker.set_site_allowed("example.org", false);
-        assert!(blocks(
-            &blocker,
-            "https://ads.example.net/ad.js",
-            "https://example.org/"
-        ));
-
-        blocker.set_enabled(false);
-        assert!(!blocks(
-            &blocker,
-            "https://ads.example.net/ad.js",
-            "https://example.org/"
-        ));
         assert_eq!(
-            blocker.element_css("https://example.org/", &["ad-banner".to_owned()], &[]),
+            blocker.element_css("https://allowed.example/", &["ad-banner".to_owned()], &[]),
             ""
+        );
+        assert!(
+            blocks(
+                &blocker,
+                "https://ads.example.net/ad.js",
+                "https://example.org/"
+            ),
+            "every other page is filtered as before"
         );
     }
 

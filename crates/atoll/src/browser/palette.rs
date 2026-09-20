@@ -43,6 +43,7 @@ enum Command {
     OpenHistory,
     NewPrivateTab,
     NewTorTab,
+    OpenShield,
     OpenArchivedPage,
     ImportFromOpera,
     OpenDownloadFolder,
@@ -685,7 +686,7 @@ impl Browser {
         }
         commands.push((
             Command::ToggleAdblock,
-            if preferences.adblock_enabled {
+            if self.protections_on("").banners {
                 t!("Werbeblocker ausschalten")
             } else {
                 t!("Werbeblocker einschalten")
@@ -700,22 +701,26 @@ impl Browser {
             "",
             "adblock werbeblocker easylist",
         ));
-        if preferences.adblock_enabled
-            && let Some(site) = self
-                .current_page_url()
-                .as_deref()
-                .filter(|url| url.starts_with("http"))
-                .and_then(atoll_adblock::site_of)
+        if let Some(url) = self
+            .current_page_url()
+            .filter(|url| url.starts_with("http"))
+            && let Some(site) = atoll_adblock::site_of(&url)
         {
             commands.push((
                 Command::ToggleSiteAdblock,
-                if self.adblock_allows_site(&site) {
-                    t!("Werbeblocker für {} einschalten", site)
+                if self.protections_on(&url).active {
+                    t!("Schutz für {} ausschalten", site)
                 } else {
-                    t!("Werbeblocker für {} ausschalten", site)
+                    t!("Schutz für {} einschalten", site)
                 },
                 "",
-                t!("adblock werbung seite ausnahme"),
+                t!("adblock werbung schutz seite ausnahme"),
+            ));
+            commands.push((
+                Command::OpenShield,
+                t!("Schutz für diese Seite einstellen").to_owned(),
+                "",
+                t!("schutz adblock popups weiterleitungen tabs"),
             ));
         }
         if self.current_page_url().is_some() {
@@ -856,9 +861,10 @@ impl Browser {
             Command::DownloadVideo => self.download_video(),
             Command::ToggleSiteAdblock => self.toggle_site_adblock(),
             Command::ToggleAdblock => {
-                let enabled = !self.preferences.borrow().adblock_enabled;
+                let enabled = !self.protections_on("").banners;
                 self.set_adblock_enabled(enabled);
             }
+            Command::OpenShield => self.show_shield(),
             Command::UpdateFilterLists => self.update_filter_lists(),
             Command::Plugin(plugin, command) => self.plugins.run_command(&plugin, &command),
             Command::PluginPanel(plugin, panel) => self.plugins.show_panel(&plugin, &panel),

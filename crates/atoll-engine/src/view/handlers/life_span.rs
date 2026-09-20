@@ -1,13 +1,14 @@
 use std::os::raw::c_int;
 
 use cef::{
-    Browser, BrowserSettings, CefString, Client, DictionaryValue, Frame, ImplLifeSpanHandler,
-    LifeSpanHandler, PopupFeatures, WindowInfo, WindowOpenDisposition, WrapLifeSpanHandler,
-    rc::Rc as _, wrap_life_span_handler,
+    Browser, BrowserSettings, CefString, Client, DictionaryValue, Frame, ImplFrame,
+    ImplLifeSpanHandler, LifeSpanHandler, PopupFeatures, WindowInfo, WindowOpenDisposition,
+    WrapLifeSpanHandler, rc::Rc as _, wrap_life_span_handler,
 };
 
 use super::text;
 use crate::events::{EngineEvent, OpenDisposition};
+use crate::filter::Opening;
 use crate::registry;
 use crate::view::bridge;
 use crate::view::{ViewId, build_client};
@@ -21,12 +22,12 @@ wrap_life_span_handler! {
         fn on_before_popup(
             &self,
             _browser: Option<&mut Browser>,
-            _frame: Option<&mut Frame>,
+            frame: Option<&mut Frame>,
             popup_id: c_int,
             target_url: Option<&CefString>,
             _target_frame_name: Option<&CefString>,
             target_disposition: WindowOpenDisposition,
-            _user_gesture: c_int,
+            user_gesture: c_int,
             _popup_features: Option<&PopupFeatures>,
             window_info: Option<&mut WindowInfo>,
             client: Option<&mut Option<Client>>,
@@ -35,7 +36,13 @@ wrap_life_span_handler! {
             _no_javascript_access: Option<&mut c_int>,
         ) -> c_int {
             let url = text(target_url);
-            if target_disposition != WindowOpenDisposition::NEW_POPUP {
+            let popup = target_disposition == WindowOpenDisposition::NEW_POPUP;
+            let opening = if popup { Opening::Popup } else { Opening::NewTab };
+            let page = frame.map(|frame| CefString::from(&frame.url()).to_string());
+            if !super::allowed(self.view, opening, page.as_deref(), &url, user_gesture) {
+                return 1;
+            }
+            if !popup {
                 registry::emit(EngineEvent::OpenUrl {
                     view: self.view,
                     url,

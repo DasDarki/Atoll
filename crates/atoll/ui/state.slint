@@ -47,6 +47,8 @@ export global BrowserState {
     in property <PageSecurity> security;
     in property <bool> private-tab;
     in property <bool> tor-tab;
+    /// Whether this page has no protection at all, which the shield shows.
+    in property <bool> protection-off;
     in property <bool> can-go-back;
     in property <bool> can-go-forward;
     in property <bool> loading;
@@ -67,6 +69,7 @@ export global BrowserState {
 
     callback navigate(string);
     callback show-site-info();
+    callback show-shield();
     in property <bool> login-form;
     callback show-passwords();
     in property <bool> page-video;
@@ -129,6 +132,26 @@ export global OverlayState {
     callback downloads-clear();
     callback downloads-open-folder();
     callback downloads-close();
+
+    in property <bool> shield-visible;
+    in property <string> shield-site;
+    in property <string> shield-page;
+    in property <bool> shield-site-known;
+    in property <bool> shield-page-known;
+    /// 0 everywhere, 1 this site, 2 this address.
+    in-out property <int> shield-scope;
+    /// Whether the chosen level says anything of its own.
+    in property <bool> shield-own;
+    in property <bool> shield-active;
+    in property <bool> shield-banners;
+    in property <bool> shield-popups;
+    in property <bool> shield-redirects;
+    in property <bool> shield-new-tabs;
+    in property <string> shield-blocked;
+    callback shield-scope-chosen(int);
+    callback shield-toggled(string, bool);
+    callback shield-reset();
+    callback shield-close();
 
     in property <bool> site-info-visible;
     in property <string> site-info-host;

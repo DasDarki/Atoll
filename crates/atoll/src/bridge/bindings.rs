@@ -147,6 +147,8 @@ fn connect_browser(window: &AppWindow, browser: &Rc<Browser>) {
         .open_downloads());
     on!(state, on_show_site_info, browser, |target| target
         .show_site_info());
+    on!(state, on_show_shield, browser, |target| target
+        .show_shield());
     on!(state, on_show_passwords, browser, |target| target
         .show_passwords());
     on!(state, on_download_video, browser, |target| target
@@ -221,6 +223,16 @@ fn connect_overlays(window: &AppWindow, browser: &Rc<Browser>) {
     let state = window.global::<OverlayState>();
     on!(state, on_site_info_close, browser, |target| target
         .close_site_info());
+    on!(state, on_shield_close, browser, |target| target
+        .close_shield());
+    on!(state, on_shield_scope_chosen, browser, |target, index| {
+        target.shield_scope_chosen(index)
+    });
+    on!(state, on_shield_toggled, browser, |target, key, value| {
+        target.shield_toggled(&key, value)
+    });
+    on!(state, on_shield_reset, browser, |target| target
+        .shield_reset());
     on!(state, on_download_action, browser, |target, id, action| {
         target.download_action(DownloadId(i64::from(id)), &action)
     });

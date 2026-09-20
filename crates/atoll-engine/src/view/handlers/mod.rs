@@ -26,6 +26,49 @@ pub(crate) use resource::FilteringResourceHandler;
 
 use cef::{CefString, CefStringList};
 
+use crate::events::EngineEvent;
+use crate::filter::Opening;
+use crate::registry;
+use crate::view::ViewId;
+
+/// Asks the content filter whether the page may open this, and says so when it may not.
+///
+/// A page without an address of its own, such as a tab that is still empty, is left alone, and so
+/// is everything the user asked for themselves.
+fn allowed(
+    view: ViewId,
+    opening: Opening,
+    page_url: Option<&str>,
+    target_url: &str,
+    user_gesture: std::os::raw::c_int,
+) -> bool {
+    let page_url = page_url.unwrap_or_default();
+    if page_url.is_empty() || target_url.is_empty() {
+        return true;
+    }
+    let allowed = registry::with_view(view, |runtime, _| {
+        runtime
+            .content_filter
+            .as_ref()
+            .is_none_or(|filter| filter.allows(opening, page_url, target_url, user_gesture != 0))
+    });
+    if allowed == Some(false) {
+        tracing::debug!(
+            ?opening,
+            page_url,
+            target_url,
+            "a page was not allowed to open this"
+        );
+        registry::emit(EngineEvent::OpeningBlocked {
+            view,
+            opening,
+            url: target_url.to_owned(),
+        });
+        return false;
+    }
+    true
+}
+
 fn text(value: Option<&CefString>) -> String {
     value.map(ToString::to_string).unwrap_or_default()
 }

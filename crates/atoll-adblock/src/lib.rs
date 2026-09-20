@@ -7,8 +7,10 @@ mod blocker;
 mod cosmetic;
 mod download;
 mod lists;
+mod policy;
 mod updater;
 
 pub use blocker::{Blocker, Cosmetics, site_of};
 pub use lists::{COOKIE_LISTS, FILTER_LISTS, FilterList};
+pub use policy::{Effective, Policy, Protection, Protections, Scope, page_of};
 pub use updater::{ListState, ListStatus, Updater};

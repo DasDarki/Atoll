@@ -330,7 +330,7 @@ mod tests {
     }
 
     fn start(path: &Path, fetch: Box<Fetch>) -> (Updater, Arc<Blocker>) {
-        let blocker = Arc::new(Blocker::new(true, []));
+        let blocker = Arc::new(Blocker::new(|_| true));
         let updater = Updater::start_with(
             blocker.clone(),
             path.to_path_buf(),

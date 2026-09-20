@@ -102,6 +102,12 @@ impl Browser {
                 }
                 Effect::NONE
             }
+            EngineEvent::OpeningBlocked { view, opening, url } => {
+                if self.is_live_view(view) {
+                    self.opening_blocked(opening, &url);
+                }
+                Effect::NONE
+            }
             EngineEvent::MainFrameFailed { view, url, reason } => {
                 tracing::debug!(%url, %reason, "a page could not be loaded");
                 if let Some(tab) = self.tab_of(view) {

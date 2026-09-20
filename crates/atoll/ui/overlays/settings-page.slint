@@ -393,7 +393,7 @@ export component SettingsPage inherits Modal {
                     }
                     if SettingsState.adblock-exceptions != "" : Divider { }
                     if SettingsState.adblock-exceptions != "" : SettingRow {
-                        title: @tr("Ausgeschaltet auf");
+                        title: @tr("Eigene Einstellungen für");
                         description: SettingsState.adblock-exceptions;
                         ActionButton {
                             text: @tr("Alle entfernen");

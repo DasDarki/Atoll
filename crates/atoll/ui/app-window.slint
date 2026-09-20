@@ -26,6 +26,7 @@ import { BookmarkManager } from "overlays/bookmark-manager.slint";
 import { HoverCard } from "overlays/hover-card.slint";
 import { SettingsPage } from "overlays/settings-page.slint";
 import { SiteInfoPopup } from "overlays/site-info-popup.slint";
+import { ShieldPopup } from "overlays/shield-popup.slint";
 import { PasswordPopup } from "overlays/password-popup.slint";
 import { DownloadsPanel } from "overlays/downloads-panel.slint";
 import { BookmarksBar } from "toolbar/bookmarks-bar.slint";
@@ -217,6 +218,13 @@ export component AppWindow inherits Window {
     }
 
     if OverlayState.site-info-visible : SiteInfoPopup {
+        width: root.width;
+        height: root.height;
+        anchor-x: toolbar.address-x;
+        anchor-y: toolbar.address-y;
+    }
+
+    if OverlayState.shield-visible : ShieldPopup {
         width: root.width;
         height: root.height;
         anchor-x: toolbar.address-x;
