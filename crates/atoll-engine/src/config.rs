@@ -42,3 +42,13 @@ pub enum Session {
     /// Like [`Session::Private`], and every request goes through the Tor proxy on that port.
     Tor(u16),
 }
+
+/// Where the ordinary sessions send their requests while the user's VPN carries them.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ProxyRoute {
+    /// The port of the SOCKS server on the loopback address.
+    pub port: u16,
+    /// Hosts that keep going out directly, because the user said so. Chromium reads them as its
+    /// bypass list, so `example.org` and `*.example.org` are both written out.
+    pub bypass: Vec<String>,
+}

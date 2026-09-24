@@ -13,6 +13,7 @@ const MIGRATIONS: &[&str] = &[
     include_str!("v8_plugins.sql"),
     include_str!("v9_private_tabs.sql"),
     include_str!("v10_adblock_rules.sql"),
+    include_str!("v11_vpn_rules.sql"),
 ];
 
 pub(crate) fn migrate(connection: &Connection) -> StorageResult<()> {

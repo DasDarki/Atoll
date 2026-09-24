@@ -17,6 +17,7 @@ pub struct AdblockRule {
     pub popups: Option<bool>,
     pub redirects: Option<bool>,
     pub new_tabs: Option<bool>,
+    pub vpn: Option<bool>,
 }
 
 impl AdblockRule {
@@ -28,6 +29,7 @@ impl AdblockRule {
             self.popups,
             self.redirects,
             self.new_tabs,
+            self.vpn,
         ]
         .iter()
         .all(Option::is_none)
@@ -42,6 +44,7 @@ impl AdblockRule {
             popups: row.get(4)?,
             redirects: row.get(5)?,
             new_tabs: row.get(6)?,
+            vpn: row.get(7)?,
         })
     }
 }
@@ -50,7 +53,7 @@ impl AdblockRule {
 pub trait AdblockStore: Connected {
     fn adblock_rules(&self) -> StorageResult<Vec<AdblockRule>> {
         let mut statement = self.connection().prepare_cached(
-            "SELECT scope, pattern, active, banners, popups, redirects, new_tabs
+            "SELECT scope, pattern, active, banners, popups, redirects, new_tabs, vpn
              FROM adblock_rule ORDER BY scope, pattern",
         )?;
         let rules = statement
@@ -70,11 +73,12 @@ pub trait AdblockStore: Connected {
         self.connection()
             .prepare_cached(
                 "INSERT INTO adblock_rule
-                     (scope, pattern, active, banners, popups, redirects, new_tabs, changed_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+                     (scope, pattern, active, banners, popups, redirects, new_tabs, vpn,
+                      changed_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
                  ON CONFLICT(scope, pattern) DO UPDATE SET
                      active = ?3, banners = ?4, popups = ?5, redirects = ?6, new_tabs = ?7,
-                     changed_at = ?8",
+                     vpn = ?8, changed_at = ?9",
             )?
             .execute(params![
                 rule.scope,
@@ -84,6 +88,7 @@ pub trait AdblockStore: Connected {
                 rule.popups,
                 rule.redirects,
                 rule.new_tabs,
+                rule.vpn,
                 at.0
             ])?;
         Ok(())

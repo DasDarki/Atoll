@@ -63,6 +63,7 @@ impl Browser {
         state.set_download_panel(preferences.download_panel);
         self.show_download_directory();
         self.show_adblock_settings();
+        self.show_vpn_settings();
         self.show_memory_settings();
         self.show_password_settings();
         self.show_plugin_settings();
@@ -154,6 +155,46 @@ impl Browser {
                 });
             }
             "adblock-enabled" => self.set_adblock_enabled(state.get_adblock_enabled()),
+            "vpn-enabled" => self.set_vpn_enabled(state.get_vpn_enabled()),
+            "vpn-kind" => {
+                let kind = match state.get_vpn_kind() {
+                    1 => "http",
+                    2 => "https",
+                    _ => "socks5",
+                };
+                self.update_preference(PreferenceKey::VpnKind, |preferences| {
+                    preferences.vpn_kind = kind.to_owned();
+                });
+                self.vpn_settings_changed();
+            }
+            "vpn-host" => {
+                let host = state.get_vpn_host().trim().to_owned();
+                self.update_preference(PreferenceKey::VpnHost, |preferences| {
+                    preferences.vpn_host = host;
+                });
+                self.vpn_settings_changed();
+            }
+            "vpn-port" => {
+                let port = state.get_vpn_port().clamp(1, i32::from(u16::MAX)) as u32;
+                self.update_preference(PreferenceKey::VpnPort, |preferences| {
+                    preferences.vpn_port = port;
+                });
+                self.vpn_settings_changed();
+            }
+            "vpn-user" => {
+                let user = state.get_vpn_user().to_string();
+                self.update_preference(PreferenceKey::VpnUser, |preferences| {
+                    preferences.vpn_user = user;
+                });
+                self.vpn_settings_changed();
+            }
+            "vpn-password" => {
+                let password = state.get_vpn_password().to_string();
+                self.update_preference(PreferenceKey::VpnPassword, |preferences| {
+                    preferences.vpn_password = password;
+                });
+                self.vpn_settings_changed();
+            }
             "cookie-banners-hide" => {
                 self.set_hide_cookie_banners(state.get_cookie_banners_hide());
             }

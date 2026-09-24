@@ -120,6 +120,18 @@ saved tabs therefore cost nothing at startup.
   extensions never see them. Their pages run in a session without a cache folder, shared among the
   private tabs, so a sign-in reaches the next one and everything is gone when the last one closes.
   A page opened from a private tab stays private.
+- **Your VPN, with a killswitch**: Atoll runs no VPN service of its own. You write down the proxy
+  of the service you already pay for - SOCKS5, or one that takes `CONNECT`, with TLS on the way to
+  it if you like, user name and password included - and from then on everything the browser does
+  takes that way: the pages, the private tabs, the downloads, the filter lists, what extensions
+  fetch and what yt-dlp loads. A SOCKS server of Atoll's own sits on the loopback address in front
+  of the service, because the engine only speaks to proxies, Chromium cannot hand a password to a
+  SOCKS proxy, and one place every connection passes through is the only honest place for a
+  killswitch. That killswitch is not a setting: while the way out is not known to be open, every
+  connection is refused there, and nothing falls back to the ordinary line, because the fallback
+  is the leak. WebRTC is held to the same way, so it cannot hand a site the real address past the
+  proxy. Single sites can be kept out on purpose - the works intranet, say - through the shield,
+  and they are listed in the settings so an exception cannot be forgotten.
 - **Tabs through Tor**: a private tab whose pages travel the Tor network, so a site does not see
   where the request comes from. Tor runs inside Atoll through Arti, the Rust implementation, with
   a small SOCKS bridge on the loopback address that only the engine talks to; nothing has to be
@@ -271,7 +283,10 @@ crates/
   atoll-onepassword  logins from the 1Password CLI and matching them to sites
   atoll-video      video downloads through yt-dlp with progress and cancel
   atoll-i18n       the languages: the `t!` macro and the catalogs built from lang/
-  atoll-tor        Tor through Arti, with the SOCKS bridge the engine speaks to
+  atoll-socks      the SOCKS server the engine talks to, shared by Tor and the VPN
+  atoll-tor        Tor through Arti, carried by that server
+  atoll-vpn        the user's VPN: their proxy, the killswitch and what it refuses
+  atoll-net        the one way out for what Atoll fetches itself, so nothing goes past the VPN
   atoll-plugin     the Luau runtime for extensions, their manifests, permissions and installation
   atoll-engine     CEF integration: off-screen browsers, rendering, input, clipboard bridge
   atoll            the application: Slint user interface and the controller
@@ -338,5 +353,9 @@ Known limitations:
   asked, so such a popup is never reported as blocked.
 - Cookie banners are only refused where a consent tool Atoll knows is in use and a refusing button
   exists. A site that only offers agreeing or paying is left to the user.
+- A tab through Tor keeps going through Tor while a VPN carries the rest: Arti builds its own way
+  out. The 1Password CLI also talks to its service by itself.
+- The user name and the password of the proxy are kept in the profile as they are, as with any
+  other proxy setting of a browser.
 - Under Wayland, new windows are placed by the compositor, not at the point where a tab was
   dropped.

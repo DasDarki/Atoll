@@ -76,6 +76,9 @@ msgstr "Cancelled"
 msgid "Adresse"
 msgstr "address"
 
+msgid "Adresse des Proxys, z.B. proxy.anbieter.net"
+msgstr "Address of the proxy, such as proxy.provider.net"
+
 msgid "Adresse des Repositorys, zum Beispiel https://example.org/erweiterung.git"
 msgstr "Address of the repository, for example https://example.org/extension.git"
 
@@ -139,6 +142,9 @@ msgstr "Remove all"
 msgid "Alle in neuen Tabs öffnen"
 msgstr "Open all in new tabs"
 
+msgid "Alles durch das VPN schicken"
+msgstr "Send everything through the VPN"
+
 msgid "Allgemein"
 msgstr "General"
 
@@ -156,6 +162,9 @@ msgstr "Create as new island"
 
 msgid "Alt+Pos1"
 msgstr "Alt+Home"
+
+msgid "Am VPN vorbei"
+msgstr "Past the VPN"
 
 msgid "Anfragen blockieren und umleiten"
 msgstr "block and redirect requests"
@@ -204,6 +213,9 @@ msgstr "Suggest archiving after weeks"
 
 msgid "Atoll beenden"
 msgstr "Quit Atoll"
+
+msgid "Atoll bringt kein VPN mit. Trag den Proxy deines Dienstes ein; solange er nicht erreichbar ist, lädt Atoll gar nichts, damit nichts daran vorbeigeht."
+msgstr "Atoll brings no VPN of its own. Write down the proxy of your service; while it cannot be reached, Atoll loads nothing at all, so that nothing slips past it."
 
 msgid "Atoll drückt bei den bekannten Einwilligungsdiensten den Knopf, der alles ablehnt. So weiß die Seite, dass du nein gesagt hast, statt nur nicht zu fragen."
 msgstr "With the consent tools Atoll knows, it presses the button that refuses everything. The site then knows that you said no, instead of simply not asking."
@@ -262,8 +274,14 @@ msgstr "Installed from an archive"
 msgid "Aus einem Zip-Archiv oder aus einem Git-Repository. Atoll fragt danach, was die Erweiterung darf."
 msgstr "From a zip archive or from a Git repository. Atoll then asks what the extension may do."
 
+msgid "Aus heißt: diese Seite geht direkt ins Netz, am VPN vorbei."
+msgstr "Off means: this site goes out directly, past the VPN."
+
 msgid "Aus {}"
 msgstr "From {}"
+
+msgid "Aus. Atoll geht direkt ins Netz."
+msgstr "Off. Atoll goes out directly."
 
 msgid "Ausgeschaltet"
 msgstr "Switched off"
@@ -306,6 +324,12 @@ msgstr "When the pages use more than the budget, the background tabs unused for 
 
 msgid "Benutzername"
 msgstr "User name"
+
+msgid "Benutzername und Passwort liegen im Profil, wie bei jeder anderen Proxy-Einstellung eines Browsers."
+msgstr "The user name and the password are kept in the profile, as with any other proxy setting of a browser."
+
+msgid "Benutzername, falls nötig"
+msgstr "User name, if one is needed"
 
 msgid "Bernstein"
 msgstr "Amber"
@@ -397,6 +421,18 @@ msgstr "The image could not be saved"
 msgid "Das Internet Archive hat eine Fassung vom {}. Soll Atoll sie öffnen?"
 msgstr "The Internet Archive has a copy from {}. Shall Atoll open it?"
 
+msgid "Das VPN ist aus, Atoll geht wieder direkt ins Netz"
+msgstr "The VPN is off, Atoll goes out directly again"
+
+msgid "Das VPN ist unterbrochen: {}. Atoll lädt nichts."
+msgstr "The VPN is broken off: {}. Atoll loads nothing."
+
+msgid "Das VPN steht"
+msgstr "The VPN stands"
+
+msgid "Das VPN wird verbunden. Bis es steht, lädt Atoll nichts."
+msgstr "The VPN is being connected. Until it stands, Atoll loads nothing."
+
 msgid "Datei auswählen"
 msgstr "Choose file"
 
@@ -426,6 +462,9 @@ msgstr "Database {} cannot be opened"
 
 msgid "Datenschutz"
 msgstr "Privacy"
+
+msgid "Der Browser konnte nicht aufs VPN umgestellt werden: {}"
+msgstr "The browser could not be sent through the VPN: {}"
 
 msgid "Der Ordner der Erweiterung und alles, was sie gespeichert hat, werden gelöscht."
 msgstr "The folder of the extension and everything it stored will be deleted."
@@ -555,6 +594,9 @@ msgstr "You will be signed out on every website."
 
 msgid "Duplizieren"
 msgstr "Duplicate"
+
+msgid "Durch das VPN"
+msgstr "Through the VPN"
 
 msgid "Durchnummerieren"
 msgstr "Count up"
@@ -1132,6 +1174,9 @@ msgstr "Atoll does not support passkeys, sign in another way"
 msgid "Passwort"
 msgstr "Password"
 
+msgid "Passwort, falls nötig"
+msgstr "Password, if one is needed"
+
 msgid "Passwörter, Zahlungsdaten und alles andere werden verschlüsselt an diese Website übertragen."
 msgstr "Passwords, payment details and everything else are sent to this website encrypted."
 
@@ -1251,6 +1296,9 @@ msgstr "Show sidebar"
 
 msgid "So viele zuletzt genutzte Tabs bleiben geladen und erscheinen sofort. Alle anderen schlafen und kosten keinen Arbeitsspeicher."
 msgstr "This many recently used tabs stay loaded and appear at once. Every other tab sleeps and costs no memory."
+
+msgid "Solange das VPN nicht steht, fragt Atoll das Archiv nicht"
+msgstr "While the VPN does not stand, Atoll does not ask the archive"
 
 msgid "Sonntag"
 msgstr "Sunday"
@@ -1423,6 +1471,9 @@ msgstr "Tor is connecting, the page loads afterwards"
 msgid "Tor-Tab: die Seite sieht nicht, woher du kommst. Gegen Wiedererkennung am Browser selbst hilft das nicht."
 msgstr "Tor tab: the site does not see where you come from. It does not help against being recognised by the browser itself."
 
+msgid "Trag zuerst den Proxy deines VPN-Dienstes ein, mit Adresse und Port"
+msgstr "Write down the proxy of your VPN service first, with its address and port"
+
 msgid "Trotzdem einfügen"
 msgstr "Fill in anyway"
 
@@ -1447,8 +1498,14 @@ msgstr "Open URL list"
 msgid "Umbenennen"
 msgstr "Rename"
 
+msgid "Unterbrochen: {}. Atoll lädt nichts."
+msgstr "Broken off: {}. Atoll loads nothing."
+
 msgid "VORSCHLÄGE"
 msgstr "SUGGESTIONS"
+
+msgid "VPN"
+msgstr "VPN"
 
 msgid "Verbindung ist nicht sicher"
 msgstr "Connection is not secure"
@@ -1458,6 +1515,9 @@ msgstr "Connection is not fully secure"
 
 msgid "Verbindung ist sicher"
 msgstr "Connection is secure"
+
+msgid "Verbunden. Alles geht durch das VPN, auch Downloads und Erweiterungen."
+msgstr "Connected. Everything goes through the VPN, downloads and extensions as well."
 
 msgid "Vergrößern"
 msgstr "Zoom in"
@@ -1575,6 +1635,9 @@ msgstr "What should the island be called?"
 
 msgid "Wiederherstellen"
 msgstr "Restore"
+
+msgid "Wird verbunden. Bis dahin lädt Atoll nichts."
+msgstr "Being connected. Until then Atoll loads nothing."
 
 msgid "Wird vom Startseiten-Button und mit Alt+Pos1 geöffnet."
 msgstr "Opened by the home button and with Alt+Home."

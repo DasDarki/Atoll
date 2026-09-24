@@ -24,15 +24,18 @@ pub enum Protection {
     Redirects,
     /// Stops a page from opening a tab on another site by itself.
     NewTabs,
+    /// Carries the page through the VPN of the user, where one is set up.
+    Vpn,
 }
 
 impl Protection {
-    pub const ALL: [Protection; 5] = [
+    pub const ALL: [Protection; 6] = [
         Protection::Active,
         Protection::Banners,
         Protection::Popups,
         Protection::Redirects,
         Protection::NewTabs,
+        Protection::Vpn,
     ];
 
     /// The name the protection carries in the database and in the user interface.
@@ -43,6 +46,7 @@ impl Protection {
             Protection::Popups => "popups",
             Protection::Redirects => "redirects",
             Protection::NewTabs => "new-tabs",
+            Protection::Vpn => "vpn",
         }
     }
 
@@ -67,6 +71,7 @@ pub struct Protections {
     pub popups: Option<bool>,
     pub redirects: Option<bool>,
     pub new_tabs: Option<bool>,
+    pub vpn: Option<bool>,
 }
 
 impl Protections {
@@ -77,6 +82,7 @@ impl Protections {
             Protection::Popups => self.popups,
             Protection::Redirects => self.redirects,
             Protection::NewTabs => self.new_tabs,
+            Protection::Vpn => self.vpn,
         }
     }
 
@@ -87,6 +93,7 @@ impl Protections {
             Protection::Popups => &mut self.popups,
             Protection::Redirects => &mut self.redirects,
             Protection::NewTabs => &mut self.new_tabs,
+            Protection::Vpn => &mut self.vpn,
         };
         *slot = value;
     }
@@ -123,6 +130,7 @@ pub struct Effective {
     pub popups: bool,
     pub redirects: bool,
     pub new_tabs: bool,
+    pub vpn: bool,
 }
 
 impl Effective {
@@ -133,6 +141,7 @@ impl Effective {
             Protection::Popups => self.popups,
             Protection::Redirects => self.redirects,
             Protection::NewTabs => self.new_tabs,
+            Protection::Vpn => self.vpn,
         }
     }
 
@@ -281,6 +290,7 @@ impl Policy {
             new_tabs: settled
                 .new_tabs
                 .unwrap_or_else(|| Protection::NewTabs.by_default()),
+            vpn: settled.vpn.unwrap_or_else(|| Protection::Vpn.by_default()),
         }
     }
 
@@ -295,6 +305,20 @@ impl Policy {
             .collect();
         found.sort();
         found
+    }
+
+    /// The sites the user keeps out of the VPN, which Chromium reads as its bypass list. The
+    /// addresses of single pages cannot be kept out: Chromium decides this by host alone.
+    pub fn bypassed_sites(&self) -> Vec<String> {
+        let rules = self.rules.read().unwrap_or_else(PoisonError::into_inner);
+        let mut sites: Vec<String> = rules
+            .sites
+            .iter()
+            .filter(|(_, rule)| rule.vpn == Some(false))
+            .map(|(site, _)| site.clone())
+            .collect();
+        sites.sort();
+        sites
     }
 
     /// Throws away every rule but the one that counts everywhere.
@@ -338,6 +362,7 @@ mod tests {
                 popups: true,
                 redirects: false,
                 new_tabs: false,
+                vpn: true,
             },
             "sending the user away happens on ordinary sites too, so it is only stopped on request"
         );
@@ -455,6 +480,22 @@ mod tests {
             Protections::default().with(Protection::Banners, Some(false)),
         );
         assert!(!policy.effective("about:blank").banners);
+    }
+
+    #[test]
+    fn the_sites_kept_out_of_the_vpn_are_named() {
+        let policy = policy();
+        policy.set(
+            Scope::Site,
+            "intern.example",
+            Protections::default().with(Protection::Vpn, Some(false)),
+        );
+        policy.set(
+            Scope::Site,
+            "shop.example.org",
+            Protections::default().with(Protection::Popups, Some(false)),
+        );
+        assert_eq!(policy.bypassed_sites(), vec!["intern.example".to_owned()]);
     }
 
     #[test]

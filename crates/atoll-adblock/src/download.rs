@@ -23,11 +23,7 @@ pub(crate) enum DownloadError {
 
 /// Downloads the text of `list`.
 pub(crate) fn fetch(list: &FilterList) -> Result<String, DownloadError> {
-    let agent: ureq::Agent = ureq::Agent::config_builder()
-        .timeout_global(Some(TIMEOUT))
-        .user_agent(concat!("Atoll/", env!("CARGO_PKG_VERSION")))
-        .build()
-        .into();
+    let agent = atoll_net::agent(TIMEOUT);
     let request_error = |source| DownloadError::Request {
         list: list.name,
         source,

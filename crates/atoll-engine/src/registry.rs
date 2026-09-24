@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use crate::config::Session;
+use crate::config::{ProxyRoute, Session};
 use crate::dev_tools::DevToolsBridge;
 use crate::events::{EngineEvent, RequestId};
 use crate::filter::ContentFilter;
@@ -38,6 +38,8 @@ pub(crate) struct Runtime {
     dev_tools: RefCell<HashMap<ViewId, Rc<DevToolsBridge>>>,
     next_view: Cell<u64>,
     next_request: Cell<u64>,
+    /// Where the ordinary sessions send their requests, while the user's VPN carries them.
+    proxy: RefCell<Option<ProxyRoute>>,
     /// The session private views share, built when the first one asks for it.
     private: RefCell<Option<cef::RequestContext>>,
     /// The same for views that go through Tor, with the port they were built for.
@@ -75,6 +77,7 @@ impl Runtime {
             dev_tools: RefCell::default(),
             next_view: Cell::new(0),
             next_request: Cell::new(0),
+            proxy: RefCell::default(),
             private: RefCell::default(),
             tor: RefCell::default(),
             private_views: Cell::new(0),
@@ -91,7 +94,16 @@ impl Runtime {
                 self.private_views.set(self.private_views.get() + 1);
                 let mut held = self.private.borrow_mut();
                 if held.is_none() {
-                    *held = forgetful_context();
+                    let built = forgetful_context();
+                    if let Some(context) = built.as_ref()
+                        && let Err(error) = route_requests(context, self.proxy.borrow().as_ref())
+                    {
+                        tracing::warn!(
+                            error,
+                            "the private session could not be sent through the VPN"
+                        );
+                    }
+                    *held = built;
                 }
                 held.clone()
             }
@@ -222,6 +234,20 @@ impl Runtime {
         self.dev_tools.borrow_mut().remove(&frontend);
     }
 
+    /// Sends every ordinary session through `route`, or lets them go out directly again. The
+    /// sessions of the private tabs are included; the ones that go through Tor keep their own way.
+    pub(crate) fn set_proxy(&self, route: Option<ProxyRoute>) -> Result<(), String> {
+        *self.proxy.borrow_mut() = route.clone();
+        let contexts = [
+            cef::request_context_get_global_context(),
+            self.private.borrow().clone(),
+        ];
+        for context in contexts.into_iter().flatten() {
+            route_requests(&context, route.as_ref())?;
+        }
+        Ok(())
+    }
+
     /// Passes messages of every DevTools frontend on to the inspected pages.
     pub(crate) fn flush_dev_tools(&self) {
         let bridges: Vec<Rc<DevToolsBridge>> = self.dev_tools.borrow().values().cloned().collect();
@@ -272,32 +298,89 @@ fn forgetful_context() -> Option<cef::RequestContext> {
     cef::request_context_create_context(Some(&settings), None)
 }
 
-/// Points a session at the SOCKS proxy on `port`, which is how the engine reaches Tor.
-fn send_through_proxy(context: &cef::RequestContext, port: u16) -> Result<(), String> {
+/// Sends one session through `route`, or lets it go out directly again.
+///
+/// Two things are set: where requests go, and what WebRTC may do. WebRTC can open its own
+/// connections past a proxy and hand a site the real address that way, so while a route stands,
+/// it is only allowed the way the rest of the browser takes.
+fn route_requests(context: &cef::RequestContext, route: Option<&ProxyRoute>) -> Result<(), String> {
+    match route {
+        Some(route) => {
+            let settings = [
+                ("mode", "fixed_servers".to_owned()),
+                ("server", format!("socks5://127.0.0.1:{}", route.port)),
+                ("bypass_list", route.bypass.join(",")),
+            ];
+            write_proxy(context, &settings)?;
+            set_text(
+                context,
+                "webrtc.ip_handling_policy",
+                "disable_non_proxied_udp",
+            );
+        }
+        None => {
+            write_proxy(context, &[("mode", "system".to_owned())])?;
+            set_text(context, "webrtc.ip_handling_policy", "default");
+        }
+    }
+    Ok(())
+}
+
+/// Writes the `proxy` preference of a session as Chromium reads it.
+fn write_proxy(context: &cef::RequestContext, settings: &[(&str, String)]) -> Result<(), String> {
     use cef::{ImplDictionaryValue, ImplPreferenceManager, ImplValue};
 
     let name = cef::CefString::from("proxy");
     if context.can_set_preference(Some(&name)) == 0 {
         return Err("the engine does not take a proxy for this session".to_owned());
     }
-    let settings = cef::dictionary_value_create().ok_or("no settings could be built")?;
-    let mode = cef::value_create().ok_or("no value could be built")?;
-    mode.set_string(Some(&cef::CefString::from("fixed_servers")));
-    settings.set_value(Some(&cef::CefString::from("mode")), Some(&mut mode.clone()));
-    let server = cef::value_create().ok_or("no value could be built")?;
-    server.set_string(Some(&cef::CefString::from(
-        format!("socks5://127.0.0.1:{port}").as_str(),
-    )));
-    settings.set_value(
-        Some(&cef::CefString::from("server")),
-        Some(&mut server.clone()),
-    );
+    let dictionary = cef::dictionary_value_create().ok_or("no settings could be built")?;
+    for (key, text) in settings {
+        let value = cef::value_create().ok_or("no value could be built")?;
+        value.set_string(Some(&cef::CefString::from(text.as_str())));
+        dictionary.set_value(Some(&cef::CefString::from(*key)), Some(&mut value.clone()));
+    }
     let value = cef::value_create().ok_or("no value could be built")?;
-    value.set_dictionary(Some(&mut settings.clone()));
+    value.set_dictionary(Some(&mut dictionary.clone()));
     let mut problem = cef::CefString::from("");
-    let set = context.set_preference(Some(&name), Some(&mut value.clone()), Some(&mut problem));
-    if set == 0 {
+    if context.set_preference(Some(&name), Some(&mut value.clone()), Some(&mut problem)) == 0 {
         return Err(problem.to_string());
     }
+    Ok(())
+}
+
+/// Sets a preference that is a plain text, and only says so in the log if it cannot be set.
+fn set_text(context: &cef::RequestContext, name: &str, text: &str) {
+    use cef::{ImplPreferenceManager, ImplValue};
+
+    let name = cef::CefString::from(name);
+    if context.can_set_preference(Some(&name)) == 0 {
+        tracing::debug!(preference = %name, "the engine does not take this setting");
+        return;
+    }
+    let Some(value) = cef::value_create() else {
+        return;
+    };
+    value.set_string(Some(&cef::CefString::from(text)));
+    let mut problem = cef::CefString::from("");
+    if context.set_preference(Some(&name), Some(&mut value.clone()), Some(&mut problem)) == 0 {
+        tracing::debug!(preference = %name, problem = %problem, "a setting was refused");
+    }
+}
+
+/// Points a session at the SOCKS proxy on `port`, which is how the engine reaches Tor.
+fn send_through_proxy(context: &cef::RequestContext, port: u16) -> Result<(), String> {
+    write_proxy(
+        context,
+        &[
+            ("mode", "fixed_servers".to_owned()),
+            ("server", format!("socks5://127.0.0.1:{port}")),
+        ],
+    )?;
+    set_text(
+        context,
+        "webrtc.ip_handling_policy",
+        "disable_non_proxied_udp",
+    );
     Ok(())
 }

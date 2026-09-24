@@ -229,6 +229,7 @@ fn protections_of(rule: &AdblockRule) -> Protections {
         popups: rule.popups,
         redirects: rule.redirects,
         new_tabs: rule.new_tabs,
+        vpn: rule.vpn,
     }
 }
 
@@ -242,6 +243,7 @@ fn rule_of(scope: Scope, pattern: &str, protections: Protections) -> AdblockRule
         popups: protections.popups,
         redirects: protections.redirects,
         new_tabs: protections.new_tabs,
+        vpn: protections.vpn,
     }
 }
 
@@ -373,7 +375,9 @@ impl Browser {
 
     /// Refreshes everything that shows what a page is protected from.
     pub(super) fn protections_changed(&self) {
+        self.apply_vpn_route();
         self.show_adblock_settings();
+        self.show_vpn_settings();
         self.sync_shield();
         if self
             .window()

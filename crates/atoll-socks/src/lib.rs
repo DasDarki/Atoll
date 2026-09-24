@@ -1,14 +1,33 @@
 //! The SOCKS server the browser engine talks to.
 //!
-//! Only what a browser needs: version 5, no authentication, and CONNECT. The address is passed
-//! on as it arrives, so names are looked up inside the Tor network and never by this computer.
+//! Only what a browser needs: version 5, no authentication, and CONNECT. Where a connection then
+//! goes is none of this server's business: a [`Connect`] carries it on, through Tor or through
+//! the user's VPN. The address travels on as it arrives, so names are looked up at the other end
+//! and never by this computer, which is what keeps a name from giving the user away.
 
+use std::future::Future;
+use std::io;
+use std::pin::Pin;
 use std::sync::Arc;
 
-use arti_client::TorClient;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
-use tor_rtcompat::Runtime;
+
+/// Anything bytes travel through in both directions.
+pub trait Carrier: AsyncRead + AsyncWrite + Send + Unpin {}
+
+impl<T: AsyncRead + AsyncWrite + Send + Unpin> Carrier for T {}
+
+/// One connection on its way to a site.
+pub type Carried = Pin<Box<dyn Carrier>>;
+
+/// The opening of such a connection, which takes a while.
+pub type Opening = Pin<Box<dyn Future<Output = io::Result<Carried>> + Send>>;
+
+/// Opens the way to a site. This is where Tor and the VPN differ, and nothing else does.
+pub trait Connect: Send + Sync + 'static {
+    fn connect(&self, host: String, port: u16) -> Opening;
+}
 
 /// The answers of the handshake, as the protocol spells them.
 const VERSION: u8 = 5;
@@ -21,40 +40,37 @@ const ADDRESS_NAME: u8 = 3;
 const ADDRESS_IPV6: u8 = 4;
 
 /// Serves every connection until the listener gives up.
-pub(crate) async fn serve<R: Runtime>(listener: TcpListener, client: Arc<TorClient<R>>) {
+pub async fn serve(listener: TcpListener, connect: Arc<dyn Connect>) {
     loop {
         let Ok((stream, _)) = listener.accept().await else {
             return;
         };
-        let client = client.clone();
+        let connect = connect.clone();
         tokio::spawn(async move {
-            if let Err(error) = handle(stream, client).await {
-                tracing::debug!(%error, "a Tor connection ended early");
+            if let Err(error) = handle(stream, connect).await {
+                tracing::debug!(%error, "a connection ended early");
             }
         });
     }
 }
 
-/// One connection: greet, read where it wants to go, open that through Tor and then only carry
-/// bytes in both directions.
-async fn handle<R: Runtime>(
-    mut stream: TcpStream,
-    client: Arc<TorClient<R>>,
-) -> Result<(), std::io::Error> {
+/// One connection: greet, read where it wants to go, have it opened and then only carry bytes in
+/// both directions.
+async fn handle(mut stream: TcpStream, connect: Arc<dyn Connect>) -> Result<(), io::Error> {
     greet(&mut stream).await?;
     let (host, port) = destination(&mut stream).await?;
-    let opened = client.connect((host.as_str(), port)).await;
-    let tor = match opened {
-        Ok(tor) => tor,
+    let opened = connect.connect(host.clone(), port).await;
+    let site = match opened {
+        Ok(site) => site,
         Err(error) => {
-            tracing::debug!(%error, host, port, "Tor could not reach the site");
+            tracing::debug!(%error, host, port, "the site could not be reached");
             refuse(&mut stream).await?;
             return Ok(());
         }
     };
     accept(&mut stream).await?;
     let (mut from_browser, mut to_browser) = stream.into_split();
-    let (mut from_site, mut to_site) = tokio::io::split(tor);
+    let (mut from_site, mut to_site) = tokio::io::split(site);
     let up = async {
         tokio::io::copy(&mut from_browser, &mut to_site).await?;
         to_site.shutdown().await
@@ -68,7 +84,7 @@ async fn handle<R: Runtime>(
 }
 
 /// The opening handshake, which only offers going without authentication.
-async fn greet<S: AsyncRead + AsyncWrite + Unpin>(stream: &mut S) -> Result<(), std::io::Error> {
+async fn greet<S: AsyncRead + AsyncWrite + Unpin>(stream: &mut S) -> Result<(), io::Error> {
     let mut header = [0u8; 2];
     stream.read_exact(&mut header).await?;
     if header[0] != VERSION {
@@ -87,7 +103,7 @@ async fn greet<S: AsyncRead + AsyncWrite + Unpin>(stream: &mut S) -> Result<(), 
 /// Where the browser wants to go.
 async fn destination<S: AsyncRead + AsyncWrite + Unpin>(
     stream: &mut S,
-) -> Result<(String, u16), std::io::Error> {
+) -> Result<(String, u16), io::Error> {
     let mut request = [0u8; 4];
     stream.read_exact(&mut request).await?;
     if request[0] != VERSION {
@@ -127,20 +143,20 @@ async fn destination<S: AsyncRead + AsyncWrite + Unpin>(
 
 /// Tells the browser the way is open. The address of this end is of no interest to it, so it
 /// gets zeros, which the protocol allows.
-async fn accept<S: AsyncWrite + Unpin>(stream: &mut S) -> Result<(), std::io::Error> {
+async fn accept<S: AsyncWrite + Unpin>(stream: &mut S) -> Result<(), io::Error> {
     stream
         .write_all(&[VERSION, SUCCEEDED, 0, ADDRESS_IPV4, 0, 0, 0, 0, 0, 0])
         .await
 }
 
-async fn refuse<S: AsyncWrite + Unpin>(stream: &mut S) -> Result<(), std::io::Error> {
+async fn refuse<S: AsyncWrite + Unpin>(stream: &mut S) -> Result<(), io::Error> {
     stream
         .write_all(&[VERSION, GENERAL_FAILURE, 0, ADDRESS_IPV4, 0, 0, 0, 0, 0, 0])
         .await
 }
 
-fn broken(message: &str) -> std::io::Error {
-    std::io::Error::new(std::io::ErrorKind::InvalidData, message.to_owned())
+fn broken(message: &str) -> io::Error {
+    io::Error::new(io::ErrorKind::InvalidData, message.to_owned())
 }
 
 #[cfg(test)]
@@ -154,7 +170,7 @@ mod tests {
             greet(&mut server).await?;
             let destination = destination(&mut server).await?;
             accept(&mut server).await?;
-            Ok::<_, std::io::Error>(destination)
+            Ok::<_, io::Error>(destination)
         });
         browser.write_all(request).await.unwrap();
         let mut answer = Vec::new();
@@ -177,7 +193,7 @@ mod tests {
         assert_eq!(
             destination,
             Some(("example.org".to_owned(), 443)),
-            "the name travels on untouched, so Tor looks it up and not this computer"
+            "the name travels on untouched, so the other end looks it up and not this computer"
         );
         assert_eq!(answer[0..2], [VERSION, NO_AUTHENTICATION]);
         assert_eq!(answer[2..4], [VERSION, SUCCEEDED]);

@@ -372,6 +372,80 @@ export component SettingsPage inherits Modal {
                 }
 
                 if SettingsState.section == 4 : VerticalLayout {
+                    SectionTitle { text: @tr("VPN"); }
+                    SettingRow {
+                        title: @tr("Alles durch das VPN schicken");
+                        description: SettingsState.vpn-status;
+                        Toggle {
+                            checked <=> SettingsState.vpn-enabled;
+                            toggled => { SettingsState.changed("vpn-enabled"); }
+                        }
+                    }
+                    VerticalLayout {
+                        spacing: 8px;
+                        padding-bottom: 8px;
+                        Text {
+                            text: @tr("Atoll bringt kein VPN mit. Trag den Proxy deines Dienstes ein; solange er nicht erreichbar ist, lädt Atoll gar nichts, damit nichts daran vorbeigeht.");
+                            color: Theme.text-faint;
+                            font-size: Theme.font-small + 1px;
+                            wrap: word-wrap;
+                        }
+                        Segmented {
+                            options: ["SOCKS5", "HTTP", "HTTPS"];
+                            selected <=> SettingsState.vpn-kind;
+                            changed-by-user => { SettingsState.changed("vpn-kind"); }
+                        }
+                        HorizontalLayout {
+                            spacing: 8px;
+                            TextField {
+                                horizontal-stretch: 1;
+                                text <=> SettingsState.vpn-host;
+                                placeholder: @tr("Adresse des Proxys, z.B. proxy.anbieter.net");
+                                edited => { SettingsState.changed("vpn-host"); }
+                                accepted => { SettingsState.changed("vpn-host"); }
+                            }
+                            SpinBox {
+                                width: 110px;
+                                minimum: 1;
+                                maximum: 65535;
+                                value <=> SettingsState.vpn-port;
+                                edited => { SettingsState.changed("vpn-port"); }
+                            }
+                        }
+                        HorizontalLayout {
+                            spacing: 8px;
+                            TextField {
+                                horizontal-stretch: 1;
+                                text <=> SettingsState.vpn-user;
+                                placeholder: @tr("Benutzername, falls nötig");
+                                edited => { SettingsState.changed("vpn-user"); }
+                                accepted => { SettingsState.changed("vpn-user"); }
+                            }
+                            TextField {
+                                horizontal-stretch: 1;
+                                secret: true;
+                                text <=> SettingsState.vpn-password;
+                                placeholder: @tr("Passwort, falls nötig");
+                                edited => { SettingsState.changed("vpn-password"); }
+                                accepted => { SettingsState.changed("vpn-password"); }
+                            }
+                        }
+                        Text {
+                            text: @tr("Benutzername und Passwort liegen im Profil, wie bei jeder anderen Proxy-Einstellung eines Browsers.");
+                            color: Theme.text-faint;
+                            font-size: Theme.font-small;
+                            wrap: word-wrap;
+                        }
+                    }
+                    if SettingsState.vpn-exceptions != "" : SettingRow {
+                        title: @tr("Am VPN vorbei");
+                        description: SettingsState.vpn-exceptions;
+                        ActionButton {
+                            text: @tr("Alle entfernen");
+                            clicked => { SettingsState.clear-vpn-exceptions(); }
+                        }
+                    }
+                    Divider { }
                     SectionTitle { text: @tr("WERBEBLOCKER"); }
                     SettingRow {
                         title: @tr("Werbung und Tracker blockieren");

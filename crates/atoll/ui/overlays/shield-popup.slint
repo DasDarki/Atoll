@@ -1,5 +1,5 @@
 import { Theme } from "../theme.slint";
-import { OverlayState } from "../state.slint";
+import { BrowserState, OverlayState } from "../state.slint";
 import { Toggle } from "../widgets/toggle.slint";
 import { Segmented } from "../widgets/segmented.slint";
 
@@ -179,6 +179,13 @@ export component ShieldPopup inherits Rectangle {
                 checked: OverlayState.shield-new-tabs;
                 enabled: OverlayState.shield-active;
                 toggled(value) => { OverlayState.shield-toggled("new-tabs", value); }
+            }
+
+            if BrowserState.vpn-state != 0 && OverlayState.shield-scope == 1 : SwitchRow {
+                title: @tr("Durch das VPN");
+                description: @tr("Aus heißt: diese Seite geht direkt ins Netz, am VPN vorbei.");
+                checked: OverlayState.shield-vpn;
+                toggled(value) => { OverlayState.shield-toggled("vpn", value); }
             }
 
             if OverlayState.shield-own : Rectangle {

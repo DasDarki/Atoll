@@ -4,6 +4,8 @@ export component TextField inherits Rectangle {
     in-out property <string> text;
     in property <string> placeholder;
     in property <length> font-size: Theme.font-normal;
+    /// Hides what is typed, for a password.
+    in property <bool> secret;
     out property <bool> focused: input.has-focus;
     callback accepted(string);
     callback edited(string);
@@ -55,6 +57,7 @@ export component TextField inherits Rectangle {
                     font-size: root.font-size;
                     vertical-alignment: center;
                     single-line: true;
+                    input-type: root.secret ? InputType.password : InputType.text;
                     selection-background-color: #7c6cff66;
                     accepted => { root.accepted(self.text); }
                     edited => { root.edited(self.text); }

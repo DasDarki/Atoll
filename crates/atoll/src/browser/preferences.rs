@@ -102,6 +102,15 @@ pub struct Preferences {
     pub dev_tools_docked_right: bool,
     /// Height, or width when docked right, of the developer tools in logical pixels.
     pub dev_tools_size: u32,
+    /// Whether the browser goes through the VPN of the user.
+    pub vpn_enabled: bool,
+    /// How the proxy of the service is spoken to: `socks5`, `http` or `https`.
+    pub vpn_kind: String,
+    pub vpn_host: String,
+    pub vpn_port: u32,
+    pub vpn_user: String,
+    /// Kept in the profile as it is, like the proxy settings of any browser.
+    pub vpn_password: String,
     /// Hides the cookie banners the filter list knows.
     pub cookie_banners_hide: bool,
     /// Answers the cookie banners Atoll recognises with a refusal.
@@ -144,6 +153,12 @@ pub enum PreferenceKey {
     ArchiveOnMissing,
     CookieBannersHide,
     CookieBannersAnswer,
+    VpnEnabled,
+    VpnKind,
+    VpnHost,
+    VpnPort,
+    VpnUser,
+    VpnPassword,
 }
 
 impl PreferenceKey {
@@ -170,6 +185,12 @@ impl PreferenceKey {
             PreferenceKey::ArchiveOnMissing => "archive_on_missing",
             PreferenceKey::CookieBannersHide => "cookie_banners_hide",
             PreferenceKey::CookieBannersAnswer => "cookie_banners_answer",
+            PreferenceKey::VpnEnabled => "vpn_enabled",
+            PreferenceKey::VpnKind => "vpn_kind",
+            PreferenceKey::VpnHost => "vpn_host",
+            PreferenceKey::VpnPort => "vpn_port",
+            PreferenceKey::VpnUser => "vpn_user",
+            PreferenceKey::VpnPassword => "vpn_password",
         }
     }
 }
@@ -192,6 +213,12 @@ impl Default for Preferences {
             dev_tools_size: DEFAULT_DEV_TOOLS_SIZE,
             cookie_banners_hide: true,
             cookie_banners_answer: true,
+            vpn_enabled: false,
+            vpn_kind: "socks5".to_owned(),
+            vpn_host: String::new(),
+            vpn_port: 1080,
+            vpn_user: String::new(),
+            vpn_password: String::new(),
             archive_suggestion_weeks: DEFAULT_ARCHIVE_SUGGESTION_WEEKS,
             memory_limit_enabled: true,
             memory_limit_gb: DEFAULT_MEMORY_LIMIT_GB,
@@ -247,6 +274,15 @@ impl Preferences {
                 PreferenceKey::CookieBannersAnswer,
                 defaults.cookie_banners_answer,
             ),
+            vpn_enabled: flag(PreferenceKey::VpnEnabled, defaults.vpn_enabled),
+            vpn_kind: text(PreferenceKey::VpnKind).unwrap_or(defaults.vpn_kind),
+            vpn_host: text(PreferenceKey::VpnHost).unwrap_or(defaults.vpn_host),
+            vpn_port: text(PreferenceKey::VpnPort)
+                .and_then(|port| port.parse().ok())
+                .filter(|port| *port > 0 && *port <= u32::from(u16::MAX))
+                .unwrap_or(defaults.vpn_port),
+            vpn_user: text(PreferenceKey::VpnUser).unwrap_or(defaults.vpn_user),
+            vpn_password: text(PreferenceKey::VpnPassword).unwrap_or(defaults.vpn_password),
             archive_suggestion_weeks: text(PreferenceKey::ArchiveSuggestionWeeks)
                 .and_then(|weeks| weeks.parse::<u32>().ok())
                 .map_or(defaults.archive_suggestion_weeks, |weeks| {
@@ -292,6 +328,12 @@ impl Preferences {
             PreferenceKey::DevToolsSize => self.dev_tools_size.to_string(),
             PreferenceKey::CookieBannersHide => flag(self.cookie_banners_hide),
             PreferenceKey::CookieBannersAnswer => flag(self.cookie_banners_answer),
+            PreferenceKey::VpnEnabled => flag(self.vpn_enabled),
+            PreferenceKey::VpnKind => self.vpn_kind.clone(),
+            PreferenceKey::VpnHost => self.vpn_host.clone(),
+            PreferenceKey::VpnPort => self.vpn_port.to_string(),
+            PreferenceKey::VpnUser => self.vpn_user.clone(),
+            PreferenceKey::VpnPassword => self.vpn_password.clone(),
             PreferenceKey::ArchiveSuggestionWeeks => self.archive_suggestion_weeks.to_string(),
             PreferenceKey::MemoryLimitEnabled => flag(self.memory_limit_enabled),
             PreferenceKey::MemoryLimitGb => self.memory_limit_gb.to_string(),
@@ -349,6 +391,12 @@ mod tests {
             dev_tools_size: 480,
             cookie_banners_hide: false,
             cookie_banners_answer: false,
+            vpn_enabled: true,
+            vpn_kind: "https".to_owned(),
+            vpn_host: "proxy.example".to_owned(),
+            vpn_port: 8443,
+            vpn_user: "ich".to_owned(),
+            vpn_password: "geheim".to_owned(),
             archive_suggestion_weeks: 9,
             memory_limit_enabled: false,
             memory_limit_gb: 12,
@@ -372,6 +420,12 @@ mod tests {
             PreferenceKey::DevToolsSize,
             PreferenceKey::CookieBannersHide,
             PreferenceKey::CookieBannersAnswer,
+            PreferenceKey::VpnEnabled,
+            PreferenceKey::VpnKind,
+            PreferenceKey::VpnHost,
+            PreferenceKey::VpnPort,
+            PreferenceKey::VpnUser,
+            PreferenceKey::VpnPassword,
             PreferenceKey::ArchiveSuggestionWeeks,
             PreferenceKey::MemoryLimitEnabled,
             PreferenceKey::MemoryLimitGb,

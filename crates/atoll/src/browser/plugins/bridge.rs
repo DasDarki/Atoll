@@ -288,11 +288,7 @@ impl PluginHost for Bridge {
 /// Runs one request of an extension, off the main thread. Methods with a body and methods
 /// without one are two different builders in `ureq`, so they take two paths here.
 fn fetch(request: &HttpRequest) -> PendingResult {
-    let agent: ureq::Agent = ureq::Agent::config_builder()
-        .timeout_global(Some(HTTP_TIMEOUT))
-        .user_agent(concat!("Atoll/", env!("CARGO_PKG_VERSION")))
-        .build()
-        .into();
+    let agent = atoll_net::agent(HTTP_TIMEOUT);
     let url = request.url.as_str();
     let sent = match request.method.as_str() {
         method @ ("POST" | "PUT" | "PATCH") => {

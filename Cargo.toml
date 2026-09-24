@@ -19,6 +19,9 @@ atoll-onepassword = { path = "crates/atoll-onepassword" }
 atoll-video = { path = "crates/atoll-video" }
 atoll-plugin = { path = "crates/atoll-plugin" }
 atoll-i18n = { path = "crates/atoll-i18n" }
+atoll-net = { path = "crates/atoll-net" }
+atoll-socks = { path = "crates/atoll-socks" }
+atoll-vpn = { path = "crates/atoll-vpn" }
 atoll-tor = { path = "crates/atoll-tor" }
 adblock = { version = "0.13", default-features = false, features = ["embedded-domain-resolver", "full-regex-handling"] }
 
@@ -49,11 +52,14 @@ slint = { version = "1.18", default-features = false, features = [
     "unstable-winit-030",
 ] }
 slint-build = "1.18"
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12", "logging"] }
 thiserror = "2"
+tokio-rustls = { version = "0.26", default-features = false, features = ["ring", "tls12", "logging"] }
+webpki-roots = "1"
 tokio = { version = "1", features = ["rt-multi-thread", "net", "io-util", "time", "macros"] }
 toml = { version = "0.9", default-features = false, features = ["parse", "serde"] }
 tracing = "0.1"
-ureq = "3.4"
+ureq = { version = "3.4", features = ["socks-proxy"] }
 tungstenite = { version = "0.28", default-features = false, features = ["handshake"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 url = "2.5"

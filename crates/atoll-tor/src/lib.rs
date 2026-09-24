@@ -9,13 +9,13 @@
 //! This hides the address a site sees. It is not the Tor Browser: nothing here changes what a
 //! page can read about fonts, screen or canvas, so a site can still recognise the browser itself.
 
-mod socks;
-
 use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4, TcpListener};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};
 
 use arti_client::{TorClient, TorClientConfig};
+use atoll_socks::{Carried, Connect, Opening};
+use tor_rtcompat::Runtime as TorRuntime;
 
 /// How far Tor is.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -144,6 +144,24 @@ fn run(inner: &Arc<Inner>) {
         };
         tracing::info!(port, "Tor is ready");
         inner.set(Status::Ready(port));
-        socks::serve(listener, client).await;
+        atoll_socks::serve(listener, Arc::new(ThroughTor { client })).await;
     });
+}
+
+/// Carries a connection of the SOCKS server through the Tor network.
+struct ThroughTor<R: TorRuntime> {
+    client: Arc<TorClient<R>>,
+}
+
+impl<R: TorRuntime> Connect for ThroughTor<R> {
+    fn connect(&self, host: String, port: u16) -> Opening {
+        let client = self.client.clone();
+        Box::pin(async move {
+            let stream = client
+                .connect((host.as_str(), port))
+                .await
+                .map_err(std::io::Error::other)?;
+            Ok(Box::pin(stream) as Carried)
+        })
+    }
 }

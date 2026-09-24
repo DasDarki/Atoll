@@ -10,7 +10,7 @@ use cef::{
 
 use crate::app;
 use crate::clipboard::ClipboardHelper;
-use crate::config::{EngineConfig, Session};
+use crate::config::{EngineConfig, ProxyRoute, Session};
 use crate::dev_tools::DevToolsSession;
 use crate::error::EngineError;
 use crate::events::{EngineEvent, RequestId};
@@ -228,6 +228,12 @@ impl Engine {
     /// while the call is still running.
     fn download_callback(&self, id: u32) -> Option<cef::DownloadItemCallback> {
         self.runtime.downloads.borrow().get(&id).cloned()
+    }
+
+    /// Sends every ordinary session through the SOCKS server on the loopback address, or lets
+    /// them go out directly again. This is how the user's VPN carries the browser.
+    pub fn set_proxy(&self, route: Option<ProxyRoute>) -> Result<(), String> {
+        self.runtime.set_proxy(route)
     }
 
     /// Deletes every cookie of the profile. Returns `false` if the cookie store is unavailable.

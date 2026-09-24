@@ -1,0 +1,1 @@
+ALTER TABLE adblock_rule ADD COLUMN vpn INTEGER;

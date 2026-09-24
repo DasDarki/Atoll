@@ -100,6 +100,32 @@ export component AddressBar inherits Rectangle {
                 }
             }
 
+            if BrowserState.vpn-state != 0 : Rectangle {
+                width: vpn-label.preferred-width + 14px;
+                height: 20px;
+                y: (parent.height - self.height) / 2;
+                border-radius: self.height / 2;
+                background: BrowserState.vpn-state == 2 ? #10b98126
+                    : BrowserState.vpn-state == 3 ? Theme.danger.with-alpha(0.18)
+                    : Theme.hover;
+
+                vpn-label := Text {
+                    text: @tr("VPN");
+                    color: BrowserState.vpn-state == 2 ? #34d399
+                        : BrowserState.vpn-state == 3 ? Theme.danger
+                        : Theme.text-faint;
+                    font-size: Theme.font-small;
+                    font-weight: 600;
+                    vertical-alignment: center;
+                    horizontal-alignment: center;
+                }
+
+                TouchArea {
+                    mouse-cursor: pointer;
+                    clicked => { BrowserState.show-shield(); }
+                }
+            }
+
             if BrowserState.private-tab : Rectangle {
                 width: label.preferred-width + 14px;
                 height: 20px;

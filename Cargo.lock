@@ -379,7 +379,7 @@ dependencies = [
  "objc2-foundation 0.3.2",
  "parking_lot",
  "percent-encoding",
- "windows-sys 0.52.0",
+ "windows-sys 0.60.2",
  "wl-clipboard-rs",
  "x11rb",
 ]
@@ -706,12 +706,14 @@ dependencies = [
  "atoll-core",
  "atoll-engine",
  "atoll-i18n",
+ "atoll-net",
  "atoll-onepassword",
  "atoll-plugin",
  "atoll-storage",
  "atoll-tor",
  "atoll-transfer",
  "atoll-video",
+ "atoll-vpn",
  "directories",
  "image",
  "libc",
@@ -730,6 +732,7 @@ name = "atoll-adblock"
 version = "0.1.0"
 dependencies = [
  "adblock",
+ "atoll-net",
  "serde_json",
  "thiserror 2.0.20",
  "tracing",
@@ -776,6 +779,13 @@ name = "atoll-i18n"
 version = "0.1.0"
 
 [[package]]
+name = "atoll-net"
+version = "0.1.0"
+dependencies = [
+ "ureq",
+]
+
+[[package]]
 name = "atoll-onepassword"
 version = "0.1.0"
 dependencies = [
@@ -801,6 +811,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "atoll-socks"
+version = "0.1.0"
+dependencies = [
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "atoll-storage"
 version = "0.1.0"
 dependencies = [
@@ -814,6 +832,7 @@ name = "atoll-tor"
 version = "0.1.0"
 dependencies = [
  "arti-client",
+ "atoll-socks",
  "tokio",
  "tor-rtcompat",
  "tracing",
@@ -835,8 +854,21 @@ dependencies = [
 name = "atoll-video"
 version = "0.1.0"
 dependencies = [
+ "atoll-net",
  "libc",
  "thiserror 2.0.20",
+]
+
+[[package]]
+name = "atoll-vpn"
+version = "0.1.0"
+dependencies = [
+ "atoll-socks",
+ "rustls",
+ "tokio",
+ "tokio-rustls",
+ "tracing",
+ "webpki-roots",
 ]
 
 [[package]]
@@ -6410,7 +6442,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys 0.4.15",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -7642,6 +7674,16 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 3.0.6",
+]
+
+[[package]]
+name = "tokio-rustls"
+version = "0.26.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c9cc2678c2cdd569ef8215e2afd7954ada2ae20b4fdd2c5fe6139a3b02d105db"
+dependencies = [
+ "rustls",
+ "tokio",
 ]
 
 [[package]]

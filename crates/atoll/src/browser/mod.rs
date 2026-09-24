@@ -36,6 +36,7 @@ mod tabs;
 mod transfer;
 mod upload;
 mod views;
+mod vpn;
 mod wayback;
 mod web_input;
 mod windows;
@@ -50,6 +51,7 @@ use atoll_storage::Storage;
 use atoll_storage::prelude::*;
 use atoll_tor::Tor;
 use atoll_video::YtDlp;
+use atoll_vpn::Vpn;
 use slint::ComponentHandle;
 
 use crate::input::pointer::ClickTracker;
@@ -99,6 +101,7 @@ struct Shared {
     favicons: Rc<RefCell<FaviconCache>>,
     private: Rc<RefCell<PrivatePages>>,
     tor: Tor,
+    vpn: Vpn,
     closed_tabs: Rc<RefCell<Vec<ClosedTab>>>,
     clipboard: Rc<Clipboard>,
     clipboard_sync: Rc<RefCell<ClipboardSync>>,
@@ -133,6 +136,7 @@ impl Shared {
             favicons: Rc::default(),
             private: Rc::default(),
             tor: Tor::default(),
+            vpn: Vpn::default(),
             closed_tabs: Rc::default(),
             clipboard: Rc::default(),
             clipboard_sync: Rc::default(),
@@ -171,6 +175,9 @@ pub struct Browser {
     tor: Tor,
     /// What Tor last said, to notice when it changes.
     tor_status: RefCell<Option<atoll_tor::Status>>,
+    vpn: Vpn,
+    /// The same for the VPN of the user.
+    vpn_status: RefCell<Option<atoll_vpn::Status>>,
     history: RefCell<HistoryView>,
     opera: RefCell<OperaImport>,
     island_drag: RefCell<IslandDrag>,
@@ -238,6 +245,8 @@ impl Browser {
             private: shared.private.clone(),
             tor: shared.tor.clone(),
             tor_status: RefCell::default(),
+            vpn: shared.vpn.clone(),
+            vpn_status: RefCell::default(),
             history: RefCell::default(),
             opera: RefCell::default(),
             island_drag: RefCell::default(),

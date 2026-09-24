@@ -113,6 +113,14 @@ impl Browser {
         if !url.starts_with("http://") && !url.starts_with("https://") {
             return;
         }
+        if self.vpn_holds_everything() {
+            if asked_for {
+                self.show_toast(t!(
+                    "Solange das VPN nicht steht, fragt Atoll das Archiv nicht"
+                ));
+            }
+            return;
+        }
         let wanted = url.to_owned();
         let this = self.this();
         if asked_for {
@@ -165,9 +173,9 @@ impl Browser {
 
 /// Asks the Internet Archive whether it has a copy of `url`.
 fn snapshot_of(url: &str) -> Option<Snapshot> {
-    let answer = ureq::get(format!("{NEAREST}{}", in_a_path(url)))
+    let answer = atoll_net::agent(TIMEOUT)
+        .get(format!("{NEAREST}{}", in_a_path(url)))
         .config()
-        .timeout_global(Some(TIMEOUT))
         .max_redirects(0)
         .build()
         .call()

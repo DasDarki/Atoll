@@ -426,6 +426,8 @@ impl WindowManager {
             }
         }
         if let Some(browser) = self.browsers().first() {
+            // Before anything is loaded, so no page can slip out past the VPN.
+            browser.resume_vpn();
             browser.start_clipboard_bridge();
         }
         let this = self.this.clone();
@@ -489,6 +491,7 @@ impl WindowManager {
         self.shared.plugins.poll_workers();
         for browser in self.browsers() {
             browser.watch_tor();
+            browser.watch_vpn();
         }
         if events.is_empty() {
             return;

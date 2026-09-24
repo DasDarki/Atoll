@@ -49,6 +49,8 @@ export global BrowserState {
     in property <bool> tor-tab;
     /// Whether this page has no protection at all, which the shield shows.
     in property <bool> protection-off;
+    /// 0 aus, 1 wird verbunden, 2 verbunden, 3 unterbrochen.
+    in property <int> vpn-state;
     in property <bool> can-go-back;
     in property <bool> can-go-forward;
     in property <bool> loading;
@@ -147,6 +149,7 @@ export global OverlayState {
     in property <bool> shield-popups;
     in property <bool> shield-redirects;
     in property <bool> shield-new-tabs;
+    in property <bool> shield-vpn;
     in property <string> shield-blocked;
     callback shield-scope-chosen(int);
     callback shield-toggled(string, bool);
@@ -350,6 +353,16 @@ export global SettingsState {
     in-out property <bool> adblock-enabled;
     in-out property <int> archive-fallback;
     in-out property <bool> archive-on-missing;
+    in-out property <bool> vpn-enabled;
+    in-out property <int> vpn-kind;
+    in-out property <string> vpn-host;
+    in-out property <int> vpn-port;
+    in-out property <string> vpn-user;
+    in-out property <string> vpn-password;
+    in property <string> vpn-status;
+    in property <string> vpn-exceptions;
+    callback clear-vpn-exceptions();
+
     in-out property <bool> cookie-banners-hide;
     in-out property <bool> cookie-banners-answer;
     in property <string> cookie-banners-status;

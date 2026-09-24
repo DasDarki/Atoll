@@ -80,7 +80,10 @@ impl Browser {
         self.set_protection(scope, &url, protection, value);
         // What is blocked in the page itself only changes once the page is built again, the rest
         // counts for the next thing the page tries.
-        if matches!(protection, Protection::Active | Protection::Banners) {
+        if matches!(
+            protection,
+            Protection::Active | Protection::Banners | Protection::Vpn
+        ) {
             self.reload(true);
             self.show_toast(t!("Die Seite wird neu geladen"));
         } else {
@@ -142,6 +145,7 @@ impl Browser {
         state.set_shield_popups(effective.popups);
         state.set_shield_redirects(effective.redirects);
         state.set_shield_new_tabs(effective.new_tabs);
+        state.set_shield_vpn(effective.vpn);
         let mut blocked = 0;
         self.with_live_view(|view| blocked = view.blocked_requests());
         state.set_shield_blocked(

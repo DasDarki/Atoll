@@ -231,6 +231,10 @@ impl VideoDownload {
         if let Some(referer) = &request.referer {
             command.arg("--referer").arg(referer);
         }
+        // A download takes the same way out as the rest of the browser, see `atoll-net`.
+        if let Some(proxy) = atoll_net::proxy_address() {
+            command.arg("--proxy").arg(proxy);
+        }
         command
             .arg("--")
             .arg(&request.url)
