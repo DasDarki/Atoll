@@ -359,9 +359,11 @@ export global SettingsState {
     in-out property <int> vpn-port;
     in-out property <string> vpn-user;
     in-out property <string> vpn-password;
+    in property <string> vpn-config;
     in property <string> vpn-status;
     in property <string> vpn-exceptions;
     callback clear-vpn-exceptions();
+    callback choose-vpn-config();
 
     in-out property <bool> cookie-banners-hide;
     in-out property <bool> cookie-banners-answer;

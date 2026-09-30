@@ -10,15 +10,42 @@
 //! a fallback is exactly the leak the user wanted to rule out.
 
 mod upstream;
+mod wireguard;
 
 use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4, TcpListener};
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};
 use std::time::Duration;
 
+use atoll_i18n::t;
 use atoll_socks::{Carried, Connect, Opening};
 
 pub use upstream::{Kind, Upstream};
+pub use wireguard::Config as TunnelConfig;
+
+/// How the browser gets out: through the proxy of a service, or through a tunnel Atoll builds
+/// itself from the configuration the service handed out.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Way {
+    Proxy(Upstream),
+    Tunnel(Box<TunnelConfig>),
+}
+
+impl Default for Way {
+    fn default() -> Self {
+        Way::Proxy(Upstream::default())
+    }
+}
+
+impl Way {
+    /// Whether enough is known to try at all.
+    pub fn is_complete(&self) -> bool {
+        match self {
+            Way::Proxy(upstream) => upstream.is_complete(),
+            Way::Tunnel(_) => true,
+        }
+    }
+}
 
 /// How often the way out is tried again while it stands, and while it does not.
 const WHILE_UP: Duration = Duration::from_secs(30);
@@ -60,7 +87,7 @@ pub struct Vpn {
 #[derive(Debug, Default)]
 struct Inner {
     status: Mutex<Status>,
-    upstream: Mutex<Upstream>,
+    way: Mutex<Way>,
     /// Set while a bridge thread is running, cleared when it is asked to stop.
     running: AtomicBool,
     wanted: AtomicBool,
@@ -81,8 +108,8 @@ impl Inner {
             .clone()
     }
 
-    fn upstream(&self) -> Upstream {
-        self.upstream
+    fn way(&self) -> Way {
+        self.way
             .lock()
             .unwrap_or_else(PoisonError::into_inner)
             .clone()
@@ -108,15 +135,15 @@ impl Vpn {
         self.inner.wanted.load(Ordering::SeqCst)
     }
 
-    /// Starts carrying connections through `upstream`. The bridge has its port before this
-    /// answers, so the engine can be pointed at it at once; whether the way out stands is what
+    /// Starts carrying connections the given way. The bridge has its port before this answers,
+    /// so the engine can be pointed at it at once; whether the way out stands is what
     /// [`Vpn::status`] then says.
-    pub fn start(&self, upstream: Upstream) {
+    pub fn start(&self, way: Way) {
         *self
             .inner
-            .upstream
+            .way
             .lock()
-            .unwrap_or_else(PoisonError::into_inner) = upstream;
+            .unwrap_or_else(PoisonError::into_inner) = way;
         self.inner.wanted.store(true, Ordering::SeqCst);
         self.inner.set(Status::Connecting);
         if self.inner.running.swap(true, Ordering::SeqCst) {
@@ -182,38 +209,47 @@ fn run(inner: &Arc<Inner>, listener: TcpListener, port: u16) {
                 return;
             }
         };
-        let watching = tokio::spawn(watch(inner.clone(), port));
-        atoll_socks::serve(
-            listener,
-            Arc::new(ThroughVpn {
-                inner: inner.clone(),
-            }),
-        )
-        .await;
+        let carrier = Arc::new(ThroughVpn {
+            inner: inner.clone(),
+            tunnel: Arc::default(),
+        });
+        let watching = tokio::spawn(watch(inner.clone(), port, carrier.clone()));
+        atoll_socks::serve(listener, carrier).await;
         watching.abort();
     });
 }
 
-/// Asks the proxy now and then whether it is still there, so a way out that broke is noticed
+/// Looks after the way out: a proxy is asked now and then whether it is still there, and a
+/// tunnel is built, or built again once its configuration changed. A way that broke is noticed
 /// before the user types the next address.
-async fn watch(inner: Arc<Inner>, port: u16) {
+async fn watch(inner: Arc<Inner>, port: u16, carrier: Arc<ThroughVpn>) {
     loop {
         if !inner.wanted.load(Ordering::SeqCst) {
+            carrier.forget_tunnel().await;
             inner.set(Status::Off);
             tokio::time::sleep(WHILE_DOWN).await;
             continue;
         }
-        let upstream = inner.upstream();
-        let settled = if upstream.is_complete() {
-            match upstream::reach(&upstream).await {
-                Ok(()) => Status::Up(port),
-                Err(error) => Status::Down(error.to_string()),
+        let settled = match inner.way() {
+            Way::Proxy(upstream) => {
+                carrier.forget_tunnel().await;
+                if upstream.is_complete() {
+                    match upstream::reach(&upstream).await {
+                        Ok(()) => Status::Up(port),
+                        Err(error) => Status::Down(error.to_string()),
+                    }
+                } else {
+                    Status::Down(t!("Kein Proxy eingetragen").to_owned())
+                }
             }
-        } else {
-            Status::Down("no proxy is written down".to_owned())
+            // The tunnel says itself how it is doing, because only it knows whether the other
+            // side still answers.
+            Way::Tunnel(config) => {
+                carrier.keep_tunnel(*config, inner.clone(), port).await;
+                inner.status()
+            }
         };
-        let was = inner.status();
-        if was != settled {
+        if inner.status() != settled {
             match &settled {
                 Status::Up(_) => tracing::info!(port, "the VPN is up"),
                 Status::Down(reason) => tracing::warn!(reason, "the VPN is down"),
@@ -230,33 +266,69 @@ async fn watch(inner: Arc<Inner>, port: u16) {
     }
 }
 
-/// Carries a connection of the SOCKS server through the proxy of the user's service, or refuses
-/// it: that refusal is the killswitch.
+/// Carries a connection of the SOCKS server out through the way the user chose, or refuses it:
+/// that refusal is the killswitch.
 struct ThroughVpn {
     inner: Arc<Inner>,
+    /// The tunnel, while one is wanted. It is built by [`watch`] and used from here.
+    tunnel: Arc<tokio::sync::Mutex<Option<wireguard::Handle>>>,
+}
+
+impl ThroughVpn {
+    /// Builds the tunnel, or builds it again after its configuration changed.
+    async fn keep_tunnel(&self, config: wireguard::Config, inner: Arc<Inner>, port: u16) {
+        let mut held = self.tunnel.lock().await;
+        let standing = held
+            .as_ref()
+            .is_some_and(|tunnel| tunnel.config == config && !tunnel.is_gone());
+        if standing {
+            return;
+        }
+        inner.set(Status::Connecting);
+        *held = Some(wireguard::start(config, inner, port));
+    }
+
+    /// Takes the tunnel down, because the user chose another way or switched the VPN off.
+    async fn forget_tunnel(&self) {
+        self.tunnel.lock().await.take();
+    }
 }
 
 impl Connect for ThroughVpn {
     fn connect(&self, host: String, port: u16) -> Opening {
         let inner = self.inner.clone();
+        let tunnel = self.tunnel.clone();
         Box::pin(async move {
             if !inner.wanted.load(Ordering::SeqCst) {
-                return Err(std::io::Error::other("the VPN was switched off"));
+                return Err(std::io::Error::other(t!("Das VPN ist ausgeschaltet")));
             }
-            let upstream = inner.upstream();
-            if !upstream.is_complete() {
-                return Err(std::io::Error::other("no proxy is written down"));
-            }
-            match upstream::open(&upstream, &host, port).await {
+            let carried = match inner.way() {
+                Way::Proxy(upstream) if upstream.is_complete() => {
+                    upstream::open(&upstream, &host, port).await
+                }
+                Way::Proxy(_) => Err(std::io::Error::other(t!("Kein Proxy eingetragen"))),
+                Way::Tunnel(_) => match tunnel.lock().await.as_ref() {
+                    Some(tunnel) => tunnel
+                        .open(host.clone(), port)
+                        .await
+                        .map(|stream| Box::pin(stream) as Carried),
+                    None => Err(std::io::Error::other(t!("Der Tunnel steht noch nicht"))),
+                },
+            };
+            match carried {
                 Ok(stream) => {
-                    if !inner.status().is_up() {
-                        inner.set(Status::Up(inner.status().port().unwrap_or_default()));
+                    if !inner.status().is_up()
+                        && let Some(port) = inner.status().port()
+                    {
+                        inner.set(Status::Up(port));
                     }
-                    Ok(stream as Carried)
+                    Ok(stream)
                 }
                 Err(error) => {
                     tracing::debug!(%error, host, port, "the VPN could not carry a connection");
-                    inner.set(Status::Down(error.to_string()));
+                    if matches!(inner.way(), Way::Proxy(_)) {
+                        inner.set(Status::Down(error.to_string()));
+                    }
                     Err(error)
                 }
             }
@@ -277,17 +349,17 @@ mod tests {
     }
 
     #[test]
-    fn asking_for_it_remembers_the_proxy_and_that_it_is_wanted() {
+    fn asking_for_it_remembers_the_way_and_that_it_is_wanted() {
         let vpn = Vpn::default();
-        let upstream = Upstream {
+        let way = Way::Proxy(Upstream {
             kind: Kind::Socks5,
             host: "proxy.example".to_owned(),
             port: 1080,
             ..Upstream::default()
-        };
-        vpn.start(upstream.clone());
+        });
+        vpn.start(way.clone());
         assert!(vpn.is_wanted());
-        assert_eq!(vpn.inner.upstream(), upstream);
+        assert_eq!(vpn.inner.way(), way);
         vpn.stop();
         assert!(!vpn.is_wanted());
         assert_eq!(vpn.status(), Status::Off);
@@ -298,6 +370,7 @@ mod tests {
         let inner = Arc::new(Inner::default());
         let through = ThroughVpn {
             inner: inner.clone(),
+            tunnel: Arc::default(),
         };
         let refused = through.connect("example.org".to_owned(), 443).await;
         assert!(refused.is_err(), "the killswitch holds everything back");

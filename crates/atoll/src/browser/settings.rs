@@ -160,6 +160,7 @@ impl Browser {
                 let kind = match state.get_vpn_kind() {
                     1 => "http",
                     2 => "https",
+                    3 => super::vpn::TUNNEL,
                     _ => "socks5",
                 };
                 self.update_preference(PreferenceKey::VpnKind, |preferences| {

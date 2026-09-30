@@ -392,6 +392,8 @@ fn connect_settings(window: &AppWindow, browser: &Rc<Browser>) {
         .clear_adblock_exceptions());
     on!(state, on_clear_vpn_exceptions, browser, |target| target
         .clear_vpn_exceptions());
+    on!(state, on_choose_vpn_config, browser, |target| target
+        .choose_vpn_config());
     on!(state, on_plugin_action, browser, |target, id, action| {
         target.plugin_action(&id, &action)
     });

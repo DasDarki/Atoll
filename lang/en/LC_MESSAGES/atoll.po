@@ -325,6 +325,9 @@ msgstr "When the pages use more than the budget, the background tabs unused for 
 msgid "Benutzername"
 msgstr "User name"
 
+msgid "Benutzername oder Passwort sind zu lang"
+msgstr "The user name or the password is too long"
+
 msgid "Benutzername und Passwort liegen im Profil, wie bei jeder anderen Proxy-Einstellung eines Browsers."
 msgstr "The user name and the password are kept in the profile, as with any other proxy setting of a browser."
 
@@ -421,8 +424,14 @@ msgstr "The image could not be saved"
 msgid "Das Internet Archive hat eine Fassung vom {}. Soll Atoll sie öffnen?"
 msgstr "The Internet Archive has a copy from {}. Shall Atoll open it?"
 
+msgid "Das Netz ist vom Proxy aus nicht erreichbar"
+msgstr "The network cannot be reached from the proxy"
+
 msgid "Das VPN ist aus, Atoll geht wieder direkt ins Netz"
 msgstr "The VPN is off, Atoll goes out directly again"
+
+msgid "Das VPN ist ausgeschaltet"
+msgstr "The VPN is switched off"
 
 msgid "Das VPN ist unterbrochen: {}. Atoll lädt nichts."
 msgstr "The VPN is broken off: {}. Atoll loads nothing."
@@ -466,6 +475,15 @@ msgstr "Privacy"
 msgid "Der Browser konnte nicht aufs VPN umgestellt werden: {}"
 msgstr "The browser could not be sent through the VPN: {}"
 
+msgid "Der Endpoint braucht einen Port, etwa server.beispiel:51820"
+msgstr "The endpoint needs a port, such as server.example:51820"
+
+msgid "Der Konfiguration fehlt {}. Gebraucht werden {}."
+msgstr "The configuration is missing {}. Needed are {}."
+
+msgid "Der Name konnte im Tunnel nicht nachgeschlagen werden"
+msgstr "The name could not be looked up inside the tunnel"
+
 msgid "Der Ordner der Erweiterung und alles, was sie gespeichert hat, werden gelöscht."
 msgstr "The folder of the extension and everything it stored will be deleted."
 
@@ -475,14 +493,95 @@ msgstr "The folder appears in the bookmarks bar."
 msgid "Der Ordner wird in „{}“ angelegt."
 msgstr "The folder will be created in \"{}\"."
 
+msgid "Der Proxy erlaubt diese Verbindung nicht"
+msgstr "The proxy does not allow this connection"
+
+msgid "Der Proxy hat Benutzername oder Passwort nicht angenommen"
+msgstr "The proxy did not accept the user name or the password"
+
+msgid "Der Proxy hat abgelehnt: {}"
+msgstr "The proxy refused: {}"
+
+msgid "Der Proxy hat die Verbindung ohne Antwort geschlossen"
+msgstr "The proxy closed the connection without an answer"
+
+msgid "Der Proxy hat jede Art der Anmeldung abgelehnt"
+msgstr "The proxy refused every way of logging in"
+
+msgid "Der Proxy hat keinen Namen, gegen den TLS prüfen könnte"
+msgstr "The proxy has no name TLS could be checked against"
+
+msgid "Der Proxy hat mehr geschickt als eine Antwort"
+msgstr "The proxy sent more than an answer"
+
+msgid "Der Proxy kennt diese Art von Adresse nicht"
+msgstr "The proxy does not know this kind of address"
+
+msgid "Der Proxy konnte die Verbindung nicht öffnen"
+msgstr "The proxy could not open the connection"
+
+msgid "Der Proxy spricht kein SOCKS in Version 5"
+msgstr "The proxy does not speak SOCKS version 5"
+
+msgid "Der Proxy trägt diese Art von Verbindung nicht"
+msgstr "The proxy does not carry this kind of connection"
+
+msgid "Der Proxy will eine Anmeldung, die Atoll nicht kann"
+msgstr "The proxy wants a way of logging in Atoll cannot"
+
+msgid "Der Proxy will einen Benutzernamen und ein Passwort"
+msgstr "The proxy wants a user name and a password"
+
+msgid "Der Tunnel hat nicht geantwortet"
+msgstr "The tunnel did not answer"
+
+msgid "Der Tunnel konnte die Verbindung nicht öffnen: {}"
+msgstr "The tunnel could not open the connection: {}"
+
+msgid "Der Tunnel läuft nicht mehr"
+msgstr "The tunnel is not running any more"
+
+msgid "Der Tunnel steht noch nicht"
+msgstr "The tunnel does not stand yet"
+
+msgid "Der VPN-Server antwortet nicht"
+msgstr "The VPN server does not answer"
+
+msgid "Der VPN-Server antwortet nicht mehr"
+msgstr "The VPN server does not answer any more"
+
+msgid "Der VPN-Server ist nicht erreichbar: {}"
+msgstr "The VPN server cannot be reached: {}"
+
+msgid "Der VPN-Server {} hat keine IPv4-Adresse"
+msgstr "The VPN server {} has no IPv4 address"
+
+msgid "Der VPN-Server {} ist nicht zu finden: {}"
+msgstr "The VPN server {} cannot be found: {}"
+
+msgid "Der Weg durch den Tunnel ließ sich nicht eintragen"
+msgstr "The way through the tunnel could not be written down"
+
+msgid "Der erste Gruß an den VPN-Server kam nicht an"
+msgstr "The first greeting to the VPN server did not arrive"
+
 msgid "Der gesamte Verlauf wird gelöscht. Tabs, Inseln und Lesezeichen bleiben erhalten."
 msgstr "The whole history will be deleted. Tabs, islands and bookmarks are kept."
+
+msgid "Die .conf-Datei, die dein Dienst für WireGuard ausgibt. Atoll baut den Tunnel selbst im Browser auf, ohne root und ohne am System etwas zu ändern. Namen werden im Tunnel nachgeschlagen, dafür braucht die Datei eine DNS-Zeile."
+msgstr "The .conf file your service hands out for WireGuard. Atoll builds the tunnel inside the browser itself, without root and without changing anything on the system. Names are looked up inside the tunnel, which is why the file needs a DNS line."
 
 msgid "Die 1Password-CLI wird gesucht…"
 msgstr "Looking for the 1Password CLI…"
 
+msgid "Die Adresse der Seite ist zu lang"
+msgstr "The address of the site is too long"
+
 msgid "Die Adresse folgt wieder den Einstellungen der Seite"
 msgstr "The address follows the settings of the site again"
+
+msgid "Die Adresse im Tunnel ist keine IPv4-Adresse"
+msgstr "The address inside the tunnel is not an IPv4 address"
 
 msgid "Die Adresse muss {{query}} enthalten, bis dahin bleibt die bisherige Suche aktiv."
 msgstr "The address has to contain {{query}}, until then the previous search stays active."
@@ -511,14 +610,26 @@ msgstr "The list is being loaded…"
 msgid "Die Seite folgt wieder den allgemeinen Einstellungen"
 msgstr "The site follows the general settings again"
 
+msgid "Die Seite hat die Verbindung abgelehnt"
+msgstr "The site refused the connection"
+
 msgid "Die Seite hat sich geändert, es wurde nichts eingefügt"
 msgstr "The page changed, nothing was filled in"
+
+msgid "Die Seite ist vom Proxy aus nicht erreichbar"
+msgstr "The site cannot be reached from the proxy"
 
 msgid "Die Seite wird neu geladen"
 msgstr "The page is being reloaded"
 
 msgid "Die Seite wurde nicht über eine geprüfte, verschlüsselte Verbindung geladen."
 msgstr "The page was not loaded over a checked, encrypted connection."
+
+msgid "Die Verbindung hat zu lange gedauert"
+msgstr "The connection took too long"
+
+msgid "Die Verbindung zum VPN-Server ist abgerissen"
+msgstr "The connection to the VPN server broke off"
 
 msgid "Die Zwischenablage enthält keinen Text"
 msgstr "The clipboard holds no text"
@@ -609,6 +720,12 @@ msgstr "Own address"
 
 msgid "Eigene Einstellungen für"
 msgstr "Own settings for"
+
+msgid "Ein Schlüssel in der Konfiguration ist kein Base64"
+msgstr "A key in the configuration is not base64"
+
+msgid "Ein Schlüssel in der Konfiguration ist nicht 32 Byte lang"
+msgstr "A key in the configuration is not 32 bytes long"
 
 msgid "Eingefroren"
 msgstr "Frozen"
@@ -913,6 +1030,12 @@ msgstr "No login found"
 msgid "Kein Opera-Profil gefunden"
 msgstr "No Opera profile found"
 
+msgid "Kein Platz für den Tunnel: {}"
+msgstr "No room for the tunnel: {}"
+
+msgid "Kein Proxy eingetragen"
+msgstr "No proxy is written down"
+
 msgid "Kein passender Befehl"
 msgstr "No matching command"
 
@@ -930,6 +1053,9 @@ msgstr "No special permissions"
 
 msgid "Keine gültigen Adressen gefunden · {} ungültige Zeilen"
 msgstr "No valid addresses found · {} invalid lines"
+
+msgid "Konfiguration wählen…"
+msgstr "Choose a configuration…"
 
 msgid "Leer lassen für die Atoll-Startseite"
 msgstr "Leave empty for the Atoll start page"
@@ -1111,8 +1237,14 @@ msgstr "Nothing found."
 msgid "Noch keine Downloads."
 msgstr "No downloads yet."
 
+msgid "Noch keine Konfiguration gewählt"
+msgstr "No configuration chosen yet"
+
 msgid "Noch keine Lesezeichen. Speichere Seiten mit Strg+D oder importiere den HTML-Export aus Opera."
 msgstr "No bookmarks yet. Save pages with Ctrl+D or import the HTML export from Opera."
+
+msgid "Noch keine WireGuard-Konfiguration gewählt"
+msgstr "No WireGuard configuration chosen yet"
 
 msgid "Noch nicht zugelassen"
 msgstr "Not allowed yet"
@@ -1128,6 +1260,9 @@ msgstr "OK"
 
 msgid "ORDNER"
 msgstr "FOLDER"
+
+msgid "Ohne DNS im Tunnel könnte Atoll Namen nur außerhalb nachschlagen, und genau das würde dich verraten. Trag einen DNS-Server in die Konfiguration ein."
+msgstr "Without DNS inside the tunnel Atoll could only look names up outside it, and that is exactly what would give you away. Write a DNS server into the configuration."
 
 msgid "Opera wird gelesen …"
 msgstr "Reading Opera …"
@@ -1642,6 +1777,12 @@ msgstr "Being connected. Until then Atoll loads nothing."
 msgid "Wird vom Startseiten-Button und mit Alt+Pos1 geöffnet."
 msgstr "Opened by the home button and with Alt+Home."
 
+msgid "WireGuard-Konfiguration"
+msgstr "WireGuard configuration"
+
+msgid "WireGuard-Konfiguration wählen"
+msgstr "Choose a WireGuard configuration"
+
 msgid "Workspace"
 msgstr "Workspace"
 
@@ -1904,6 +2045,15 @@ msgstr "{} filled in"
 
 msgid "{} gibt es nicht"
 msgstr "{} does not exist"
+
+msgid "{} hat keine IPv4-Adresse"
+msgstr "{} has no IPv4 address"
+
+msgid "{} ist im Tunnel nicht aufzulösen"
+msgstr "{} cannot be resolved inside the tunnel"
+
+msgid "{} ist nicht lesbar: {}"
+msgstr "{} cannot be read: {}"
 
 msgid "{} konnte nicht geladen werden"
 msgstr "{} could not be loaded"

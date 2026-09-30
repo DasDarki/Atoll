@@ -391,11 +391,11 @@ export component SettingsPage inherits Modal {
                             wrap: word-wrap;
                         }
                         Segmented {
-                            options: ["SOCKS5", "HTTP", "HTTPS"];
+                            options: ["SOCKS5", "HTTP", "HTTPS", "WireGuard"];
                             selected <=> SettingsState.vpn-kind;
                             changed-by-user => { SettingsState.changed("vpn-kind"); }
                         }
-                        HorizontalLayout {
+                        if SettingsState.vpn-kind != 3 : HorizontalLayout {
                             spacing: 8px;
                             TextField {
                                 horizontal-stretch: 1;
@@ -412,7 +412,7 @@ export component SettingsPage inherits Modal {
                                 edited => { SettingsState.changed("vpn-port"); }
                             }
                         }
-                        HorizontalLayout {
+                        if SettingsState.vpn-kind != 3 : HorizontalLayout {
                             spacing: 8px;
                             TextField {
                                 horizontal-stretch: 1;
@@ -430,8 +430,31 @@ export component SettingsPage inherits Modal {
                                 accepted => { SettingsState.changed("vpn-password"); }
                             }
                         }
-                        Text {
+                        if SettingsState.vpn-kind != 3 : Text {
                             text: @tr("Benutzername und Passwort liegen im Profil, wie bei jeder anderen Proxy-Einstellung eines Browsers.");
+                            color: Theme.text-faint;
+                            font-size: Theme.font-small;
+                            wrap: word-wrap;
+                        }
+                        if SettingsState.vpn-kind == 3 : HorizontalLayout {
+                            spacing: 8px;
+                            VerticalLayout {
+                                horizontal-stretch: 1;
+                                alignment: center;
+                                Text {
+                                    text: SettingsState.vpn-config != "" ? SettingsState.vpn-config : @tr("Noch keine Konfiguration gewählt");
+                                    color: SettingsState.vpn-config != "" ? Theme.text : Theme.text-faint;
+                                    font-size: Theme.font-normal;
+                                    overflow: elide;
+                                }
+                            }
+                            ActionButton {
+                                text: @tr("Konfiguration wählen…");
+                                clicked => { SettingsState.choose-vpn-config(); }
+                            }
+                        }
+                        if SettingsState.vpn-kind == 3 : Text {
+                            text: @tr("Die .conf-Datei, die dein Dienst für WireGuard ausgibt. Atoll baut den Tunnel selbst im Browser auf, ohne root und ohne am System etwas zu ändern. Namen werden im Tunnel nachgeschlagen, dafür braucht die Datei eine DNS-Zeile.");
                             color: Theme.text-faint;
                             font-size: Theme.font-small;
                             wrap: word-wrap;

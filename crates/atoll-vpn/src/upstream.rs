@@ -7,6 +7,7 @@
 use std::io;
 use std::sync::Arc;
 
+use atoll_i18n::t;
 use atoll_socks::Carried;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio::net::TcpStream;
@@ -129,8 +130,11 @@ async fn wrapped_in_tls(
         .map_err(io::Error::other)?
         .with_root_certificates(roots)
         .with_no_client_auth();
-    let name = ServerName::try_from(upstream.host.trim().to_owned())
-        .map_err(|_| broken("the proxy has no name TLS could be checked against"))?;
+    let name = ServerName::try_from(upstream.host.trim().to_owned()).map_err(|_| {
+        broken(t!(
+            "Der Proxy hat keinen Namen, gegen den TLS prüfen könnte"
+        ))
+    })?;
     TlsConnector::from(Arc::new(config))
         .connect(name, tcp)
         .await
@@ -151,14 +155,18 @@ async fn greet<S: AsyncRead + AsyncWrite + Unpin>(
     let mut answer = [0u8; 2];
     stream.read_exact(&mut answer).await?;
     if answer[0] != VERSION {
-        return Err(broken("the proxy does not speak SOCKS version 5"));
+        return Err(broken(t!("Der Proxy spricht kein SOCKS in Version 5")));
     }
     match answer[1] {
         NO_AUTHENTICATION => Ok(()),
         LOGIN if upstream.has_login() => log_in(upstream, stream).await,
-        LOGIN => Err(broken("the proxy wants a user name and a password")),
-        0xff => Err(broken("the proxy refused every way of logging in")),
-        _ => Err(broken("the proxy wants a way of logging in Atoll cannot")),
+        LOGIN => Err(broken(t!(
+            "Der Proxy will einen Benutzernamen und ein Passwort"
+        ))),
+        0xff => Err(broken(t!("Der Proxy hat jede Art der Anmeldung abgelehnt"))),
+        _ => Err(broken(t!(
+            "Der Proxy will eine Anmeldung, die Atoll nicht kann"
+        ))),
     }
 }
 
@@ -170,7 +178,7 @@ async fn log_in<S: AsyncRead + AsyncWrite + Unpin>(
     let user = upstream.user.as_bytes();
     let password = upstream.password.as_bytes();
     if user.len() > 255 || password.len() > 255 {
-        return Err(broken("the user name or the password is too long"));
+        return Err(broken(t!("Benutzername oder Passwort sind zu lang")));
     }
     let mut message = Vec::with_capacity(3 + user.len() + password.len());
     message.push(LOGIN_VERSION);
@@ -182,7 +190,9 @@ async fn log_in<S: AsyncRead + AsyncWrite + Unpin>(
     let mut answer = [0u8; 2];
     stream.read_exact(&mut answer).await?;
     if answer[1] != 0 {
-        return Err(broken("the proxy did not accept the user name or password"));
+        return Err(broken(t!(
+            "Der Proxy hat Benutzername oder Passwort nicht angenommen"
+        )));
     }
     Ok(())
 }
@@ -197,7 +207,7 @@ async fn through_socks<S: AsyncRead + AsyncWrite + Unpin>(
     greet(upstream, stream).await?;
     let name = host.as_bytes();
     if name.len() > 255 {
-        return Err(broken("the address of the site is too long"));
+        return Err(broken(t!("Die Adresse der Seite ist zu lang")));
     }
     let mut request = Vec::with_capacity(7 + name.len());
     request.extend_from_slice(&[VERSION, CONNECT, 0, ADDRESS_NAME]);
@@ -209,7 +219,7 @@ async fn through_socks<S: AsyncRead + AsyncWrite + Unpin>(
     let mut answer = [0u8; 4];
     stream.read_exact(&mut answer).await?;
     if answer[0] != VERSION {
-        return Err(broken("the proxy does not speak SOCKS version 5"));
+        return Err(broken(t!("Der Proxy spricht kein SOCKS in Version 5")));
     }
     if answer[1] != SUCCEEDED {
         return Err(broken(socks_reason(answer[1])));
@@ -257,10 +267,12 @@ async fn through_connect<S: AsyncRead + AsyncWrite + Unpin>(
     let mut byte = [0u8; 1];
     while !head.ends_with(b"\r\n\r\n") {
         if head.len() > 8192 {
-            return Err(broken("the proxy answered with more than an answer"));
+            return Err(broken(t!("Der Proxy hat mehr geschickt als eine Antwort")));
         }
         if stream.read_exact(&mut byte).await.is_err() {
-            return Err(broken("the proxy closed the connection without an answer"));
+            return Err(broken(t!(
+                "Der Proxy hat die Verbindung ohne Antwort geschlossen"
+            )));
         }
         head.push(byte[0]);
     }
@@ -272,22 +284,24 @@ async fn through_connect<S: AsyncRead + AsyncWrite + Unpin>(
     let code = first.split_whitespace().nth(1).unwrap_or_default();
     match code {
         "200" => Ok(()),
-        "407" => Err(broken("the proxy did not accept the user name or password")),
-        _ => Err(broken(&format!("the proxy refused: {first}"))),
+        "407" => Err(broken(t!(
+            "Der Proxy hat Benutzername oder Passwort nicht angenommen"
+        ))),
+        _ => Err(broken(&t!("Der Proxy hat abgelehnt: {}", first))),
     }
 }
 
 /// What the proxy said about a connection it did not open.
 fn socks_reason(code: u8) -> &'static str {
     match code {
-        2 => "the proxy does not allow this connection",
-        3 => "the network cannot be reached from the proxy",
-        4 => "the site cannot be reached from the proxy",
-        5 => "the site refused the connection",
-        6 => "the connection timed out",
-        7 => "the proxy does not carry this kind of connection",
-        8 => "the proxy does not know this kind of address",
-        _ => "the proxy could not open the connection",
+        2 => t!("Der Proxy erlaubt diese Verbindung nicht"),
+        3 => t!("Das Netz ist vom Proxy aus nicht erreichbar"),
+        4 => t!("Die Seite ist vom Proxy aus nicht erreichbar"),
+        5 => t!("Die Seite hat die Verbindung abgelehnt"),
+        6 => t!("Die Verbindung hat zu lange gedauert"),
+        7 => t!("Der Proxy trägt diese Art von Verbindung nicht"),
+        8 => t!("Der Proxy kennt diese Art von Adresse nicht"),
+        _ => t!("Der Proxy konnte die Verbindung nicht öffnen"),
     }
 }
 
@@ -379,7 +393,7 @@ mod tests {
         let error = through_socks(&upstream(Kind::Socks5), &mut stream, "example.org", 443)
             .await
             .expect_err("the login is refused");
-        assert!(error.to_string().contains("user name or password"));
+        assert!(error.to_string().contains("Passwort"));
     }
 
     #[tokio::test]
@@ -394,7 +408,7 @@ mod tests {
         let error = through_socks(&without_login, &mut stream, "example.org", 443)
             .await
             .expect_err("the site is not reachable");
-        assert!(error.to_string().contains("site cannot be reached"));
+        assert!(error.to_string().contains("nicht erreichbar"));
     }
 
     #[tokio::test]
@@ -419,7 +433,7 @@ mod tests {
         let error = through_connect(&upstream(Kind::Http), &mut stream, "example.org", 443)
             .await
             .expect_err("the login is refused");
-        assert!(error.to_string().contains("user name or password"));
+        assert!(error.to_string().contains("Passwort"));
     }
 
     #[test]

@@ -6,14 +6,17 @@
 //! goes at all - that is the killswitch, and it is not a setting, because a fallback to the
 //! ordinary connection is exactly the leak a VPN is meant to rule out.
 
+use std::path::PathBuf;
+
 use atoll_adblock::Scope;
 use atoll_engine::ProxyRoute;
 use atoll_i18n::t;
-use atoll_vpn::{Kind, Status, Upstream};
+use atoll_vpn::{Kind, Status, TunnelConfig, Upstream, Way};
 use slint::ComponentHandle;
 
 use super::Browser;
 use super::preferences::PreferenceKey;
+use crate::platform::dialogs::{self, FileDialogKind, FileDialogOptions, FileFilter};
 use crate::ui::{BrowserState, SettingsState};
 
 /// What the user interface shows about the VPN.
@@ -37,21 +40,71 @@ impl Showing {
 }
 
 impl Browser {
-    /// The proxy as the user wrote it down in the settings.
-    fn upstream(&self) -> Upstream {
+    /// The way out as the user wrote it down in the settings, or what is wrong with it.
+    fn way(&self) -> Result<Way, String> {
         let preferences = self.preferences.borrow();
-        Upstream {
-            kind: Kind::from_key(&preferences.vpn_kind).unwrap_or_default(),
-            host: preferences.vpn_host.trim().to_owned(),
-            port: u16::try_from(preferences.vpn_port).unwrap_or_default(),
-            user: preferences.vpn_user.clone(),
-            password: preferences.vpn_password.clone(),
+        if preferences.vpn_kind != TUNNEL {
+            return Ok(Way::Proxy(Upstream {
+                kind: Kind::from_key(&preferences.vpn_kind).unwrap_or_default(),
+                host: preferences.vpn_host.trim().to_owned(),
+                port: u16::try_from(preferences.vpn_port).unwrap_or_default(),
+                user: preferences.vpn_user.clone(),
+                password: preferences.vpn_password.clone(),
+            }));
         }
+        let path = preferences
+            .vpn_config_path
+            .clone()
+            .ok_or_else(|| t!("Noch keine WireGuard-Konfiguration gewählt").to_owned())?;
+        drop(preferences);
+        let text = std::fs::read_to_string(&path)
+            .map_err(|error| t!("{} ist nicht lesbar: {}", path.display(), error))?;
+        TunnelConfig::parse(&text).map(|config| Way::Tunnel(Box::new(config)))
+    }
+
+    /// Settings: picks the configuration file the service handed out.
+    pub fn choose_vpn_config(&self) {
+        let this = self.this();
+        dialogs::show(
+            FileDialogOptions {
+                kind: FileDialogKind::Open,
+                title: t!("WireGuard-Konfiguration wählen").into(),
+                directory: None,
+                file_name: None,
+                filters: vec![FileFilter {
+                    name: t!("WireGuard-Konfiguration").to_owned(),
+                    extensions: vec!["conf".to_owned()],
+                }],
+            },
+            move |paths| {
+                let Some(browser) = this.upgrade() else {
+                    return;
+                };
+                if let Some(path) = paths.and_then(|paths| paths.into_iter().next()) {
+                    browser.set_vpn_config(Some(path));
+                }
+            },
+        );
+    }
+
+    /// Remembers the chosen configuration and tries it at once.
+    pub(super) fn set_vpn_config(&self, path: Option<PathBuf>) {
+        self.update_preference(PreferenceKey::VpnConfigPath, |preferences| {
+            preferences.vpn_config_path = path;
+        });
+        self.vpn_settings_changed();
+        self.for_all_windows(Browser::show_vpn_settings);
     }
 
     /// Starts carrying everything through the VPN, or stops doing so.
     pub(super) fn set_vpn_enabled(&self, enabled: bool) {
-        if enabled && !self.upstream().is_complete() {
+        let way = self.way();
+        if enabled && let Err(trouble) = &way {
+            self.show_toast(trouble);
+            self.show_vpn_settings();
+            return;
+        }
+        if enabled && !way.as_ref().is_ok_and(Way::is_complete) {
             self.show_toast(t!(
                 "Trag zuerst den Proxy deines VPN-Dienstes ein, mit Adresse und Port"
             ));
@@ -61,10 +114,9 @@ impl Browser {
         self.update_preference(PreferenceKey::VpnEnabled, |preferences| {
             preferences.vpn_enabled = enabled;
         });
-        if enabled {
-            self.vpn.start(self.upstream());
-        } else {
-            self.vpn.stop();
+        match (enabled, way) {
+            (true, Ok(way)) => self.vpn.start(way),
+            _ => self.vpn.stop(),
         }
         self.apply_vpn_route();
         self.for_all_windows(Browser::show_vpn_settings);
@@ -80,20 +132,26 @@ impl Browser {
         if !self.preferences.borrow().vpn_enabled {
             return;
         }
-        let upstream = self.upstream();
-        if !upstream.is_complete() {
-            tracing::warn!("the VPN is switched on but no proxy is written down");
+        match self.way() {
+            Ok(way) => self.vpn.start(way),
+            Err(trouble) => {
+                // The killswitch holds anyway: the bridge refuses while nothing carries.
+                tracing::warn!(trouble, "the VPN is switched on but cannot be built");
+                self.vpn.start(Way::default());
+            }
         }
-        self.vpn.start(upstream);
         self.apply_vpn_route();
     }
 
-    /// The proxy was changed in the settings, so it is tried again right away.
+    /// The way out was changed in the settings, so it is tried again right away.
     pub(super) fn vpn_settings_changed(&self) {
         if !self.preferences.borrow().vpn_enabled {
             return;
         }
-        self.vpn.start(self.upstream());
+        match self.way() {
+            Ok(way) => self.vpn.start(way),
+            Err(trouble) => self.show_toast(&trouble),
+        }
         self.apply_vpn_route();
         self.for_all_windows(Browser::show_vpn_settings);
     }
@@ -162,12 +220,23 @@ impl Browser {
         let state = window.global::<SettingsState>();
         let preferences = self.preferences.borrow();
         state.set_vpn_enabled(preferences.vpn_enabled);
-        state.set_vpn_kind(
-            match Kind::from_key(&preferences.vpn_kind).unwrap_or_default() {
-                Kind::Socks5 => 0,
-                Kind::Http => 1,
-                Kind::Https => 2,
-            },
+        state.set_vpn_kind(match preferences.vpn_kind.as_str() {
+            "http" => 1,
+            "https" => 2,
+            TUNNEL => 3,
+            _ => 0,
+        });
+        state.set_vpn_config(
+            preferences
+                .vpn_config_path
+                .as_ref()
+                .map(|path| {
+                    path.file_name()
+                        .map(|name| name.to_string_lossy().into_owned())
+                        .unwrap_or_else(|| path.display().to_string())
+                })
+                .unwrap_or_default()
+                .into(),
         );
         state.set_vpn_host(preferences.vpn_host.as_str().into());
         state.set_vpn_port(preferences.vpn_port as i32);
@@ -208,6 +277,9 @@ impl Browser {
         self.for_all_windows(Browser::show_vpn_settings);
     }
 }
+
+/// The name the settings use for the tunnel Atoll builds itself.
+pub(super) const TUNNEL: &str = "wireguard";
 
 /// The hosts Chromium lets out directly: the site itself and everything below it.
 fn bypass_list(sites: &[String]) -> Vec<String> {

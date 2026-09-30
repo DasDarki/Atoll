@@ -104,8 +104,10 @@ pub struct Preferences {
     pub dev_tools_size: u32,
     /// Whether the browser goes through the VPN of the user.
     pub vpn_enabled: bool,
-    /// How the proxy of the service is spoken to: `socks5`, `http` or `https`.
+    /// How the browser gets out: `socks5`, `http`, `https` or `wireguard`.
     pub vpn_kind: String,
+    /// The WireGuard configuration of the service, as a file on disk.
+    pub vpn_config_path: Option<PathBuf>,
     pub vpn_host: String,
     pub vpn_port: u32,
     pub vpn_user: String,
@@ -155,6 +157,7 @@ pub enum PreferenceKey {
     CookieBannersAnswer,
     VpnEnabled,
     VpnKind,
+    VpnConfigPath,
     VpnHost,
     VpnPort,
     VpnUser,
@@ -187,6 +190,7 @@ impl PreferenceKey {
             PreferenceKey::CookieBannersAnswer => "cookie_banners_answer",
             PreferenceKey::VpnEnabled => "vpn_enabled",
             PreferenceKey::VpnKind => "vpn_kind",
+            PreferenceKey::VpnConfigPath => "vpn_config_path",
             PreferenceKey::VpnHost => "vpn_host",
             PreferenceKey::VpnPort => "vpn_port",
             PreferenceKey::VpnUser => "vpn_user",
@@ -215,6 +219,7 @@ impl Default for Preferences {
             cookie_banners_answer: true,
             vpn_enabled: false,
             vpn_kind: "socks5".to_owned(),
+            vpn_config_path: None,
             vpn_host: String::new(),
             vpn_port: 1080,
             vpn_user: String::new(),
@@ -276,6 +281,9 @@ impl Preferences {
             ),
             vpn_enabled: flag(PreferenceKey::VpnEnabled, defaults.vpn_enabled),
             vpn_kind: text(PreferenceKey::VpnKind).unwrap_or(defaults.vpn_kind),
+            vpn_config_path: text(PreferenceKey::VpnConfigPath)
+                .filter(|path| !path.is_empty())
+                .map(PathBuf::from),
             vpn_host: text(PreferenceKey::VpnHost).unwrap_or(defaults.vpn_host),
             vpn_port: text(PreferenceKey::VpnPort)
                 .and_then(|port| port.parse().ok())
@@ -330,6 +338,11 @@ impl Preferences {
             PreferenceKey::CookieBannersAnswer => flag(self.cookie_banners_answer),
             PreferenceKey::VpnEnabled => flag(self.vpn_enabled),
             PreferenceKey::VpnKind => self.vpn_kind.clone(),
+            PreferenceKey::VpnConfigPath => self
+                .vpn_config_path
+                .as_ref()
+                .map(|path| path.display().to_string())
+                .unwrap_or_default(),
             PreferenceKey::VpnHost => self.vpn_host.clone(),
             PreferenceKey::VpnPort => self.vpn_port.to_string(),
             PreferenceKey::VpnUser => self.vpn_user.clone(),
@@ -393,6 +406,7 @@ mod tests {
             cookie_banners_answer: false,
             vpn_enabled: true,
             vpn_kind: "https".to_owned(),
+            vpn_config_path: Some(PathBuf::from("/tmp/mullvad.conf")),
             vpn_host: "proxy.example".to_owned(),
             vpn_port: 8443,
             vpn_user: "ich".to_owned(),
@@ -422,6 +436,7 @@ mod tests {
             PreferenceKey::CookieBannersAnswer,
             PreferenceKey::VpnEnabled,
             PreferenceKey::VpnKind,
+            PreferenceKey::VpnConfigPath,
             PreferenceKey::VpnHost,
             PreferenceKey::VpnPort,
             PreferenceKey::VpnUser,

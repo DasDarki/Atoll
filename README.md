@@ -122,7 +122,11 @@ saved tabs therefore cost nothing at startup.
   A page opened from a private tab stays private.
 - **Your VPN, with a killswitch**: Atoll runs no VPN service of its own. You write down the proxy
   of the service you already pay for - SOCKS5, or one that takes `CONNECT`, with TLS on the way to
-  it if you like, user name and password included - and from then on everything the browser does
+  it if you like, user name and password included - or you hand it the WireGuard configuration the
+  service wrote out, and Atoll builds that tunnel itself inside the browser, without root and
+  without changing anything on the system: boringtun speaks the protocol, a network stack of its
+  own lives in the tunnel, and names are looked up inside it, which is why such a configuration
+  needs its DNS line. From then on everything the browser does
   takes that way: the pages, the private tabs, the downloads, the filter lists, what extensions
   fetch and what yt-dlp loads. A SOCKS server of Atoll's own sits on the loopback address in front
   of the service, because the engine only speaks to proxies, Chromium cannot hand a password to a
@@ -285,7 +289,7 @@ crates/
   atoll-i18n       the languages: the `t!` macro and the catalogs built from lang/
   atoll-socks      the SOCKS server the engine talks to, shared by Tor and the VPN
   atoll-tor        Tor through Arti, carried by that server
-  atoll-vpn        the user's VPN: their proxy, the killswitch and what it refuses
+  atoll-vpn        the user's VPN: their proxy or a WireGuard tunnel, and the killswitch
   atoll-net        the one way out for what Atoll fetches itself, so nothing goes past the VPN
   atoll-plugin     the Luau runtime for extensions, their manifests, permissions and installation
   atoll-engine     CEF integration: off-screen browsers, rendering, input, clipboard bridge
@@ -355,6 +359,9 @@ Known limitations:
   exists. A site that only offers agreeing or paying is left to the user.
 - A tab through Tor keeps going through Tor while a VPN carries the rest: Arti builds its own way
   out. The 1Password CLI also talks to its service by itself.
+- The tunnel carries TCP over IPv4. That is what a browser needs, and what cannot travel it - the
+  QUIC of a page, say - falls back to TCP by itself. Where the server is has to be looked up
+  before the tunnel stands, which is the one lookup no WireGuard client can hide.
 - The user name and the password of the proxy are kept in the profile as they are, as with any
   other proxy setting of a browser.
 - Under Wayland, new windows are placed by the compositor, not at the point where a tab was
