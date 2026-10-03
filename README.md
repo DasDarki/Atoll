@@ -120,6 +120,17 @@ saved tabs therefore cost nothing at startup.
   extensions never see them. Their pages run in a session without a cache folder, shared among the
   private tabs, so a sign-in reaches the next one and everything is gone when the last one closes.
   A page opened from a private tab stays private.
+- **Torrents**, in the download list like everything else that loads: a magnet address typed or
+  clicked, or the address of a torrent file, and `librqbit` does the rest. A torrent only ever
+  runs while a way out stands that hides where you are, and there are two. Through Atoll's own
+  VPN the peers are reached through its bridge, which carries TCP alone: the distributed table
+  and the trackers that speak UDP are switched off, because a client that used them would hand
+  out your address behind the VPN's back, and Atoll asks the remaining trackers itself so even
+  their names are looked up at the far end of the tunnel. That costs peers. Through a VPN of the
+  system every socket of the torrent is tied to its device, which the kernel then enforces, and
+  BitTorrent can do everything it knows. Giving pieces back to the swarm while a torrent loads is
+  on - switching it off is offered, with a word about what the swarms do to those who take
+  without giving.
 - **Your VPN, with a killswitch**: Atoll runs no VPN service of its own. You write down the proxy
   of the service you already pay for - SOCKS5, or one that takes `CONNECT`, with TLS on the way to
   it if you like, user name and password included - or you hand it the WireGuard configuration the
@@ -291,6 +302,7 @@ crates/
   atoll-tor        Tor through Arti, carried by that server
   atoll-vpn        the user's VPN: their proxy or a WireGuard tunnel, and the killswitch
   atoll-net        the one way out for what Atoll fetches itself, so nothing goes past the VPN
+  atoll-torrent    torrents through librqbit, tied to the way out and to the network devices
   atoll-plugin     the Luau runtime for extensions, their manifests, permissions and installation
   atoll-engine     CEF integration: off-screen browsers, rendering, input, clipboard bridge
   atoll            the application: Slint user interface and the controller
@@ -359,6 +371,8 @@ Known limitations:
   exists. A site that only offers agreeing or paying is left to the user.
 - A tab through Tor keeps going through Tor while a VPN carries the rest: Arti builds its own way
   out. The 1Password CLI also talks to its service by itself.
+- A torrent file a page offers for download is saved like any other file; to load it, open it
+  from the address bar. Magnet addresses are taken over wherever they appear.
 - The tunnel carries TCP over IPv4. That is what a browser needs, and what cannot travel it - the
   QUIC of a page, say - falls back to TCP by itself. Where the server is has to be looked up
   before the tunnel stands, which is the one lookup no WireGuard client can hide.

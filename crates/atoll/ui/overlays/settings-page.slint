@@ -469,6 +469,42 @@ export component SettingsPage inherits Modal {
                         }
                     }
                     Divider { }
+                    SectionTitle { text: @tr("TORRENTS"); }
+                    VerticalLayout {
+                        spacing: 8px;
+                        padding-bottom: 8px;
+                        Segmented {
+                            options: [@tr("Durch Atolls VPN"), @tr("Über ein System-VPN")];
+                            selected <=> SettingsState.torrent-route;
+                            changed-by-user => { SettingsState.changed("torrent-route"); }
+                        }
+                        Text {
+                            text: SettingsState.torrent-status;
+                            color: Theme.text-faint;
+                            font-size: Theme.font-small + 1px;
+                            wrap: word-wrap;
+                        }
+                        if SettingsState.torrent-route == 1 : ComboBox {
+                            model: SettingsState.torrent-devices;
+                            current-index <=> SettingsState.torrent-device;
+                            selected => { SettingsState.torrent-device-chosen(self.current-index); }
+                        }
+                        if SettingsState.torrent-route == 1 : Text {
+                            text: @tr("Atoll bindet jeden Socket eines Torrents an dieses Gerät. Fällt es weg, geht nichts mehr durch - und BitTorrent kann alles, was es braucht.");
+                            color: Theme.text-faint;
+                            font-size: Theme.font-small;
+                            wrap: word-wrap;
+                        }
+                    }
+                    SettingRow {
+                        title: @tr("Beim Laden auch hochladen");
+                        description: SettingsState.torrent-upload ? @tr("So gehört es sich im Schwarm: Atoll gibt Stücke ab, solange ein Torrent lädt, und hört danach auf.") : @tr("Achtung: Ohne Hochladen wirst du von vielen Schwärmen abgestraft oder ausgeschlossen, und du nimmst mehr, als du gibst.");
+                        Toggle {
+                            checked <=> SettingsState.torrent-upload;
+                            toggled => { SettingsState.changed("torrent-upload"); }
+                        }
+                    }
+                    Divider { }
                     SectionTitle { text: @tr("WERBEBLOCKER"); }
                     SettingRow {
                         title: @tr("Werbung und Tracker blockieren");

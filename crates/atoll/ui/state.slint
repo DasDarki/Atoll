@@ -365,6 +365,14 @@ export global SettingsState {
     callback clear-vpn-exceptions();
     callback choose-vpn-config();
 
+    /// 0 durch Atolls VPN, 1 über ein Gerät des Systems.
+    in-out property <int> torrent-route;
+    in property <[string]> torrent-devices;
+    in-out property <int> torrent-device;
+    in-out property <bool> torrent-upload;
+    in property <string> torrent-status;
+    callback torrent-device-chosen(int);
+
     in-out property <bool> cookie-banners-hide;
     in-out property <bool> cookie-banners-answer;
     in property <string> cookie-banners-status;

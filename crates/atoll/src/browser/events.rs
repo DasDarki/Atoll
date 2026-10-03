@@ -169,6 +169,15 @@ impl Browser {
                 view,
                 url,
                 disposition,
+            } if super::downloads::is_magnet(&url) => {
+                let _ = (view, disposition);
+                self.open_torrent(&url);
+                Effect::NONE
+            }
+            EngineEvent::OpenUrl {
+                view,
+                url,
+                disposition,
             } => {
                 let source = self.tab_of(view);
                 let activate = disposition != OpenDisposition::BackgroundTab;

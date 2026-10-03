@@ -73,6 +73,9 @@ msgstr "Cancel"
 msgid "Abgebrochen"
 msgstr "Cancelled"
 
+msgid "Achtung: Ohne Hochladen wirst du von vielen Schwärmen abgestraft oder ausgeschlossen, und du nimmst mehr, als du gibst."
+msgstr "Careful: without uploading, many swarms will punish or shut you out, and you take more than you give."
+
 msgid "Adresse"
 msgstr "address"
 
@@ -214,6 +217,9 @@ msgstr "Suggest archiving after weeks"
 msgid "Atoll beenden"
 msgstr "Quit Atoll"
 
+msgid "Atoll bindet jeden Socket eines Torrents an dieses Gerät. Fällt es weg, geht nichts mehr durch - und BitTorrent kann alles, was es braucht."
+msgstr "Atoll ties every socket of a torrent to this device. If it goes away, nothing gets through any more - and BitTorrent can do everything it needs to."
+
 msgid "Atoll bringt kein VPN mit. Trag den Proxy deines Dienstes ein; solange er nicht erreichbar ist, lädt Atoll gar nichts, damit nichts daran vorbeigeht."
 msgstr "Atoll brings no VPN of its own. Write down the proxy of your service; while it cannot be reached, Atoll loads nothing at all, so that nothing slips past it."
 
@@ -319,6 +325,9 @@ msgstr "Commands"
 msgid "Behalten"
 msgstr "Keep"
 
+msgid "Beim Laden auch hochladen"
+msgstr "Upload while loading"
+
 msgid "Belegen die Seiten mehr als das Budget, schlafen die am längsten nicht genutzten Hintergrund-Tabs ein. Tabs mit Wiedergabe, ungesendeten Eingaben und angepinnte Tabs bleiben geladen. "
 msgstr "When the pages use more than the budget, the background tabs unused for longest go to sleep. Tabs that play media, have unsent input or are pinned stay loaded. "
 
@@ -421,6 +430,9 @@ msgstr "Asking the archive …"
 msgid "Das Bild konnte nicht gespeichert werden"
 msgstr "The image could not be saved"
 
+msgid "Das Gerät {} ist nicht da, Torrents bleiben stehen"
+msgstr "The device {} is not there, torrents stay put"
+
 msgid "Das Internet Archive hat eine Fassung vom {}. Soll Atoll sie öffnen?"
 msgstr "The Internet Archive has a copy from {}. Shall Atoll open it?"
 
@@ -438,6 +450,9 @@ msgstr "The VPN is broken off: {}. Atoll loads nothing."
 
 msgid "Das VPN steht"
 msgstr "The VPN stands"
+
+msgid "Das VPN steht noch nicht, Torrents warten darauf"
+msgstr "The VPN does not stand yet, torrents wait for it"
 
 msgid "Das VPN wird verbunden. Bis es steht, lädt Atoll nichts."
 msgstr "The VPN is being connected. Until it stands, Atoll loads nothing."
@@ -532,6 +547,15 @@ msgstr "The proxy wants a way of logging in Atoll cannot"
 msgid "Der Proxy will einen Benutzernamen und ein Passwort"
 msgstr "The proxy wants a user name and a password"
 
+msgid "Der Torrent konnte nicht geladen werden: {}"
+msgstr "The torrent could not be loaded: {}"
+
+msgid "Der Torrent läuft nicht weiter: {}"
+msgstr "The torrent does not go on: {}"
+
+msgid "Der Torrent wurde nur gelesen, nicht geladen"
+msgstr "The torrent was only read, not loaded"
+
 msgid "Der Tunnel hat nicht geantwortet"
 msgstr "The tunnel did not answer"
 
@@ -625,6 +649,12 @@ msgstr "The page is being reloaded"
 msgid "Die Seite wurde nicht über eine geprüfte, verschlüsselte Verbindung geladen."
 msgstr "The page was not loaded over a checked, encrypted connection."
 
+msgid "Die Torrent-Datei kam nicht an: {}"
+msgstr "The torrent file did not arrive: {}"
+
+msgid "Die Torrents konnten nicht gestartet werden: {}"
+msgstr "The torrents could not be started: {}"
+
 msgid "Die Verbindung hat zu lange gedauert"
 msgstr "The connection took too long"
 
@@ -657,6 +687,9 @@ msgstr "Let this level decide nothing"
 
 msgid "Dieser Ordner ist leer."
 msgstr "This folder is empty."
+
+msgid "Dieser Torrent lässt sich nicht noch einmal starten"
+msgstr "This torrent cannot be started again"
 
 msgid "Dieses Video ist kopiergeschützt und lässt sich nicht speichern"
 msgstr "This video is copy-protected and cannot be saved"
@@ -705,6 +738,9 @@ msgstr "You will be signed out on every website."
 
 msgid "Duplizieren"
 msgstr "Duplicate"
+
+msgid "Durch Atolls VPN"
+msgstr "Through Atoll's VPN"
 
 msgid "Durch das VPN"
 msgstr "Through the VPN"
@@ -864,6 +900,9 @@ msgstr "No login is stored for {}. Search in all logins:"
 
 msgid "GLEICHNAMIGE INSELN"
 msgstr "ISLANDS OF THE SAME NAME"
+
+msgid "Gerät wählen"
+msgstr "Choose a device"
 
 msgid "Geschieht automatisch alle vier Tage."
 msgstr "Happens automatically every four days."
@@ -1119,6 +1158,12 @@ msgstr "Use the login of another site?"
 
 msgid "Lokale Datei"
 msgstr "Local file"
+
+msgid "Läuft durch Atolls VPN. Ohne DHT und ohne UDP-Tracker, darum oft wenige Peers."
+msgstr "Runs through Atoll's VPN. Without DHT and without UDP trackers, which often means few peers."
+
+msgid "Läuft über {}. Alles von BitTorrent ist möglich."
+msgstr "Runs over {}. Everything BitTorrent can do is possible."
 
 msgid "Läuft, {} Befehle"
 msgstr "Running, {} commands"
@@ -1429,6 +1474,9 @@ msgstr "Hide sidebar"
 msgid "Sidebar einblenden"
 msgstr "Show sidebar"
 
+msgid "So gehört es sich im Schwarm: Atoll gibt Stücke ab, solange ein Torrent lädt, und hört danach auf."
+msgstr "That is how a swarm works: Atoll gives pieces away while a torrent loads, and stops afterwards."
+
 msgid "So viele zuletzt genutzte Tabs bleiben geladen und erscheinen sofort. Alle anderen schlafen und kosten keinen Arbeitsspeicher."
 msgstr "This many recently used tabs stay loaded and appear at once. Every other tab sleeps and costs no memory."
 
@@ -1558,6 +1606,9 @@ msgstr "Search engine: {}"
 msgid "Systemsprache"
 msgstr "System language"
 
+msgid "TORRENTS"
+msgstr "TORRENTS"
+
 msgid "Tab"
 msgstr "tab"
 
@@ -1605,6 +1656,18 @@ msgstr "Tor is connecting, the page loads afterwards"
 
 msgid "Tor-Tab: die Seite sieht nicht, woher du kommst. Gegen Wiedererkennung am Browser selbst hilft das nicht."
 msgstr "Tor tab: the site does not see where you come from. It does not help against being recognised by the browser itself."
+
+msgid "Torrent"
+msgstr "Torrent"
+
+msgid "Torrent anlegen"
+msgstr "Note the torrent"
+
+msgid "Torrent merken"
+msgstr "Remember the torrent"
+
+msgid "Torrents laufen nur durch ein VPN. Schalte es ein oder wähle dein System-VPN."
+msgstr "Torrents only run through a VPN. Switch it on or choose your system VPN."
 
 msgid "Trag zuerst den Proxy deines VPN-Dienstes ein, mit Adresse und Port"
 msgstr "Write down the proxy of your VPN service first, with its address and port"
@@ -1807,6 +1870,9 @@ msgstr "Switch workspace"
 msgid "Workspace {}"
 msgstr "Workspace {}"
 
+msgid "Wähle zuerst das Netzwerkgerät deines System-VPN"
+msgstr "Choose the network device of your system VPN first"
+
 msgid "ZIEL"
 msgstr "TARGET"
 
@@ -2007,6 +2073,9 @@ msgstr[1] "{n} tabs"
 msgid "{{query}} wird durch den Suchbegriff ersetzt."
 msgstr "{{query}} is replaced with the search term."
 
+msgid "{} (nicht da)"
+msgstr "{} (not there)"
+
 msgid "{} ({})"
 msgstr "{} ({})"
 
@@ -2049,6 +2118,9 @@ msgstr "{} does not exist"
 msgid "{} hat keine IPv4-Adresse"
 msgstr "{} has no IPv4 address"
 
+msgid "{} ist fertig"
+msgstr "{} is done"
+
 msgid "{} ist im Tunnel nicht aufzulösen"
 msgstr "{} cannot be resolved inside the tunnel"
 
@@ -2075,6 +2147,12 @@ msgstr "{} and {} filled in"
 
 msgid "{} von {}"
 msgstr "{} of {}"
+
+msgid "{} wird geholt"
+msgstr "{} is being fetched"
+
+msgid "{} wird geladen"
+msgstr "{} is being loaded"
 
 msgid "{} {} importiert, {} neue {}."
 msgstr "{} {} imported, {} new {}."
@@ -2111,6 +2189,9 @@ msgstr "Change…"
 
 msgid "Öffnen"
 msgstr "Open"
+
+msgid "Über ein System-VPN"
+msgstr "Over a system VPN"
 
 msgid "Überall"
 msgstr "Everywhere"

@@ -40,6 +40,8 @@ pub enum DownloadKind {
     File,
     /// A video put together from a stream by yt-dlp, `url` is what yt-dlp was given.
     Video,
+    /// A torrent, `url` is the magnet address or where the torrent file came from.
+    Torrent,
 }
 
 impl DownloadKind {
@@ -47,6 +49,7 @@ impl DownloadKind {
         match self {
             DownloadKind::File => "file",
             DownloadKind::Video => "video",
+            DownloadKind::Torrent => "torrent",
         }
     }
 
@@ -54,6 +57,7 @@ impl DownloadKind {
         match text {
             "file" => Some(DownloadKind::File),
             "video" => Some(DownloadKind::Video),
+            "torrent" => Some(DownloadKind::Torrent),
             _ => None,
         }
     }

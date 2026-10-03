@@ -64,6 +64,7 @@ impl Browser {
         self.show_download_directory();
         self.show_adblock_settings();
         self.show_vpn_settings();
+        self.show_torrent_settings();
         self.show_memory_settings();
         self.show_password_settings();
         self.show_plugin_settings();
@@ -196,6 +197,8 @@ impl Browser {
                 });
                 self.vpn_settings_changed();
             }
+            "torrent-route" => self.set_torrent_route(state.get_torrent_route() == 1),
+            "torrent-upload" => self.set_torrent_upload(state.get_torrent_upload()),
             "cookie-banners-hide" => {
                 self.set_hide_cookie_banners(state.get_cookie_banners_hide());
             }

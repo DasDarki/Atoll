@@ -23,6 +23,7 @@ atoll-net = { path = "crates/atoll-net" }
 atoll-socks = { path = "crates/atoll-socks" }
 atoll-vpn = { path = "crates/atoll-vpn" }
 atoll-tor = { path = "crates/atoll-tor" }
+atoll-torrent = { path = "crates/atoll-torrent" }
 adblock = { version = "0.13", default-features = false, features = ["embedded-domain-resolver", "full-regex-handling"] }
 
 arti-client = "0.47"
@@ -36,6 +37,7 @@ anyhow = "1"
 arboard = { version = "3.6", features = ["wayland-data-control"] }
 image = { version = "0.25", default-features = false, features = ["png"] }
 libc = "0.2"
+librqbit = { version = "9", default-features = false, features = ["rust-tls", "disable-upload"] }
 mlua = { version = "0.12", features = ["luau", "vendored", "serialize"] }
 pollster = "1"
 regex = "1"

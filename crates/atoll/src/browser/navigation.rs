@@ -11,9 +11,18 @@ impl Browser {
     /// Loads what the user typed into the address bar or the new tab page.
     pub fn navigate(&self, input: &str) {
         let search_url = self.preferences.borrow().search_url.clone();
+        // A magnet address is no page: it goes to the torrents, wherever it was typed.
+        if super::downloads::is_magnet(input) {
+            self.open_torrent(input);
+            return;
+        }
         let Some(url) = resolve_input(input, &search_url) else {
             return;
         };
+        if url.ends_with(".torrent") {
+            self.open_torrent(&url);
+            return;
+        }
         let active = self.session.borrow().active_tab;
         let Some(tab) = active else {
             let _ = self.open_in_new_tab(None, &url, true);

@@ -113,6 +113,12 @@ pub struct Preferences {
     pub vpn_user: String,
     /// Kept in the profile as it is, like the proxy settings of any browser.
     pub vpn_password: String,
+    /// How torrents get out: `vpn` through Atoll's own, `device` through one of the system.
+    pub torrent_route: String,
+    /// The network device torrents are tied to, while they go that way.
+    pub torrent_device: String,
+    /// Whether Atoll gives pieces back to the swarm while a torrent loads.
+    pub torrent_upload: bool,
     /// Hides the cookie banners the filter list knows.
     pub cookie_banners_hide: bool,
     /// Answers the cookie banners Atoll recognises with a refusal.
@@ -162,6 +168,9 @@ pub enum PreferenceKey {
     VpnPort,
     VpnUser,
     VpnPassword,
+    TorrentRoute,
+    TorrentDevice,
+    TorrentUpload,
 }
 
 impl PreferenceKey {
@@ -195,6 +204,9 @@ impl PreferenceKey {
             PreferenceKey::VpnPort => "vpn_port",
             PreferenceKey::VpnUser => "vpn_user",
             PreferenceKey::VpnPassword => "vpn_password",
+            PreferenceKey::TorrentRoute => "torrent_route",
+            PreferenceKey::TorrentDevice => "torrent_device",
+            PreferenceKey::TorrentUpload => "torrent_upload",
         }
     }
 }
@@ -224,6 +236,9 @@ impl Default for Preferences {
             vpn_port: 1080,
             vpn_user: String::new(),
             vpn_password: String::new(),
+            torrent_route: "vpn".to_owned(),
+            torrent_device: String::new(),
+            torrent_upload: true,
             archive_suggestion_weeks: DEFAULT_ARCHIVE_SUGGESTION_WEEKS,
             memory_limit_enabled: true,
             memory_limit_gb: DEFAULT_MEMORY_LIMIT_GB,
@@ -291,6 +306,9 @@ impl Preferences {
                 .unwrap_or(defaults.vpn_port),
             vpn_user: text(PreferenceKey::VpnUser).unwrap_or(defaults.vpn_user),
             vpn_password: text(PreferenceKey::VpnPassword).unwrap_or(defaults.vpn_password),
+            torrent_route: text(PreferenceKey::TorrentRoute).unwrap_or(defaults.torrent_route),
+            torrent_device: text(PreferenceKey::TorrentDevice).unwrap_or(defaults.torrent_device),
+            torrent_upload: flag(PreferenceKey::TorrentUpload, defaults.torrent_upload),
             archive_suggestion_weeks: text(PreferenceKey::ArchiveSuggestionWeeks)
                 .and_then(|weeks| weeks.parse::<u32>().ok())
                 .map_or(defaults.archive_suggestion_weeks, |weeks| {
@@ -347,6 +365,9 @@ impl Preferences {
             PreferenceKey::VpnPort => self.vpn_port.to_string(),
             PreferenceKey::VpnUser => self.vpn_user.clone(),
             PreferenceKey::VpnPassword => self.vpn_password.clone(),
+            PreferenceKey::TorrentRoute => self.torrent_route.clone(),
+            PreferenceKey::TorrentDevice => self.torrent_device.clone(),
+            PreferenceKey::TorrentUpload => flag(self.torrent_upload),
             PreferenceKey::ArchiveSuggestionWeeks => self.archive_suggestion_weeks.to_string(),
             PreferenceKey::MemoryLimitEnabled => flag(self.memory_limit_enabled),
             PreferenceKey::MemoryLimitGb => self.memory_limit_gb.to_string(),
@@ -411,6 +432,9 @@ mod tests {
             vpn_port: 8443,
             vpn_user: "ich".to_owned(),
             vpn_password: "geheim".to_owned(),
+            torrent_route: "device".to_owned(),
+            torrent_device: "wg0".to_owned(),
+            torrent_upload: false,
             archive_suggestion_weeks: 9,
             memory_limit_enabled: false,
             memory_limit_gb: 12,
@@ -441,6 +465,9 @@ mod tests {
             PreferenceKey::VpnPort,
             PreferenceKey::VpnUser,
             PreferenceKey::VpnPassword,
+            PreferenceKey::TorrentRoute,
+            PreferenceKey::TorrentDevice,
+            PreferenceKey::TorrentUpload,
             PreferenceKey::ArchiveSuggestionWeeks,
             PreferenceKey::MemoryLimitEnabled,
             PreferenceKey::MemoryLimitGb,

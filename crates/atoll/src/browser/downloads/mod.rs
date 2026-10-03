@@ -15,9 +15,11 @@ use crate::platform::opener;
 use crate::ui::{BrowserState, DownloadItem, DownloadItemStatus, OverlayState};
 
 mod streams;
+mod torrents;
 mod videos;
 
 use atoll_i18n::t;
+pub use torrents::{TorrentSession, is_magnet};
 pub use videos::VideoSearch;
 
 const LISTED_DOWNLOADS: usize = 50;
@@ -27,6 +29,7 @@ const LISTED_DOWNLOADS: usize = 50;
 enum Control {
     Engine(u32),
     Video(Canceller),
+    Torrent(atoll_torrent::TorrentId),
 }
 
 /// The live state of a running download.
@@ -242,6 +245,20 @@ impl Browser {
         self.for_all_windows(Browser::show_download_state);
     }
 
+    /// Redraws the list after something other than the engine changed it.
+    pub(super) fn refresh_download_list(&self) {
+        self.refresh_downloads();
+    }
+
+    /// Takes a torrent on again after it was stopped.
+    fn retry_torrent(&self, entry: &Download) {
+        if entry.url.is_empty() {
+            self.show_toast(t!("Dieser Torrent lässt sich nicht noch einmal starten"));
+            return;
+        }
+        self.open_torrent(&entry.url);
+    }
+
     /// Updates the toolbar button and, if it is open, the download list.
     pub(super) fn show_download_state(&self) {
         let Some(window) = self.window() else { return };
@@ -320,13 +337,20 @@ impl Browser {
                     }
                 }
                 Some(Control::Video(canceller)) if action == "cancel" => canceller.cancel(),
+                Some(Control::Torrent(torrent)) => self.torrent_action(torrent, action),
                 Some(Control::Video(_)) | None => {}
             },
             "retry" => match entry.kind {
                 DownloadKind::File => self.retry_download(&entry.url),
                 DownloadKind::Video => self.retry_stream(&entry),
+                DownloadKind::Torrent => self.retry_torrent(&entry),
             },
             "remove" => {
+                if entry.kind == DownloadKind::Torrent
+                    && let Some(Control::Torrent(torrent)) = control
+                {
+                    self.torrent_action(torrent, "remove");
+                }
                 let result = self.storage.remove_download(id);
                 self.report(t!("Download entfernen"), result);
                 self.downloads

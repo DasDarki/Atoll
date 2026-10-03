@@ -492,6 +492,7 @@ impl WindowManager {
         for browser in self.browsers() {
             browser.watch_tor();
             browser.watch_vpn();
+            browser.watch_torrents();
         }
         if events.is_empty() {
             return;

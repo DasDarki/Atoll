@@ -63,7 +63,7 @@ use adblock::Adblock;
 use bookmarks::BookmarkState;
 use clipboard::ClipboardSync;
 use dev_tools::DevToolsPresentation;
-use downloads::{Downloads, VideoSearch};
+use downloads::{Downloads, TorrentSession, VideoSearch};
 use favicons::FaviconCache;
 use history::HistoryView;
 use memory::MemoryWatcher;
@@ -178,6 +178,7 @@ pub struct Browser {
     vpn: Vpn,
     /// The same for the VPN of the user.
     vpn_status: RefCell<Option<atoll_vpn::Status>>,
+    torrents: RefCell<TorrentSession>,
     history: RefCell<HistoryView>,
     opera: RefCell<OperaImport>,
     island_drag: RefCell<IslandDrag>,
@@ -247,6 +248,7 @@ impl Browser {
             tor_status: RefCell::default(),
             vpn: shared.vpn.clone(),
             vpn_status: RefCell::default(),
+            torrents: RefCell::default(),
             history: RefCell::default(),
             opera: RefCell::default(),
             island_drag: RefCell::default(),

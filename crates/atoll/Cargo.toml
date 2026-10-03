@@ -19,6 +19,7 @@ atoll-i18n.workspace = true
 atoll-net.workspace = true
 atoll-vpn.workspace = true
 atoll-tor.workspace = true
+atoll-torrent.workspace = true
 libc.workspace = true
 ureq.workspace = true
 atoll-video.workspace = true

@@ -394,6 +394,9 @@ fn connect_settings(window: &AppWindow, browser: &Rc<Browser>) {
         .clear_vpn_exceptions());
     on!(state, on_choose_vpn_config, browser, |target| target
         .choose_vpn_config());
+    on!(state, on_torrent_device_chosen, browser, |target, index| {
+        target.choose_torrent_device(index)
+    });
     on!(state, on_plugin_action, browser, |target, id, action| {
         target.plugin_action(&id, &action)
     });
