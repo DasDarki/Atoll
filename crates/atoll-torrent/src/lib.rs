@@ -38,25 +38,33 @@ const POLL: Duration = Duration::from_millis(900);
 /// Our own number for a torrent, handed out before `librqbit` knows it.
 pub type TorrentId = u64;
 
-/// Where a torrent's traffic goes. Without one of these nothing runs at all.
+/// Where a torrent's traffic goes.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Route {
     /// Through Atoll's own VPN, on the port of its SOCKS bridge. Only TCP fits through it.
     Bridge(u16),
     /// Through a VPN of the system: every socket is bound to that device.
     Device(String),
+    /// Out the way everything else goes, with the swarm seeing where the user is. Only ever
+    /// taken because the user said so for that one torrent.
+    Direct,
 }
 
 impl Route {
     /// Whether the parts of BitTorrent that speak UDP can be used at all.
     pub fn carries_udp(&self) -> bool {
-        matches!(self, Route::Device(_))
+        !matches!(self, Route::Bridge(_))
+    }
+
+    /// Whether anything about where the user is is hidden on this way.
+    pub fn hides_the_user(&self) -> bool {
+        !matches!(self, Route::Direct)
     }
 
     /// Whether the way out is still there.
     pub fn stands(&self) -> bool {
         match self {
-            Route::Bridge(_) => true,
+            Route::Bridge(_) | Route::Direct => true,
             Route::Device(name) => device::is_up(name),
         }
     }
@@ -231,7 +239,7 @@ fn run(
                 return;
             }
         };
-        serve(session, shared, !route.carries_udp(), orders).await;
+        serve(session, shared, matches!(route, Route::Bridge(_)), orders).await;
     });
 }
 
@@ -268,6 +276,13 @@ async fn build_session(
         }
         Route::Device(name) => {
             options.bind_device_name = Some(name.clone());
+            options.listen = Some(ListenerOptions {
+                mode: ListenerMode::TcpAndUtp,
+                ipv4_only: true,
+                ..ListenerOptions::default()
+            });
+        }
+        Route::Direct => {
             options.listen = Some(ListenerOptions {
                 mode: ListenerMode::TcpAndUtp,
                 ipv4_only: true,

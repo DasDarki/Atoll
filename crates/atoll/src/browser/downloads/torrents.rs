@@ -31,39 +31,60 @@ const LOAD: &str = "load";
 pub struct TorrentSession {
     /// The session, while a way out stands.
     running: Option<Torrents>,
-    /// Which download row belongs to which torrent.
-    rows: Vec<(TorrentId, DownloadId)>,
+    /// Everything Atoll is loading, with where it came from, so a way that comes back can take
+    /// it on again without the user doing anything.
+    entries: Vec<Entry>,
     /// What was asked for while no way out stood.
     waiting: Vec<(Source, String)>,
 }
 
+/// One torrent, as the browser keeps it.
+struct Entry {
+    /// Its number in the running session, as long as one carries it.
+    torrent: Option<TorrentId>,
+    row: DownloadId,
+    source: Source,
+}
+
+/// What a torrent can do right now.
+enum Way {
+    /// A way out stands.
+    Ready(Route),
+    /// One is set up but not there at the moment, so the torrent waits for it.
+    Waiting(String),
+    /// None is set up. Only the user can decide to go without one.
+    Nothing(String),
+}
+
 impl Browser {
-    /// The way out torrents are to take, as far as it stands right now.
-    fn torrent_route(&self) -> Result<Route, String> {
+    /// The way out torrents are to take, and what is in the way if there is none.
+    fn torrent_way(&self) -> Way {
         let preferences = self.preferences.borrow();
         let chosen = preferences.torrent_route.clone();
         let device = preferences.torrent_device.clone();
         drop(preferences);
         if chosen == THROUGH_DEVICE {
             if device.trim().is_empty() {
-                return Err(t!("Wähle zuerst das Netzwerkgerät deines System-VPN").to_owned());
+                return Way::Nothing(
+                    t!("Wähle zuerst das Netzwerkgerät deines System-VPN").to_owned(),
+                );
             }
             if !atoll_torrent::devices()
                 .iter()
                 .any(|known| known.name == device && known.up)
             {
-                return Err(t!(
+                return Way::Waiting(t!(
                     "Das Gerät {} ist nicht da, Torrents bleiben stehen",
                     device
                 ));
             }
-            return Ok(Route::Device(device));
+            return Way::Ready(Route::Device(device));
         }
         if !self.vpn.is_wanted() {
-            return Err(t!(
-                "Torrents laufen nur durch ein VPN. Schalte es ein oder wähle dein System-VPN."
-            )
-            .to_owned());
+            return Way::Nothing(
+                t!("Torrents laufen nur durch ein VPN. Schalte es ein oder wähle dein System-VPN.")
+                    .to_owned(),
+            );
         }
         match self
             .vpn
@@ -71,38 +92,66 @@ impl Browser {
             .port()
             .filter(|_| self.vpn.status().is_up())
         {
-            Some(port) => Ok(Route::Bridge(port)),
-            None => Err(t!("Das VPN steht noch nicht, Torrents warten darauf").to_owned()),
+            Some(port) => Way::Ready(Route::Bridge(port)),
+            None => Way::Waiting(t!("Das VPN steht noch nicht, Torrents warten darauf").to_owned()),
         }
     }
 
     /// Takes a magnet address or the bytes of a torrent file and loads it.
     pub(in crate::browser) fn add_torrent(&self, source: Source, name: String) {
-        match self.torrent_route() {
-            Ok(route) => {
-                self.keep_torrent_session(&route);
-                let directory = self.download_directory();
-                let started = {
-                    let session = self.torrents.borrow_mut();
-                    session
-                        .running
-                        .as_ref()
-                        .map(|torrents| torrents.add(source.clone(), directory))
-                };
-                match started {
-                    Some(id) => {
-                        self.note_torrent(id, &name, &source);
-                        self.show_toast(&t!("{} wird geladen", name));
-                        self.open_downloads();
-                    }
-                    None => self.torrents.borrow_mut().waiting.push((source, name)),
-                }
-            }
-            Err(trouble) => {
+        match self.torrent_way() {
+            Way::Ready(route) => self.start_torrent(source, name, route),
+            Way::Waiting(trouble) => {
                 self.torrents.borrow_mut().waiting.push((source, name));
                 self.show_toast(&trouble);
             }
+            // Nothing hides the user, so only they can decide to be seen.
+            Way::Nothing(trouble) => self.ask_about_loading_openly(source, name, trouble),
         }
+    }
+
+    /// Asks whether this one torrent may go out the ordinary way. Nothing is remembered: the
+    /// next torrent asks again, because only the user knows what it is.
+    fn ask_about_loading_openly(&self, source: Source, name: String, trouble: String) {
+        let this = self.this();
+        self.confirm(
+            t!("Kein VPN für Torrents"),
+            &t!(
+                "{} Lädst du {} trotzdem, sehen der Schwarm und dein Anbieter, dass du es lädst, und von wo.",
+                trouble,
+                name
+            ),
+            t!("Ohne Schutz laden"),
+            move || {
+                if let Some(browser) = this.upgrade() {
+                    browser.start_torrent(source, name, Route::Direct);
+                }
+            },
+        );
+    }
+
+    /// Starts one torrent on a way that is there.
+    fn start_torrent(&self, source: Source, name: String, route: Route) {
+        self.keep_torrent_session(&route);
+        let directory = self.download_directory();
+        let started = {
+            let session = self.torrents.borrow();
+            session
+                .running
+                .as_ref()
+                .map(|torrents| torrents.add(source.clone(), directory))
+        };
+        let Some(id) = started else {
+            self.torrents.borrow_mut().waiting.push((source, name));
+            return;
+        };
+        self.note_torrent(id, &name, &source);
+        self.show_toast(&if route.hides_the_user() {
+            t!("{} wird geladen", name)
+        } else {
+            t!("{} wird ohne Schutz geladen", name)
+        });
+        self.open_downloads();
     }
 
     /// Writes the torrent into the download list, so it is there like everything else that loads.
@@ -127,7 +176,11 @@ impl Browser {
                 return;
             }
         };
-        self.torrents.borrow_mut().rows.push((id, row));
+        self.torrents.borrow_mut().entries.push(Entry {
+            torrent: Some(id),
+            row,
+            source: source.clone(),
+        });
         let mut downloads = self.downloads.borrow_mut();
         downloads.entries.insert(
             0,
@@ -185,23 +238,101 @@ impl Browser {
         if !has_work {
             return;
         }
-        match self.torrent_route() {
-            Ok(route) => {
-                self.keep_torrent_session(&route);
-                let waiting: Vec<(Source, String)> =
-                    std::mem::take(&mut self.torrents.borrow_mut().waiting);
-                for (source, name) in waiting {
-                    self.add_torrent(source, name);
+        match self.torrent_way() {
+            Way::Ready(route) => {
+                let changed = self
+                    .torrents
+                    .borrow()
+                    .running
+                    .as_ref()
+                    .is_some_and(|torrents| *torrents.route() != route);
+                if changed {
+                    // The way out changed under them, so they travel the new one from now on.
+                    self.rebuild_torrent_session();
+                    return;
                 }
+                self.keep_torrent_session(&route);
+                self.take_on_what_waited();
                 self.show_torrent_progress();
             }
-            Err(trouble) => {
-                let stopped = self.torrents.borrow_mut().running.take().is_some();
-                if stopped {
-                    self.stop_torrent_rows();
-                    self.show_toast(&trouble);
-                }
+            // A way that is only away for a moment: nothing runs meanwhile, and what was
+            // loading is taken on again once it is back.
+            Way::Waiting(trouble) | Way::Nothing(trouble) => self.hold_torrents(&trouble),
+        }
+    }
+
+    /// Starts what was asked for while nothing could carry it.
+    fn take_on_what_waited(&self) {
+        let waiting: Vec<(Source, String)> =
+            std::mem::take(&mut self.torrents.borrow_mut().waiting);
+        for (source, name) in waiting {
+            self.add_torrent(source, name);
+        }
+        // What was loading before the way broke off goes on now.
+        let resting: Vec<(usize, Source)> = self
+            .torrents
+            .borrow()
+            .entries
+            .iter()
+            .enumerate()
+            .filter(|(_, entry)| entry.torrent.is_none())
+            .map(|(at, entry)| (at, entry.source.clone()))
+            .collect();
+        if resting.is_empty() {
+            return;
+        }
+        let directory = self.download_directory();
+        for (at, source) in resting {
+            let started = {
+                let session = self.torrents.borrow();
+                session
+                    .running
+                    .as_ref()
+                    .map(|torrents| torrents.add(source, directory.clone()))
+            };
+            let Some(id) = started else { continue };
+            let mut session = self.torrents.borrow_mut();
+            let Some(entry) = session.entries.get_mut(at) else {
+                continue;
+            };
+            entry.torrent = Some(id);
+            let row = entry.row;
+            drop(session);
+            let mut downloads = self.downloads.borrow_mut();
+            downloads.transfers.insert(
+                row,
+                Transfer {
+                    control: Control::Torrent(id),
+                    speed: 0,
+                    paused: false,
+                },
+            );
+            if let Some(entry) = downloads.entries.iter_mut().find(|entry| entry.id == row) {
+                entry.status = DownloadStatus::Running;
+                entry.finished_at = None;
             }
+        }
+        self.refresh_download_list();
+    }
+
+    /// Holds everything while no way out stands. The torrents are kept, only their session is
+    /// given up, so nothing of them can travel unprotected.
+    fn hold_torrents(&self, trouble: &str) {
+        let unprotected = self
+            .torrents
+            .borrow()
+            .running
+            .as_ref()
+            .is_some_and(|torrents| !torrents.route().hides_the_user());
+        if unprotected {
+            // The user said this one may go out openly, so nothing is taken from them.
+            self.show_torrent_progress();
+            return;
+        }
+        let stopped = self.torrents.borrow_mut().running.take().is_some();
+        if stopped {
+            self.stop_torrent_rows();
+            self.show_toast(trouble);
         }
     }
 
@@ -232,10 +363,10 @@ impl Browser {
     fn row_of(&self, torrent: TorrentId) -> Option<DownloadId> {
         self.torrents
             .borrow()
-            .rows
+            .entries
             .iter()
-            .find(|(known, _)| *known == torrent)
-            .map(|(_, row)| *row)
+            .find(|entry| entry.torrent == Some(torrent))
+            .map(|entry| entry.row)
     }
 
     /// Writes what one torrent says into its row. Answers whether the list has to be redrawn.
@@ -298,24 +429,47 @@ impl Browser {
         true
     }
 
-    /// Builds the session again after something it was built from changed. What was running
-    /// stops, because the new session knows nothing of it.
+    /// Builds the session again after something it was built from changed, and hands it what
+    /// was loading: the files are there, so the torrents go on where they stopped.
     fn rebuild_torrent_session(&self) {
-        let had_torrents = self.torrents.borrow().running.is_some();
-        self.torrents.borrow_mut().running = None;
-        if had_torrents {
-            self.stop_torrent_rows();
+        {
+            let mut session = self.torrents.borrow_mut();
+            session.running = None;
+            for entry in &mut session.entries {
+                entry.torrent = None;
+            }
         }
-        self.watch_torrents();
+        {
+            let mut downloads = self.downloads.borrow_mut();
+            let rows: Vec<DownloadId> = self
+                .torrents
+                .borrow()
+                .entries
+                .iter()
+                .map(|entry| entry.row)
+                .collect();
+            for row in rows {
+                downloads.transfers.remove(&row);
+            }
+        }
+        if let Way::Ready(route) = self.torrent_way() {
+            self.keep_torrent_session(&route);
+            self.take_on_what_waited();
+        }
         self.for_all_windows(Browser::show_torrent_settings);
+        self.refresh_download_list();
     }
 
-    /// The way out went away: every torrent row says so, and nothing keeps loading.
+    /// The way out went away: every torrent row says so, and nothing keeps loading. What they
+    /// are stays known, so they go on once a way is back.
     fn stop_torrent_rows(&self) {
-        let rows: Vec<DownloadId> = std::mem::take(&mut self.torrents.borrow_mut().rows)
-            .into_iter()
-            .map(|(_, row)| row)
-            .collect();
+        let rows: Vec<DownloadId> = {
+            let mut session = self.torrents.borrow_mut();
+            for entry in &mut session.entries {
+                entry.torrent = None;
+            }
+            session.entries.iter().map(|entry| entry.row).collect()
+        };
         let mut downloads = self.downloads.borrow_mut();
         for row in rows {
             downloads.transfers.remove(&row);
@@ -448,15 +602,18 @@ impl Browser {
                 .map_or(0, |at| at as i32 + 1),
         );
         state.set_torrent_status(
-            match self.torrent_route() {
-                Ok(Route::Bridge(_)) => t!(
+            match self.torrent_way() {
+                Way::Ready(Route::Bridge(_)) => t!(
                     "Läuft durch Atolls VPN. Ohne DHT und ohne UDP-Tracker, darum oft wenige Peers."
                 )
                 .to_owned(),
-                Ok(Route::Device(device)) => {
+                Way::Ready(Route::Device(device)) => {
                     t!("Läuft über {}. Alles von BitTorrent ist möglich.", device)
                 }
-                Err(trouble) => trouble,
+                Way::Ready(Route::Direct) => {
+                    t!("Läuft ohne Schutz, weil du es für diesen Torrent erlaubt hast.").to_owned()
+                }
+                Way::Waiting(trouble) | Way::Nothing(trouble) => trouble,
             }
             .into(),
         );

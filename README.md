@@ -132,6 +132,11 @@ saved tabs therefore cost nothing at startup.
   on - switching it off is offered, with a word about what the swarms do to those who take
   without giving. A torrent file that was downloaded is asked about, loaded at once or simply
   left lying there, whichever the settings say; asking is what Atoll does unless told otherwise.
+  Where no VPN is set up at all, Atoll asks about that one torrent instead of refusing it: an
+  installation image is nobody's business but your own, and the question says plainly that the
+  swarm and the provider will see you. Nothing of that answer is remembered, so the next torrent
+  asks again. A torrent that loses its way out stops where it is and goes on by itself once the
+  way is back, because the files are already there.
 - **Your VPN, with a killswitch**: Atoll runs no VPN service of its own. You write down the proxy
   of the service you already pay for - SOCKS5, or one that takes `CONNECT`, with TLS on the way to
   it if you like, user name and password included - or you hand it the WireGuard configuration the

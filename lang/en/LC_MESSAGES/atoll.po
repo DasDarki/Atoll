@@ -1075,6 +1075,9 @@ msgstr "No room for the tunnel: {}"
 msgid "Kein Proxy eingetragen"
 msgstr "No proxy is written down"
 
+msgid "Kein VPN für Torrents"
+msgstr "No VPN for torrents"
+
 msgid "Kein passender Befehl"
 msgstr "No matching command"
 
@@ -1161,6 +1164,9 @@ msgstr "Local file"
 
 msgid "Läuft durch Atolls VPN. Ohne DHT und ohne UDP-Tracker, darum oft wenige Peers."
 msgstr "Runs through Atoll's VPN. Without DHT and without UDP trackers, which often means few peers."
+
+msgid "Läuft ohne Schutz, weil du es für diesen Torrent erlaubt hast."
+msgstr "Runs without protection, because you allowed it for this torrent."
 
 msgid "Läuft über {}. Alles von BitTorrent ist möglich."
 msgstr "Runs over {}. Everything BitTorrent can do is possible."
@@ -1311,6 +1317,9 @@ msgstr "FOLDER"
 
 msgid "Ohne DNS im Tunnel könnte Atoll Namen nur außerhalb nachschlagen, und genau das würde dich verraten. Trag einen DNS-Server in die Konfiguration ein."
 msgstr "Without DNS inside the tunnel Atoll could only look names up outside it, and that is exactly what would give you away. Write a DNS server into the configuration."
+
+msgid "Ohne Schutz laden"
+msgstr "Load without protection"
 
 msgid "Opera wird gelesen …"
 msgstr "Reading Opera …"
@@ -2115,6 +2124,9 @@ msgstr "{} bookmarks"
 msgid "{} Lesezeichen importiert"
 msgstr "{} bookmarks imported"
 
+msgid "{} Lädst du {} trotzdem, sehen der Schwarm und dein Anbieter, dass du es lädst, und von wo."
+msgstr "{} If you load {} anyway, the swarm and your provider see that you are loading it, and from where."
+
 msgid "{} Seiten"
 msgstr "{} pages"
 
@@ -2171,6 +2183,9 @@ msgstr "{} is being fetched"
 
 msgid "{} wird geladen"
 msgstr "{} is being loaded"
+
+msgid "{} wird ohne Schutz geladen"
+msgstr "{} is being loaded without protection"
 
 msgid "{} {} importiert, {} neue {}."
 msgstr "{} {} imported, {} new {}."
