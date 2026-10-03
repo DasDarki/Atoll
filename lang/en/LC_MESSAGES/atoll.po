@@ -1297,6 +1297,9 @@ msgstr "Not allowed yet"
 msgid "Noch nichts besucht."
 msgstr "Nothing visited yet."
 
+msgid "Nur die Datei"
+msgstr "The file alone"
+
 msgid "Nur diese Adresse"
 msgstr "Only this address"
 
@@ -1479,6 +1482,9 @@ msgstr "That is how a swarm works: Atoll gives pieces away while a torrent loads
 
 msgid "So viele zuletzt genutzte Tabs bleiben geladen und erscheinen sofort. Alle anderen schlafen und kosten keinen Arbeitsspeicher."
 msgstr "This many recently used tabs stay loaded and appear at once. Every other tab sleeps and costs no memory."
+
+msgid "Sofort laden"
+msgstr "Load it at once"
 
 msgid "Solange das VPN nicht steht, fragt Atoll das Archiv nicht"
 msgstr "While the VPN does not stand, Atoll does not ask the archive"
@@ -1663,6 +1669,12 @@ msgstr "Torrent"
 msgid "Torrent anlegen"
 msgstr "Note the torrent"
 
+msgid "Torrent gefunden"
+msgstr "A torrent was found"
+
+msgid "Torrent laden"
+msgstr "Load the torrent"
+
 msgid "Torrent merken"
 msgstr "Remember the torrent"
 
@@ -1800,6 +1812,9 @@ msgstr "Prevent redirects"
 
 msgid "Wenn dich die Seite ungefragt zu einer fremden Seite schickt."
 msgstr "When the page sends you to another site unasked."
+
+msgid "Wenn du eine .torrent-Datei herunterlädst"
+msgstr "When you download a .torrent file"
 
 msgid "Werbeblocker ausgeschaltet"
 msgstr "Ad blocker switched off"
@@ -2117,6 +2132,9 @@ msgstr "{} does not exist"
 
 msgid "{} hat keine IPv4-Adresse"
 msgstr "{} has no IPv4 address"
+
+msgid "{} ist eine Torrent-Datei. Soll Atoll laden, was darin steht?"
+msgstr "{} is a torrent file. Shall Atoll load what it points at?"
 
 msgid "{} ist fertig"
 msgstr "{} is done"

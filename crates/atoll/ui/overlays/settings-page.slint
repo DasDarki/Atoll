@@ -496,6 +496,20 @@ export component SettingsPage inherits Modal {
                             wrap: word-wrap;
                         }
                     }
+                    VerticalLayout {
+                        spacing: 6px;
+                        padding-bottom: 8px;
+                        Text {
+                            text: @tr("Wenn du eine .torrent-Datei herunterlädst");
+                            color: Theme.text;
+                            font-size: Theme.font-normal;
+                        }
+                        Segmented {
+                            options: [@tr("Fragen"), @tr("Sofort laden"), @tr("Nur die Datei")];
+                            selected <=> SettingsState.torrent-files;
+                            changed-by-user => { SettingsState.changed("torrent-files"); }
+                        }
+                    }
                     SettingRow {
                         title: @tr("Beim Laden auch hochladen");
                         description: SettingsState.torrent-upload ? @tr("So gehört es sich im Schwarm: Atoll gibt Stücke ab, solange ein Torrent lädt, und hört danach auf.") : @tr("Achtung: Ohne Hochladen wirst du von vielen Schwärmen abgestraft oder ausgeschlossen, und du nimmst mehr, als du gibst.");

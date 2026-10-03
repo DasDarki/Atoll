@@ -130,7 +130,8 @@ saved tabs therefore cost nothing at startup.
   system every socket of the torrent is tied to its device, which the kernel then enforces, and
   BitTorrent can do everything it knows. Giving pieces back to the swarm while a torrent loads is
   on - switching it off is offered, with a word about what the swarms do to those who take
-  without giving.
+  without giving. A torrent file that was downloaded is asked about, loaded at once or simply
+  left lying there, whichever the settings say; asking is what Atoll does unless told otherwise.
 - **Your VPN, with a killswitch**: Atoll runs no VPN service of its own. You write down the proxy
   of the service you already pay for - SOCKS5, or one that takes `CONNECT`, with TLS on the way to
   it if you like, user name and password included - or you hand it the WireGuard configuration the
@@ -371,8 +372,6 @@ Known limitations:
   exists. A site that only offers agreeing or paying is left to the user.
 - A tab through Tor keeps going through Tor while a VPN carries the rest: Arti builds its own way
   out. The 1Password CLI also talks to its service by itself.
-- A torrent file a page offers for download is saved like any other file; to load it, open it
-  from the address bar. Magnet addresses are taken over wherever they appear.
 - The tunnel carries TCP over IPv4. That is what a browser needs, and what cannot travel it - the
   QUIC of a page, say - falls back to TCP by itself. Where the server is has to be looked up
   before the tunnel stands, which is the one lookup no WireGuard client can hide.

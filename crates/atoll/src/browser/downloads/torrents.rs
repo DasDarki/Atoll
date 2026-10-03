@@ -6,6 +6,7 @@
 //! goes away the session goes with it - that is the same killswitch the rest of the browser has,
 //! applied to the one kind of traffic that talks to strangers all day.
 
+use std::path::PathBuf;
 use std::time::Duration;
 
 use atoll_core::{Download, DownloadId, DownloadKind, DownloadStatus};
@@ -20,6 +21,10 @@ use atoll_i18n::t;
 /// The name the settings use for each way out.
 pub(in crate::browser) const THROUGH_VPN: &str = "vpn";
 pub(in crate::browser) const THROUGH_DEVICE: &str = "device";
+
+/// What the settings do with a torrent file that was downloaded.
+const ASK: &str = "ask";
+const LOAD: &str = "load";
 
 /// What the torrents of this run are doing, next to the download list.
 #[derive(Default)]
@@ -366,6 +371,49 @@ impl Browser {
         );
     }
 
+    /// A file was downloaded. If it is a torrent file, what happens now is the user's choice:
+    /// ask, load it at once, or leave it lying there like any other file.
+    pub(super) fn torrent_file_downloaded(&self, path: Option<&str>, file_name: &str) {
+        if !file_name.to_ascii_lowercase().ends_with(".torrent") {
+            return;
+        }
+        let Some(path) = path.map(PathBuf::from).filter(|path| path.exists()) else {
+            return;
+        };
+        let name = file_name
+            .strip_suffix(".torrent")
+            .unwrap_or(file_name)
+            .to_owned();
+        match self.preferences.borrow().torrent_files.as_str() {
+            LOAD => self.load_torrent_file(path, name),
+            ASK => {
+                let this = self.this();
+                self.offer(
+                    t!("Torrent gefunden"),
+                    &t!(
+                        "{} ist eine Torrent-Datei. Soll Atoll laden, was darin steht?",
+                        name
+                    ),
+                    t!("Torrent laden"),
+                    move || {
+                        if let Some(browser) = this.upgrade() {
+                            browser.load_torrent_file(path, name);
+                        }
+                    },
+                );
+            }
+            _ => {}
+        }
+    }
+
+    /// Reads a torrent file that lies on the disk and takes it on.
+    pub(in crate::browser) fn load_torrent_file(&self, path: PathBuf, name: String) {
+        match std::fs::read(&path) {
+            Ok(bytes) => self.add_torrent(Source::File(bytes), name),
+            Err(error) => self.show_toast(&t!("Die Torrent-Datei kam nicht an: {}", error)),
+        }
+    }
+
     /// Fills the torrent part of the settings page.
     pub(in crate::browser) fn show_torrent_settings(&self) {
         use slint::{ComponentHandle, ModelRc, SharedString, VecModel};
@@ -375,6 +423,11 @@ impl Browser {
         let preferences = self.preferences.borrow();
         state.set_torrent_route(i32::from(preferences.torrent_route == THROUGH_DEVICE));
         state.set_torrent_upload(preferences.torrent_upload);
+        state.set_torrent_files(match preferences.torrent_files.as_str() {
+            LOAD => 1,
+            ASK => 0,
+            _ => 2,
+        });
         let chosen = preferences.torrent_device.clone();
         drop(preferences);
         let devices = atoll_torrent::devices();
@@ -437,6 +490,20 @@ impl Browser {
             |preferences| preferences.torrent_route = route.to_owned(),
         );
         self.rebuild_torrent_session();
+    }
+
+    /// Settings: what happens with a torrent file that was downloaded.
+    pub(in crate::browser) fn set_torrent_files(&self, choice: i32) {
+        let choice = match choice {
+            1 => LOAD,
+            2 => "keep",
+            _ => ASK,
+        };
+        self.update_preference(
+            crate::browser::preferences::PreferenceKey::TorrentFiles,
+            |preferences| preferences.torrent_files = choice.to_owned(),
+        );
+        self.for_all_windows(Browser::show_torrent_settings);
     }
 
     /// Settings: switches giving pieces back to the swarm on or off.

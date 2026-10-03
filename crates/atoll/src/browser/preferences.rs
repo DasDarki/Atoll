@@ -119,6 +119,8 @@ pub struct Preferences {
     pub torrent_device: String,
     /// Whether Atoll gives pieces back to the swarm while a torrent loads.
     pub torrent_upload: bool,
+    /// What happens with a torrent file that was downloaded: `ask`, `load` or `keep`.
+    pub torrent_files: String,
     /// Hides the cookie banners the filter list knows.
     pub cookie_banners_hide: bool,
     /// Answers the cookie banners Atoll recognises with a refusal.
@@ -171,6 +173,7 @@ pub enum PreferenceKey {
     TorrentRoute,
     TorrentDevice,
     TorrentUpload,
+    TorrentFiles,
 }
 
 impl PreferenceKey {
@@ -207,6 +210,7 @@ impl PreferenceKey {
             PreferenceKey::TorrentRoute => "torrent_route",
             PreferenceKey::TorrentDevice => "torrent_device",
             PreferenceKey::TorrentUpload => "torrent_upload",
+            PreferenceKey::TorrentFiles => "torrent_files",
         }
     }
 }
@@ -239,6 +243,7 @@ impl Default for Preferences {
             torrent_route: "vpn".to_owned(),
             torrent_device: String::new(),
             torrent_upload: true,
+            torrent_files: "ask".to_owned(),
             archive_suggestion_weeks: DEFAULT_ARCHIVE_SUGGESTION_WEEKS,
             memory_limit_enabled: true,
             memory_limit_gb: DEFAULT_MEMORY_LIMIT_GB,
@@ -309,6 +314,7 @@ impl Preferences {
             torrent_route: text(PreferenceKey::TorrentRoute).unwrap_or(defaults.torrent_route),
             torrent_device: text(PreferenceKey::TorrentDevice).unwrap_or(defaults.torrent_device),
             torrent_upload: flag(PreferenceKey::TorrentUpload, defaults.torrent_upload),
+            torrent_files: text(PreferenceKey::TorrentFiles).unwrap_or(defaults.torrent_files),
             archive_suggestion_weeks: text(PreferenceKey::ArchiveSuggestionWeeks)
                 .and_then(|weeks| weeks.parse::<u32>().ok())
                 .map_or(defaults.archive_suggestion_weeks, |weeks| {
@@ -368,6 +374,7 @@ impl Preferences {
             PreferenceKey::TorrentRoute => self.torrent_route.clone(),
             PreferenceKey::TorrentDevice => self.torrent_device.clone(),
             PreferenceKey::TorrentUpload => flag(self.torrent_upload),
+            PreferenceKey::TorrentFiles => self.torrent_files.clone(),
             PreferenceKey::ArchiveSuggestionWeeks => self.archive_suggestion_weeks.to_string(),
             PreferenceKey::MemoryLimitEnabled => flag(self.memory_limit_enabled),
             PreferenceKey::MemoryLimitGb => self.memory_limit_gb.to_string(),
@@ -435,6 +442,7 @@ mod tests {
             torrent_route: "device".to_owned(),
             torrent_device: "wg0".to_owned(),
             torrent_upload: false,
+            torrent_files: "load".to_owned(),
             archive_suggestion_weeks: 9,
             memory_limit_enabled: false,
             memory_limit_gb: 12,
@@ -468,6 +476,7 @@ mod tests {
             PreferenceKey::TorrentRoute,
             PreferenceKey::TorrentDevice,
             PreferenceKey::TorrentUpload,
+            PreferenceKey::TorrentFiles,
             PreferenceKey::ArchiveSuggestionWeeks,
             PreferenceKey::MemoryLimitEnabled,
             PreferenceKey::MemoryLimitGb,

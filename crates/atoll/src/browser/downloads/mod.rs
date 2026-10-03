@@ -155,6 +155,9 @@ impl Browser {
                     path: entry.path.clone(),
                 });
             }
+            if status == DownloadStatus::Complete && entry.kind == DownloadKind::File {
+                self.torrent_file_downloaded(entry.path.as_deref(), &entry.file_name);
+            }
             match status {
                 DownloadStatus::Complete => {
                     self.show_toast(&t!("Download abgeschlossen: {}", entry.file_name))

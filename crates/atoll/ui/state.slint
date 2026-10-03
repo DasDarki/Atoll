@@ -370,6 +370,8 @@ export global SettingsState {
     in property <[string]> torrent-devices;
     in-out property <int> torrent-device;
     in-out property <bool> torrent-upload;
+    /// 0 fragen, 1 sofort laden, 2 nur die Datei behalten.
+    in-out property <int> torrent-files;
     in property <string> torrent-status;
     callback torrent-device-chosen(int);
 

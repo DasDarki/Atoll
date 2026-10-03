@@ -199,6 +199,7 @@ impl Browser {
             }
             "torrent-route" => self.set_torrent_route(state.get_torrent_route() == 1),
             "torrent-upload" => self.set_torrent_upload(state.get_torrent_upload()),
+            "torrent-files" => self.set_torrent_files(state.get_torrent_files()),
             "cookie-banners-hide" => {
                 self.set_hide_cookie_banners(state.get_cookie_banners_hide());
             }
