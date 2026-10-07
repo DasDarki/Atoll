@@ -19,6 +19,10 @@ impl Browser {
     /// Shows `tab`, waking its engine instance if it was sleeping.
     pub fn activate_tab(&self, tab: TabId) {
         let already_active = self.session.borrow().active_tab == Some(tab);
+        // The page being left is finished, which is the moment to read what it shows.
+        if let Some(leaving) = self.session.borrow().active_tab.filter(|_| !already_active) {
+            self.capture_page_text(leaving);
+        }
         let (blank, workspace) = {
             let mut session = self.session.borrow_mut();
             let Some(record) = session.tab(tab) else {
@@ -161,6 +165,7 @@ impl Browser {
     }
 
     pub fn close_tab(&self, tab: TabId) {
+        self.forget_page_text(tab);
         let (successor, was_active, closed) = {
             let session = self.session.borrow();
             let Some(record) = session.tab(tab) else {

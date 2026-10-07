@@ -81,6 +81,9 @@ impl Browser {
         let session = self.session_of(tab);
         match engine.create_view_in(&record.url, self.geometry.get(), false, session) {
             Ok(view) => {
+                // The way to the page is opened at once: what a page shows can only be read
+                // through it, and it has to be there before the page is loaded.
+                view.start_bridge();
                 if session == atoll_engine::Session::Normal {
                     // Extensions stay out of private pages.
                     self.plugin_prepare_view(&view);

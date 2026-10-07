@@ -223,6 +223,21 @@ fn connect_overlays(window: &AppWindow, browser: &Rc<Browser>) {
     let state = window.global::<OverlayState>();
     on!(state, on_site_info_close, browser, |target| target
         .close_site_info());
+    on!(state, on_page_search_close, browser, |target| target
+        .close_page_search());
+    on!(state, on_page_search_edited, browser, |target, text| target
+        .page_search_edited(&text));
+    on!(state, on_page_search_move, browser, |target, by| target
+        .page_search_move(by));
+    on!(state, on_page_search_activate, browser, |target, index| {
+        target.page_search_activate(index)
+    });
+    on!(
+        state,
+        on_page_search_in_pages_changed,
+        browser,
+        |target, inside| target.page_search_in_pages(inside)
+    );
     on!(state, on_shield_close, browser, |target| target
         .close_shield());
     on!(state, on_shield_scope_chosen, browser, |target, index| {

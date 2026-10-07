@@ -54,6 +54,8 @@ enum Pending {
         frame: String,
         script: Option<(ScriptId, String)>,
     },
+    /// The frames of a page that was already loaded when the bridge started.
+    Frames,
     /// Something whose answer only matters if it failed.
     Quiet,
 }
@@ -151,6 +153,12 @@ pub(crate) fn start(bridge: &mut PageBridge, binding: &str) -> Outgoing {
         bridge.pending.insert(id, Pending::Quiet);
         messages.push(message(id, method, params));
     }
+    // A page that was already loaded sends no `Page.frameNavigated` any more, so its frames are
+    // asked for once. Without this nothing could be run in a page the bridge came to late.
+    let id = bridge.message_id();
+    bridge.pending.insert(id, Pending::Frames);
+    messages.push(message(id, "Page.getFrameTree", json!({})));
+
     let source = bridge_script(binding);
     for world in [ScriptWorld::Isolated, ScriptWorld::Page] {
         let id = bridge.message_id();
@@ -373,6 +381,17 @@ fn answered(bridge: &mut PageBridge, id: i64, value: &Value) -> Incoming {
             }
             Incoming::Ignored
         }
+        Pending::Frames => {
+            if let Some(frame) = value.pointer("/result/frameTree/frame")
+                && let Some(id) = frame.get("id").and_then(Value::as_str)
+            {
+                bridge.main = Some(id.to_owned());
+                if let Some(url) = frame.get("url").and_then(Value::as_str) {
+                    bridge.urls.insert(id.to_owned(), url.to_owned());
+                }
+            }
+            Incoming::Ignored
+        }
         Pending::Script(request) => Incoming::Script {
             request,
             result: script_result(value, error),
@@ -580,6 +599,31 @@ mod tests {
     }
 
     #[test]
+    fn the_frames_of_a_page_that_was_already_loaded_are_learned() {
+        let mut bridge = PageBridge::default();
+        let out = start(&mut bridge, "atollSend1");
+        let asking = out
+            .messages
+            .iter()
+            .find(|message| method_of(message) == "Page.getFrameTree")
+            .map(|message| id_of(message))
+            .expect("the frames are asked for");
+        assert_eq!(bridge.main, None, "nothing is known before the answer");
+
+        let answer = json!({
+            "id": asking,
+            "result": { "frameTree": { "frame": { "id": "FRAME1", "url": "https://example.org/" } } }
+        })
+        .to_string();
+        receive(&mut bridge, &answer);
+        assert_eq!(bridge.main.as_deref(), Some("FRAME1"));
+        assert_eq!(
+            bridge.urls.get("FRAME1").map(String::as_str),
+            Some("https://example.org/")
+        );
+    }
+
+    #[test]
     fn the_first_messages_set_up_the_bridge() {
         let mut bridge = PageBridge::default();
         let out = start(&mut bridge, "atollSend1");
@@ -595,14 +639,16 @@ mod tests {
                 "Page.enable",
                 "Runtime.addBinding",
                 "Runtime.addBinding",
+                // A page that was already loaded has to be asked for its frames, see `start`.
+                "Page.getFrameTree",
                 "Page.addScriptToEvaluateOnNewDocument",
                 "Page.addScriptToEvaluateOnNewDocument",
             ]
         );
         assert!(out.messages[3].contains("\"executionContextName\":\"atoll\""));
-        assert!(out.messages[4].contains("\"worldName\":\"atoll\""));
+        assert!(out.messages[5].contains("\"worldName\":\"atoll\""));
         assert!(
-            !out.messages[5].contains("worldName"),
+            !out.messages[6].contains("worldName"),
             "the page world has no name"
         );
         assert!(

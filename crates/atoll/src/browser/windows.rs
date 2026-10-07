@@ -493,6 +493,7 @@ impl WindowManager {
             browser.watch_tor();
             browser.watch_vpn();
             browser.watch_torrents();
+            browser.capture_settled_pages();
         }
         if events.is_empty() {
             return;

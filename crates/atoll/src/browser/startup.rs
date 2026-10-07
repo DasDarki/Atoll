@@ -5,6 +5,8 @@ use super::Browser;
 impl Browser {
     /// Shows the stored session. Only the database is read, no engine instance is created yet.
     pub(super) fn show_session(&self) {
+        // Pages of tabs that are not there any more have nothing to be searched for.
+        self.forget_closed_page_texts();
         self.restore_layout();
         self.restore_dev_tools_layout();
         self.show_bookmarks();

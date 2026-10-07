@@ -45,6 +45,8 @@ impl Browser {
 
     /// Loads `url` in `tab`, which is where navigating ends up once the address is settled.
     pub(super) fn load_in_tab(&self, tab: TabId, url: &str) {
+        // What the page shows is read before it is replaced.
+        self.capture_page_text(tab);
         let url = url.to_owned();
         let blank = self
             .session

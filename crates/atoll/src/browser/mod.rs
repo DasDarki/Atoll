@@ -19,6 +19,7 @@ mod opera;
 mod organize;
 mod overlays;
 mod page;
+mod pages;
 mod palette;
 mod passwords;
 mod plugins;
@@ -70,6 +71,7 @@ use memory::MemoryWatcher;
 use opera::OperaImport;
 use overlays::DialogQueue;
 use page::PageState;
+use pages::PageSearch;
 use palette::PaletteState;
 use passwords::{PasswordPopup, PasswordVault, PendingFill};
 use plugins::{OpenPanel, Plugins};
@@ -179,6 +181,7 @@ pub struct Browser {
     /// The same for the VPN of the user.
     vpn_status: RefCell<Option<atoll_vpn::Status>>,
     torrents: RefCell<TorrentSession>,
+    pages: RefCell<PageSearch>,
     history: RefCell<HistoryView>,
     opera: RefCell<OperaImport>,
     island_drag: RefCell<IslandDrag>,
@@ -249,6 +252,7 @@ impl Browser {
             vpn: shared.vpn.clone(),
             vpn_status: RefCell::default(),
             torrents: RefCell::default(),
+            pages: RefCell::default(),
             history: RefCell::default(),
             opera: RefCell::default(),
             island_drag: RefCell::default(),

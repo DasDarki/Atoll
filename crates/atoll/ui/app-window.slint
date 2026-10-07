@@ -20,6 +20,7 @@ import { UploadPicker } from "overlays/upload-picker.slint";
 import { Toast } from "overlays/toast.slint";
 import { SuggestionList } from "overlays/suggestion-list.slint";
 import { CommandPalette } from "overlays/command-palette.slint";
+import { PageSearch } from "overlays/page-search.slint";
 import { FolderPopup } from "overlays/folder-popup.slint";
 import { BookmarkEditor } from "overlays/bookmark-editor.slint";
 import { BookmarkManager } from "overlays/bookmark-manager.slint";
@@ -232,6 +233,11 @@ export component AppWindow inherits Window {
     }
 
     if OverlayState.downloads-visible : DownloadsPanel {
+        width: root.width;
+        height: root.height;
+    }
+
+    if OverlayState.page-search-visible : PageSearch {
         width: root.width;
         height: root.height;
     }

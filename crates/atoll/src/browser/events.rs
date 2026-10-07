@@ -89,6 +89,9 @@ impl Browser {
             EngineEvent::MainFrameLoaded { view, http_status } => {
                 self.restore_scroll(view);
                 self.page_loaded(view);
+                if let Some(tab) = self.tab_of(view) {
+                    self.page_will_settle(tab);
+                }
                 if matches!(http_status, 404 | 410)
                     && let Some(tab) = self.tab_of(view)
                 {
@@ -315,7 +318,9 @@ impl Browser {
                 request,
                 result,
             } => {
-                self.plugins.script_finished(view, request, result);
+                if !self.page_text_arrived(view, request, &result) {
+                    self.plugins.script_finished(view, request, result);
+                }
                 Effect::NONE
             }
             EngineEvent::PageMessage {

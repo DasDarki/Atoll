@@ -44,6 +44,7 @@ enum Command {
     NewPrivateTab,
     NewTorTab,
     OpenShield,
+    SearchPages,
     OpenArchivedPage,
     ImportFromOpera,
     OpenDownloadFolder,
@@ -520,6 +521,12 @@ impl Browser {
                 t!("archiv wayback kopie alte fassung"),
             ),
             (
+                Command::SearchPages,
+                t!("Seiten dieses Arbeitsbereichs durchsuchen").to_owned(),
+                t!("Strg+Umschalt+F"),
+                t!("suchen seiten tabs inhalt text finden"),
+            ),
+            (
                 Command::OpenHistory,
                 t!("Verlauf").to_owned(),
                 t!("Strg+H"),
@@ -865,6 +872,7 @@ impl Browser {
                 self.set_adblock_enabled(enabled);
             }
             Command::OpenShield => self.show_shield(),
+            Command::SearchPages => self.open_page_search(),
             Command::UpdateFilterLists => self.update_filter_lists(),
             Command::Plugin(plugin, command) => self.plugins.run_command(&plugin, &command),
             Command::PluginPanel(plugin, panel) => self.plugins.show_panel(&plugin, &panel),

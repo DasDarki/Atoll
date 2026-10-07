@@ -1,0 +1,212 @@
+import { ListView } from "std-widgets.slint";
+import { Theme } from "../theme.slint";
+import { OverlayState } from "../state.slint";
+import { Toggle } from "../widgets/toggle.slint";
+
+component HitRow inherits Rectangle {
+    in property <string> title;
+    in property <string> url;
+    in property <string> snippet;
+    in property <bool> selected;
+    in property <length> row-height: 44px;
+    callback activated();
+
+    height: root.row-height;
+    border-radius: Theme.radius-small;
+    background: root.selected ? Theme.selected : touch.has-hover ? Theme.hover : transparent;
+
+    HorizontalLayout {
+        padding-left: 12px;
+        padding-right: 12px;
+        spacing: 12px;
+
+        Image {
+            source: @image-url("../icons/globe.svg");
+            width: 15px;
+            height: 15px;
+            y: 15px;
+            colorize: Theme.text-faint;
+        }
+
+        VerticalLayout {
+            alignment: center;
+            spacing: 1px;
+            horizontal-stretch: 1;
+            Text {
+                text: root.title;
+                color: Theme.text;
+                font-size: Theme.font-normal;
+                overflow: elide;
+            }
+            Text {
+                text: root.url;
+                color: Theme.text-faint;
+                font-size: Theme.font-small;
+                overflow: elide;
+            }
+            if root.snippet != "" : Text {
+                text: root.snippet;
+                color: Theme.accent;
+                font-size: Theme.font-small;
+                overflow: elide;
+            }
+        }
+    }
+
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.activated(); }
+    }
+}
+
+export component PageSearch inherits Rectangle {
+    background: #05060c80;
+
+    property <int> selected: OverlayState.page-search-index;
+    property <length> row-height: OverlayState.page-search-in-pages ? 60px : 44px;
+    changed selected => {
+        let top = self.selected * self.row-height;
+        if (top < -list.content-y) {
+            list.content-y = -top;
+        } else if (top + self.row-height > -list.content-y + list.visible-height) {
+            list.content-y = -(top + self.row-height - list.visible-height);
+        }
+    }
+
+    TouchArea {
+        clicked => { OverlayState.page-search-close(); }
+    }
+
+    card := Rectangle {
+        x: (parent.width - self.width) / 2;
+        y: 70px;
+        width: min(680px, parent.width - 40px);
+        height: layout.preferred-height;
+        border-radius: Theme.radius-large;
+        background: Theme.surface;
+        border-width: 1px;
+        border-color: Theme.border-strong;
+        drop-shadow-blur: 40px;
+        drop-shadow-color: #000000c0;
+        clip: true;
+
+        TouchArea { }
+
+        layout := VerticalLayout {
+            Rectangle {
+                height: 52px;
+                HorizontalLayout {
+                    padding-left: 18px;
+                    padding-right: 18px;
+                    spacing: 12px;
+                    Image {
+                        source: @image-url("../icons/search.svg");
+                        width: 16px;
+                        height: 16px;
+                        y: (parent.height - self.height) / 2;
+                        colorize: Theme.text-faint;
+                    }
+                    Rectangle {
+                        horizontal-stretch: 1;
+                        clip: true;
+                        Text {
+                            x: 0;
+                            width: parent.width;
+                            text: @tr("Seiten dieses Arbeitsbereichs durchsuchen");
+                            visible: input.text == "";
+                            color: Theme.text-faint;
+                            font-size: Theme.font-large;
+                            vertical-alignment: center;
+                        }
+                        input := TextInput {
+                            x: 0;
+                            width: parent.width;
+                            height: parent.height;
+                            text <=> OverlayState.page-search-text;
+                            color: Theme.text;
+                            font-size: Theme.font-large;
+                            vertical-alignment: center;
+                            single-line: true;
+                            selection-background-color: #7c6cff66;
+                            init => { self.focus(); }
+                            edited => { OverlayState.page-search-edited(self.text); }
+                            accepted => { OverlayState.page-search-activate(-1); }
+                            key-pressed(event) => {
+                                if (event.text == Key.DownArrow) {
+                                    OverlayState.page-search-move(1);
+                                    return accept;
+                                }
+                                if (event.text == Key.UpArrow) {
+                                    OverlayState.page-search-move(-1);
+                                    return accept;
+                                }
+                                if (event.text == Key.Escape) {
+                                    OverlayState.page-search-close();
+                                    return accept;
+                                }
+                                return reject;
+                            }
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                height: 1px;
+                background: Theme.border;
+            }
+
+            Rectangle {
+                height: 40px;
+                HorizontalLayout {
+                    padding-left: 18px;
+                    padding-right: 18px;
+                    spacing: 10px;
+                    VerticalLayout {
+                        alignment: center;
+                        horizontal-stretch: 1;
+                        Text {
+                            text: @tr("Auf den Seiten suchen");
+                            color: Theme.text-muted;
+                            font-size: Theme.font-small + 1px;
+                        }
+                    }
+                    VerticalLayout {
+                        alignment: center;
+                        Toggle {
+                            checked <=> OverlayState.page-search-in-pages;
+                            toggled => { OverlayState.page-search-in-pages-changed(self.checked); }
+                        }
+                    }
+                }
+            }
+
+            if OverlayState.page-search-hint != "" : Text {
+                height: 56px;
+                text: OverlayState.page-search-hint;
+                color: Theme.text-faint;
+                font-size: Theme.font-normal;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+
+            list := ListView {
+                visible: OverlayState.page-search-items.length > 0;
+                height: self.visible ? min(OverlayState.page-search-items.length * root.row-height + 12px, 7 * root.row-height + 12px) : 0px;
+                for hit[index] in OverlayState.page-search-items : Rectangle {
+                    height: root.row-height;
+                    HitRow {
+                        x: 6px;
+                        width: parent.width - 12px;
+                        row-height: root.row-height;
+                        title: hit.title;
+                        url: hit.url;
+                        snippet: hit.snippet;
+                        selected: index == OverlayState.page-search-index;
+                        activated => { OverlayState.page-search-activate(index); }
+                    }
+                }
+            }
+        }
+    }
+}

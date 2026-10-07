@@ -238,6 +238,9 @@ msgstr "Back to what Atoll does anyway"
 msgid "Auf Seite suchen"
 msgstr "Find on page"
 
+msgid "Auf den Seiten suchen"
+msgstr "Search inside the pages"
+
 msgid "Auf dieser Seite wurde kein Video gefunden"
 msgstr "No video found on this page"
 
@@ -1477,6 +1480,9 @@ msgstr "Page not found"
 msgid "Seite verlassen?"
 msgstr "Leave page?"
 
+msgid "Seiten dieses Arbeitsbereichs durchsuchen"
+msgstr "Search the pages of this workspace"
+
 msgid "Sidebar anzeigen"
 msgstr "Show sidebar"
 
@@ -1585,6 +1591,9 @@ msgstr "Ctrl+Shift+B"
 msgid "Strg+Umschalt+B blendet sie jederzeit ein oder aus."
 msgstr "Ctrl+Shift+B shows and hides it at any time."
 
+msgid "Strg+Umschalt+F"
+msgstr "Ctrl+Shift+F"
+
 msgid "Strg+Umschalt+L"
 msgstr "Ctrl+Shift+L"
 
@@ -1656,6 +1665,9 @@ msgstr "Text file (.txt)"
 
 msgid "Textdateien"
 msgstr "Text files"
+
+msgid "Tippe, um unter den Seiten dieses Arbeitsbereichs zu suchen"
+msgstr "Type to search among the pages of this workspace"
 
 msgid "Tor"
 msgstr "Tor"
@@ -2052,6 +2064,9 @@ msgstr "protection adblock popups redirects tabs"
 
 msgid "suche einstellung"
 msgstr "search setting"
+
+msgid "suchen seiten tabs inhalt text finden"
+msgstr "search pages tabs content text find"
 
 msgid "tab öffnen"
 msgstr "open tab"

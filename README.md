@@ -164,6 +164,19 @@ saved tabs therefore cost nothing at startup.
   the settings say so, or not at all. A second switch extends this to pages that answer that they
   are not there. The palette finds the copy of any page on request. Asking sends the address to
   archive.org, so it never happens in a private tab.
+- **Searching the pages of a workspace** (`Ctrl+Shift+F`, or the palette): one field, and a switch
+  for how deep it looks. Switched off it searches what a tab knows anyway, its address and its
+  title, which costs nothing and answers while the user types. Switched on it searches what the
+  pages show, with the sentence the words were found in next to each hit, and a hit jumps to that
+  tab - a sleeping one as well, because what it showed was read before it went to sleep.
+  What is read is the rendered text of a page and nothing else: no markup, no class names, and
+  nothing that is hidden, because the page is asked for `innerText` in a world of its own. It is
+  read when the page is left - at its first load a page that builds itself has nothing to show
+  yet - and five seconds after it finished loading, so a tab that is never left is searchable
+  too. One row per open tab, at most 64 KB, replaced when the page is left, thrown away with the
+  tab and cleaned up at startup, so nothing piles up; SQLite's full text index does the searching,
+  so a search costs the matches and not the pages, and nothing of it is held in memory. Private
+  tabs are left out of all of it.
 - **History** (`Ctrl+H`): the visited pages by day, with a search of its own, a way to forget a
   single page and one to throw the whole history away. The address bar and the palette search the
   same pages, the view is the place that shows all of them.
