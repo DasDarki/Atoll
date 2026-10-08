@@ -172,8 +172,9 @@ saved tabs therefore cost nothing at startup.
   What is read is the rendered text of a page and nothing else: no markup, no class names, and
   nothing that is hidden, because the page is asked for `innerText` in a world of its own. It is
   read when the page is left - at its first load a page that builds itself has nothing to show
-  yet - and five seconds after it finished loading, so a tab that is never left is searchable
-  too. One row per open tab, at most 64 KB, replaced when the page is left, thrown away with the
+  yet - five seconds after it finished loading, so a tab that is never left is searchable too,
+  and once more when Atoll closes, so what a page became is what is remembered. What is typed
+  into a field is not part of it, an editor inside a page is. One row per open tab, at most 64 KB, replaced when the page is left, thrown away with the
   tab and cleaned up at startup, so nothing piles up; SQLite's full text index does the searching,
   so a search costs the matches and not the pages, and nothing of it is held in memory. Private
   tabs are left out of all of it.

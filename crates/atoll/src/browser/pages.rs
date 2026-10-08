@@ -303,6 +303,20 @@ impl Browser {
         true
     }
 
+    /// Before Atoll closes: asks every page that is still open what it shows right now. A page
+    /// that was never left would otherwise be remembered as it was a moment after it loaded.
+    pub(super) fn capture_open_pages(&self) {
+        let tabs = self.views.borrow().open_tabs();
+        for tab in tabs {
+            self.capture_page_text(tab);
+        }
+    }
+
+    /// Whether answers are still on their way.
+    pub(super) fn waits_for_page_text(&self) -> bool {
+        !self.pages.borrow().asked.is_empty()
+    }
+
     /// A page finished loading. It is read once it had a moment to build itself.
     pub(super) fn page_will_settle(&self, tab: TabId) {
         if self.is_private(tab) {

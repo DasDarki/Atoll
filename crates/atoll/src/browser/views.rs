@@ -94,6 +94,11 @@ impl ViewRegistry {
         self.views.values()
     }
 
+    /// Every tab of this window that has an engine instance.
+    pub fn open_tabs(&self) -> Vec<TabId> {
+        self.views.keys().copied().collect()
+    }
+
     pub fn contains(&self, tab: TabId) -> bool {
         self.views.contains_key(&tab)
     }

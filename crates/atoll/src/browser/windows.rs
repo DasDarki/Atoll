@@ -551,6 +551,7 @@ impl WindowManager {
             browser.stop_clipboard_bridge();
             browser.store_scroll_positions();
         }
+        self.keep_what_the_pages_show(&browsers);
         for (_, entry) in self.shared.views.borrow_mut().drain() {
             entry.view.close();
         }
@@ -559,7 +560,44 @@ impl WindowManager {
         }
         self.windows.borrow_mut().clear();
     }
+
+    /// Asks every page that is still open what it shows and waits a moment for the answers, so
+    /// a page that was never left is remembered as it was last seen and not as it loaded.
+    fn keep_what_the_pages_show(&self, browsers: &[Rc<Browser>]) {
+        let engine = self.shared.engine.borrow();
+        let Some(engine) = engine.as_ref() else {
+            return;
+        };
+        for browser in browsers {
+            browser.capture_open_pages();
+        }
+        let until = Instant::now() + LAST_WORD;
+        while Instant::now() < until && browsers.iter().any(|browser| browser.waits_for_page_text())
+        {
+            engine.do_message_loop_work();
+            for event in engine.drain_events() {
+                let EngineEvent::ScriptResult {
+                    view,
+                    request,
+                    result,
+                } = event
+                else {
+                    continue;
+                };
+                for browser in browsers {
+                    if browser.page_text_arrived(view, request, &result) {
+                        break;
+                    }
+                }
+            }
+            std::thread::sleep(Duration::from_millis(2));
+        }
+    }
 }
+
+/// How long the pages get to answer what they show while Atoll is closing. A page answers in a
+/// few milliseconds; this is the point at which Atoll stops waiting for one that does not.
+const LAST_WORD: Duration = Duration::from_millis(600);
 
 /// The logical size of a window opened from `browser`'s window.
 fn detached_size(browser: &Browser) -> Option<(u32, u32)> {
