@@ -7,7 +7,9 @@
 //! builds itself has nothing to show yet.
 //!
 //! Only the text is kept, never the markup, and only of the open tabs: one row per tab, replaced
-//! when the page is left and thrown away with the tab. The index of the database does the
+//! when the page is left and thrown away with the tab. What the user typed into a field counts
+//! as part of the page, so the tab they typed it into can be found again - a password never
+//! does, and neither does a field that is not shown. The index of the database does the
 //! searching, so a search costs the matches and not the pages, and nothing is held in memory.
 //! Private tabs are left out of all of it, like everywhere else.
 
@@ -32,15 +34,29 @@ const SHOWN: usize = 40;
 /// itself has nothing to show at the moment it is loaded, which is why nothing is read then.
 const SETTLES_IN: Duration = Duration::from_secs(5);
 
-/// What a page shows, as the browser asks the page itself. `innerText` is what is rendered, so
-/// what is hidden, and everything that is markup, stays out by itself.
+/// What a page shows, as the browser asks the page itself.
+///
+/// `innerText` is what is rendered, so what is hidden, and everything that is markup, stays out
+/// by itself. What the user typed into a field is not part of it and is collected on top: the
+/// fields one can see, never a password and never a field that is not shown.
 const READ_THE_PAGE: &str = r#"(() => {
   const body = document.body;
   if (!body) {
     return "";
   }
-  const text = body.innerText || "";
-  return text.replace(/[\s ]+/g, " ").trim().slice(0, 65536);
+  const shown = (element) => element.getClientRects().length > 0;
+  const typed = [];
+  for (const field of document.querySelectorAll("input, textarea")) {
+    if (field.type === "password" || field.type === "hidden" || !shown(field)) {
+      continue;
+    }
+    const value = typeof field.value === "string" ? field.value.trim() : "";
+    if (value) {
+      typed.push(value.slice(0, 2048));
+    }
+  }
+  const text = (body.innerText || "") + (typed.length ? " " + typed.join(" ") : "");
+  return text.replace(/[\s\u00a0]+/g, " ").trim().slice(0, 65536);
 })()"#;
 
 /// The search over the pages of the workspace.
