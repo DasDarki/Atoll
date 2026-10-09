@@ -69,6 +69,11 @@ export global BrowserState {
     in property <bool> find-visible;
     in property <string> find-result;
 
+    /// Was die Pille sagt, die zeigt, dass die Seite schon in einem anderen Tab offen ist.
+    /// Leer, wenn es keinen solchen Tab gibt.
+    in property <string> also-open;
+    callback show-other-tab();
+
     callback navigate(string);
     callback show-site-info();
     callback show-shield();

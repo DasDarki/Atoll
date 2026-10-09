@@ -6,6 +6,7 @@ mod clipboard;
 mod detach;
 mod dev_tools;
 mod downloads;
+mod duplicates;
 mod events;
 mod favicons;
 mod filter;
@@ -65,6 +66,7 @@ use bookmarks::BookmarkState;
 use clipboard::ClipboardSync;
 use dev_tools::DevToolsPresentation;
 use downloads::{Downloads, TorrentSession, VideoSearch};
+use duplicates::OpenElsewhere;
 use favicons::FaviconCache;
 use history::HistoryView;
 use memory::MemoryWatcher;
@@ -182,6 +184,8 @@ pub struct Browser {
     vpn_status: RefCell<Option<atoll_vpn::Status>>,
     torrents: RefCell<TorrentSession>,
     pages: RefCell<PageSearch>,
+    /// The other tabs that show the page of the active tab.
+    elsewhere: RefCell<OpenElsewhere>,
     history: RefCell<HistoryView>,
     opera: RefCell<OperaImport>,
     island_drag: RefCell<IslandDrag>,
@@ -256,6 +260,7 @@ impl Browser {
             history: RefCell::default(),
             opera: RefCell::default(),
             island_drag: RefCell::default(),
+            elsewhere: RefCell::default(),
             page: RefCell::default(),
             dialogs: RefCell::default(),
             context_menu: Cell::new(None),

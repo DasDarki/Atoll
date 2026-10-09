@@ -31,6 +31,21 @@ pub fn origin_of(address: &str) -> Option<String> {
     origin.is_tuple().then(|| origin.ascii_serialization())
 }
 
+/// The address without the part after `#`, which names a place inside a page and not another
+/// page. Two tabs whose addresses only differ there show the same thing.
+pub fn without_fragment(address: &str) -> String {
+    match Url::parse(address.trim()) {
+        Ok(mut parsed) => {
+            parsed.set_fragment(None);
+            String::from(parsed)
+        }
+        Err(_) => address.trim().split_once('#').map_or_else(
+            || address.trim().to_owned(),
+            |(before, _)| before.to_owned(),
+        ),
+    }
+}
+
 /// Normalises an address so that equivalent spellings compare equal.
 pub fn normalize(address: &str) -> String {
     Url::parse(address.trim())
@@ -56,6 +71,19 @@ mod tests {
             display_host("https://www.rust-lang.org"),
             Some("rust-lang.org".into())
         );
+    }
+
+    #[test]
+    fn the_place_inside_a_page_is_not_part_of_the_address() {
+        assert_eq!(
+            without_fragment("https://example.org/doc#part"),
+            "https://example.org/doc"
+        );
+        assert_eq!(
+            without_fragment("https://example.org/doc"),
+            "https://example.org/doc"
+        );
+        assert_eq!(without_fragment("about:blank#x"), "about:blank");
     }
 
     #[test]

@@ -348,3 +348,50 @@ fn private_tabs_keep_nothing_and_go_away_with_the_run() {
         "a second run finds nothing left"
     );
 }
+
+#[test]
+fn the_tabs_showing_the_same_page_are_found_across_workspaces() {
+    let storage = storage();
+    let work = storage.create_workspace("Arbeit").unwrap();
+    let home = storage.create_workspace("Privat").unwrap();
+    let desk = storage
+        .create_island(new_island(work.id, "Schreibtisch"))
+        .unwrap();
+    let couch = storage.create_island(new_island(home.id, "Sofa")).unwrap();
+    let old = storage.create_island(new_island(work.id, "Altes")).unwrap();
+
+    let here = storage
+        .create_tab(new_tab(desk.id, "https://example.org/doc"))
+        .unwrap();
+    let there = storage
+        .create_tab(new_tab(couch.id, "https://example.org/doc"))
+        .unwrap();
+    let deeper = storage
+        .create_tab(new_tab(desk.id, "https://example.org/doc#teil"))
+        .unwrap();
+    storage
+        .create_tab(new_tab(desk.id, "https://example.org/anderes"))
+        .unwrap();
+    storage
+        .create_tab(new_tab(old.id, "https://example.org/doc"))
+        .unwrap();
+    storage.archive_island(old.id, Timestamp(5)).unwrap();
+    storage
+        .create_tab(NewTab {
+            private: true,
+            ..new_tab(desk.id, "https://example.org/doc")
+        })
+        .unwrap();
+
+    let found = storage
+        .tabs_showing("https://example.org/doc", here.id)
+        .unwrap();
+    let ids: Vec<TabId> = found.iter().map(|entry| entry.tab.id).collect();
+    assert_eq!(ids, [there.id, deeper.id]);
+    assert_eq!(found[0].workspace_name, "Privat");
+
+    let nothing = storage
+        .tabs_showing("https://example.org/anderes", here.id)
+        .unwrap();
+    assert_eq!(nothing.len(), 1);
+}

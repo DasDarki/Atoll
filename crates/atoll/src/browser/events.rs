@@ -413,6 +413,10 @@ impl Browser {
             if let Err(error) = result {
                 tracing::warn!(%error, "address could not be stored");
             }
+            if changed {
+                // Another window may show this page too, or may have shown it until now.
+                self.for_other_windows(Browser::refresh_open_elsewhere);
+            }
         }
         Effect {
             sidebar: changed,

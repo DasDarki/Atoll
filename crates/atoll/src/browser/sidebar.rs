@@ -122,6 +122,12 @@ impl Browser {
                 .global::<SidebarState>()
                 .set_archive_suggestion(suggestions);
         }
+        drop(favicons);
+        drop(views);
+        drop(lifecycle);
+        drop(session);
+        // Whatever moved the tabs may have added or taken away a tab showing this page.
+        self.refresh_open_elsewhere();
     }
 
     /// The workspaces other windows show.

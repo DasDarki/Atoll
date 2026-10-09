@@ -38,6 +38,7 @@ impl Browser {
             state.set_page_video(false);
             state.set_status_text("".into());
             state.set_find_visible(false);
+            state.set_also_open("".into());
             state.set_page_frame(Image::default());
             state.set_popup_visible(false);
             *self.page.borrow_mut() = PageState::default();
@@ -98,6 +99,7 @@ impl Browser {
         self.present_popup();
         self.sync_dev_tools();
         self.update_bookmark_star();
+        self.update_open_elsewhere();
     }
 
     /// Shows the newest frame of the live view.

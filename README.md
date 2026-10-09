@@ -29,6 +29,11 @@ saved tabs therefore cost nothing at startup.
   Nothing is archived without confirmation.
 - **Quick search and command palette**: `Ctrl+K` searches the tabs of all workspaces (archived
   ones included), bookmarks and history. `Ctrl+Shift+P` or a leading `>` lists commands instead.
+- **Already open**: when the page in front of you is open in another tab, the address bar says
+  so with a pill, and a click goes there. It counts the tabs of every workspace, names the
+  workspace when the other tab lives in one of its own, and counts them when there are several;
+  clicking then walks through them in the order they were opened. Two addresses that differ only
+  after the `#` are the same page. Private tabs keep out of it, in both directions.
 - **Search the pages of the workspace**: `Ctrl+Shift+F` or the palette opens a search over every
   tab of the workspace, the sleeping ones included. By default it looks at address and title, and
   a switch in the dialog looks inside the pages as well, with the matching line next to the hit.

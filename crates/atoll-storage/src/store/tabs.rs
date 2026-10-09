@@ -50,6 +50,32 @@ pub trait TabStore: Connected {
         Ok(entries)
     }
 
+    /// The tabs of every workspace that show the page at `url`, `except` the one asking, in the
+    /// order they were opened. `url` is an address without the part after `#`, which is why an
+    /// address that only adds such a part counts as the same page. Archived islands stay out,
+    /// they are not open, and private tabs keep no address here at all.
+    fn tabs_showing(&self, url: &str, except: TabId) -> StorageResult<Vec<TabEntry>> {
+        let mut statement = self.connection().prepare_cached(&format!(
+            "SELECT {TAB_COLUMNS}, {ISLAND_COLUMNS}, workspace.name
+             FROM tab
+             JOIN island ON island.id = tab.island_id
+             JOIN workspace ON workspace.id = island.workspace_id
+             WHERE tab.private = 0 AND tab.id <> ?1 AND island.archived_at IS NULL
+               AND (tab.url = ?2 OR substr(tab.url, 1, length(?2) + 1) = ?2 || '#')
+             ORDER BY tab.id"
+        ))?;
+        let entries = statement
+            .query_map(params![except.0, url], |row| {
+                Ok(TabEntry {
+                    tab: rows::tab(row)?,
+                    island: rows::island_at(row, 10)?,
+                    workspace_name: row.get(18)?,
+                })
+            })?
+            .collect::<Result<_, _>>()?;
+        Ok(entries)
+    }
+
     /// Tabs of all active islands in a workspace, ordered by island and then by tab position.
     fn tabs_in_workspace(&self, workspace: WorkspaceId) -> StorageResult<Vec<Tab>> {
         let mut statement = self.connection().prepare_cached(&format!(

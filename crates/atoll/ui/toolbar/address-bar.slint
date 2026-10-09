@@ -143,6 +143,31 @@ export component AddressBar inherits Rectangle {
                 }
             }
 
+            if BrowserState.also-open != "" : Rectangle {
+                width: min(also-open-label.preferred-width + 16px, 190px);
+                height: 20px;
+                y: (parent.height - self.height) / 2;
+                border-radius: self.height / 2;
+                background: also-open-touch.pressed ? Theme.pressed
+                    : also-open-touch.has-hover ? Theme.accent.transparentize(0.7)
+                    : Theme.accent.transparentize(0.82);
+
+                also-open-label := Text {
+                    text: BrowserState.also-open;
+                    color: Theme.accent;
+                    font-size: Theme.font-small;
+                    font-weight: 600;
+                    vertical-alignment: center;
+                    horizontal-alignment: center;
+                    overflow: elide;
+                }
+
+                also-open-touch := TouchArea {
+                    mouse-cursor: pointer;
+                    clicked => { BrowserState.show-other-tab(); }
+                }
+            }
+
             Rectangle {
                 clip: true;
                 horizontal-stretch: 1;

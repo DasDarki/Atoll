@@ -504,6 +504,7 @@ impl Browser {
         let active_before = self.session.borrow().active_tab;
         self.reload_session_here();
         let active_now = self.session.borrow().active_tab;
+        self.refresh_open_elsewhere();
         if active_before.is_some() && active_now.is_none() {
             self.show_remembered_tab();
         } else {

@@ -1468,6 +1468,15 @@ msgstr "Close"
 msgid "Schläft, wird beim Öffnen geladen"
 msgstr "Asleep, loads when opened"
 
+msgid "Schon offen"
+msgstr "Already open"
+
+msgid "Schon offen in „{}“"
+msgstr "Already open in \"{}\""
+
+msgid "Schon {}x offen"
+msgstr "Already open {} times"
+
 msgid "Schutz"
 msgstr "Protection"
 

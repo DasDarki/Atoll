@@ -149,6 +149,8 @@ fn connect_browser(window: &AppWindow, browser: &Rc<Browser>) {
         .show_site_info());
     on!(state, on_show_shield, browser, |target| target
         .show_shield());
+    on!(state, on_show_other_tab, browser, |target| target
+        .show_other_tab());
     on!(state, on_show_passwords, browser, |target| target
         .show_passwords());
     on!(state, on_download_video, browser, |target| target
