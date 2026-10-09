@@ -39,13 +39,21 @@ wrap_request_handler! {
             frame: Option<&mut Frame>,
             request: Option<&mut Request>,
             user_gesture: c_int,
-            _is_redirect: c_int,
+            is_redirect: c_int,
         ) -> c_int {
             let Some(frame) = frame else { return 0 };
             if frame.is_main() == 0 {
                 return 0;
             }
-            let asked_for = registry::with_view(self.view, |_, view| view.asked_for.replace(false));
+            let asked_for = registry::with_view(self.view, |_, view| {
+                if is_redirect != 0 {
+                    // Where the first hop was asked for, so is where it leads.
+                    return view.asked_for_underway.get();
+                }
+                let asked_for = view.asked_for.replace(false);
+                view.asked_for_underway.set(asked_for);
+                asked_for
+            });
             if asked_for != Some(false) {
                 return 0;
             }

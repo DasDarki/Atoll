@@ -46,6 +46,10 @@ pub(crate) struct ViewState {
     /// Whether the next navigation of the main frame is one Atoll itself asked for. Such a
     /// navigation is never stopped, whatever a page is otherwise allowed to do.
     pub(crate) asked_for: Cell<bool>,
+    /// Whether the navigation under way is that one. A server that answers an address with a
+    /// redirect, as every site does that sends http to https, continues the navigation the user
+    /// asked for, so the hops after the first one are theirs as well.
+    pub(crate) asked_for_underway: Cell<bool>,
     /// Requests blocked by the content filter since the page started loading. Counted on the
     /// network thread.
     pub(crate) blocked_requests: Arc<AtomicU32>,
@@ -75,6 +79,7 @@ impl ViewState {
             through_tor: Cell::new(false),
             dev_tools_frontend: Cell::new(false),
             asked_for: Cell::new(false),
+            asked_for_underway: Cell::new(false),
             blocked_requests: Arc::default(),
             activity: RefCell::default(),
             bridge: RefCell::default(),
