@@ -29,6 +29,16 @@ saved tabs therefore cost nothing at startup.
   Nothing is archived without confirmation.
 - **Quick search and command palette**: `Ctrl+K` searches the tabs of all workspaces (archived
   ones included), bookmarks and history. `Ctrl+Shift+P` or a leading `>` lists commands instead.
+- **Search the pages of the workspace**: `Ctrl+Shift+F` or the palette opens a search over every
+  tab of the workspace, the sleeping ones included. By default it looks at address and title, and
+  a switch in the dialog looks inside the pages as well, with the matching line next to the hit.
+  For that Atoll remembers what a page shows, read from the page itself: the rendered text, never
+  the markup, and only when the page is finished - when the tab is left, five seconds after it
+  loaded, and once more when Atoll closes, so an open page is remembered as it last stood. One row
+  per tab, at most 64 KB, replaced when the page is left and thrown away with the tab, searched by
+  SQLite's own index. Private tabs stay out. The settings decide whether anything is remembered at
+  all, whether what was typed into fields counts (never a password field) and whether drafts in
+  editors inside a page count, and they throw away what was remembered at any time.
 - **Address bar autocomplete**: addresses are completed inline from history and bookmarks. The
   suggestions offer open tabs to switch to, bookmarks and visited pages, ranked by how often and
   how recently they were visited.
@@ -269,6 +279,7 @@ storage).
 | `Alt+Left`, `Alt+Right` | Back, forward |
 | `Ctrl+Tab`, `Ctrl+PageDown` | Next tab, add `Shift` or use `PageUp` for the previous one |
 | `Ctrl+F` | Find on page |
+| `Ctrl+Shift+F` | Search the pages of this workspace |
 | `Ctrl+K` | Search all tabs, bookmarks and history |
 | `Ctrl+Shift+P` | Command palette |
 | `Ctrl+B` | Show or hide the sidebar |

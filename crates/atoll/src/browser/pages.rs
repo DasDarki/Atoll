@@ -37,16 +37,37 @@ const SETTLES_IN: Duration = Duration::from_secs(5);
 /// What a page shows, as the browser asks the page itself.
 ///
 /// `innerText` is what is rendered, so what is hidden, and everything that is markup, stays out
-/// by itself. What the user typed into a field is not part of it and is collected on top: the
-/// fields one can see, never a password and never a field that is not shown.
-const READ_THE_PAGE: &str = r#"(() => {
-  const body = document.body;
-  if (!body) {
-    return "";
-  }
-  const shown = (element) => element.getClientRects().length > 0;
-  const typed = [];
-  for (const field of document.querySelectorAll("input, textarea")) {
+/// by itself. The two parts the user decides about are added or left out here: what they typed
+/// into a field, and what stands in an editor inside the page.
+fn read_the_page(fields: bool, drafts: bool) -> String {
+    let editors = if drafts {
+        // Everything at once, which is what a browser is fastest at.
+        "const seen = (root) => root.innerText || \"\";".to_owned()
+    } else {
+        // Along the way to an editor the text is gathered piece by piece, so the editor itself
+        // can be passed over. Everything that holds none is taken whole.
+        r#"const editing = (element) =>
+    element.isContentEditable &&
+    !(element.parentElement && element.parentElement.isContentEditable);
+  const holdsAnEditor = (element) =>
+    element.querySelector("[contenteditable]:not([contenteditable="false"])") !== null;
+  const seen = (root) => {
+    if (editing(root)) {
+      return "";
+    }
+    if (!holdsAnEditor(root)) {
+      return root.innerText || "";
+    }
+    let gathered = "";
+    for (const child of root.children) {
+      gathered += " " + seen(child);
+    }
+    return gathered;
+  };"#
+        .to_owned()
+    };
+    let typed = if fields {
+        r#"for (const field of document.querySelectorAll("input, textarea")) {
     if (field.type === "password" || field.type === "hidden" || !shown(field)) {
       continue;
     }
@@ -54,10 +75,25 @@ const READ_THE_PAGE: &str = r#"(() => {
     if (value) {
       typed.push(value.slice(0, 2048));
     }
-  }
-  const text = (body.innerText || "") + (typed.length ? " " + typed.join(" ") : "");
+  }"#
+    } else {
+        ""
+    };
+    format!(
+        r#"(() => {{
+  const body = document.body;
+  if (!body) {{
+    return "";
+  }}
+  const shown = (element) => element.getClientRects().length > 0;
+  {editors}
+  const typed = [];
+  {typed}
+  const text = seen(body) + (typed.length ? " " + typed.join(" ") : "");
   return text.replace(/[\s\u00a0]+/g, " ").trim().slice(0, 65536);
-})()"#;
+}})()"#
+    )
+}
 
 /// The search over the pages of the workspace.
 #[derive(Default)]
@@ -89,12 +125,14 @@ impl Browser {
     pub fn open_page_search(&self) {
         let Some(window) = self.window() else { return };
         self.dismiss_suggestions();
+        let remembers = self.preferences.borrow().page_text_enabled;
         {
             let mut search = self.pages.borrow_mut();
             search.visible = true;
             search.text.clear();
             search.index = 0;
-            search.in_pages = self.preferences.borrow().search_in_pages;
+            // Without anything remembered there is nothing to look inside of.
+            search.in_pages = remembers && self.preferences.borrow().search_in_pages;
         }
         // The page in front of the user is the one most likely to be searched, so it is read
         // now; everything else was read when it was left.
@@ -103,6 +141,7 @@ impl Browser {
         }
         let state = window.global::<OverlayState>();
         state.set_page_search_text("".into());
+        state.set_page_search_remembers(remembers);
         state.set_page_search_in_pages(self.pages.borrow().in_pages);
         state.set_page_search_visible(true);
         self.find_pages("");
@@ -268,6 +307,18 @@ impl Browser {
         if self.is_private(tab) {
             return;
         }
+        let (enabled, fields, drafts) = {
+            let preferences = self.preferences.borrow();
+            (
+                preferences.page_text_enabled,
+                preferences.page_text_fields,
+                preferences.page_text_drafts,
+            )
+        };
+        if !enabled {
+            return;
+        }
+        let code = read_the_page(fields, drafts);
         let asked = {
             let views = self.views.borrow();
             let Some(entry) = views.get(tab) else {
@@ -275,7 +326,7 @@ impl Browser {
             };
             entry
                 .view
-                .evaluate(READ_THE_PAGE, ScriptWorld::Isolated)
+                .evaluate(&code, ScriptWorld::Isolated)
                 .map(|script| (entry.view.id(), script))
         };
         if let Some(key) = asked {
@@ -316,7 +367,97 @@ impl Browser {
         if let Err(error) = stored {
             tracing::warn!(%error, "the text of a page could not be kept");
         }
+        // Someone who just switched something on is looking at how much is remembered.
+        self.for_all_windows(|browser| {
+            if browser
+                .window()
+                .is_some_and(|window| window.global::<crate::ui::SettingsState>().get_visible())
+            {
+                browser.show_page_search_settings();
+            }
+        });
         true
+    }
+
+    /// Settings: whether the pages are remembered at all. Switching it off throws away what
+    /// was remembered, because keeping it would be the opposite of what was asked for.
+    pub(in crate::browser) fn set_page_text_enabled(&self, remember: bool) {
+        self.update_preference(PreferenceKey::PageTextEnabled, |preferences| {
+            preferences.page_text_enabled = remember;
+        });
+        if !remember && let Err(error) = self.storage.forget_all_page_texts() {
+            tracing::warn!(%error, "what was remembered could not be thrown away");
+        }
+        self.for_all_windows(Browser::show_page_search_settings);
+        self.show_toast(if remember {
+            t!("Seiteninhalte werden wieder gemerkt, ab der nächsten Seite")
+        } else {
+            t!("Seiteninhalte werden nicht mehr gemerkt, das Gemerkte ist gelöscht")
+        });
+    }
+
+    /// Settings: whether what the user typed into a field counts as part of a page.
+    pub(in crate::browser) fn set_page_text_fields(&self, fields: bool) {
+        self.update_preference(PreferenceKey::PageTextFields, |preferences| {
+            preferences.page_text_fields = fields;
+        });
+        self.renew_page_texts(!fields);
+    }
+
+    /// Settings: whether what stands in an editor inside a page counts as part of it.
+    pub(in crate::browser) fn set_page_text_drafts(&self, drafts: bool) {
+        self.update_preference(PreferenceKey::PageTextDrafts, |preferences| {
+            preferences.page_text_drafts = drafts;
+        });
+        self.renew_page_texts(!drafts);
+    }
+
+    /// Settings: throws away everything that was remembered of the pages.
+    pub fn forget_page_texts(&self) {
+        if let Err(error) = self.storage.forget_all_page_texts() {
+            tracing::warn!(%error, "what was remembered could not be thrown away");
+        }
+        self.for_all_windows(Browser::show_page_search_settings);
+        self.show_toast(t!("Das Gemerkte ist gelöscht"));
+    }
+
+    /// What was remembered followed the old settings, so the open pages are read again the way
+    /// the user wants it now. If something was taken out of what is remembered, everything that
+    /// still follows the old settings goes first: a sleeping page cannot be read again, and what
+    /// the user just excluded must not stay in the index.
+    fn renew_page_texts(&self, narrowed: bool) {
+        if narrowed && let Err(error) = self.storage.forget_all_page_texts() {
+            tracing::warn!(%error, "what was remembered could not be thrown away");
+        }
+        self.capture_open_pages();
+        self.for_all_windows(Browser::show_page_search_settings);
+    }
+
+    /// Fills the page search part of the settings page.
+    pub(in crate::browser) fn show_page_search_settings(&self) {
+        let Some(window) = self.window() else { return };
+        let state = window.global::<crate::ui::SettingsState>();
+        let preferences = self.preferences.borrow();
+        state.set_page_text_enabled(preferences.page_text_enabled);
+        state.set_page_text_fields(preferences.page_text_fields);
+        state.set_page_text_drafts(preferences.page_text_drafts);
+        drop(preferences);
+        let (pages, bytes) = self.storage.page_text_size().unwrap_or_default();
+        state.set_page_text_size(
+            match pages {
+                0 => t!("Nichts gemerkt").to_owned(),
+                1 => t!(
+                    "Eine Seite, {}",
+                    super::downloads::format_bytes(bytes as i64)
+                ),
+                pages => t!(
+                    "{} Seiten, {}",
+                    pages,
+                    super::downloads::format_bytes(bytes as i64)
+                ),
+            }
+            .into(),
+        );
     }
 
     /// Before Atoll closes: asks every page that is still open what it shows right now. A page

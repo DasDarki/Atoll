@@ -123,6 +123,12 @@ pub struct Preferences {
     pub torrent_files: String,
     /// Whether the search over the pages of a workspace looks inside them as well.
     pub search_in_pages: bool,
+    /// Whether Atoll remembers what the open pages show, so they can be searched.
+    pub page_text_enabled: bool,
+    /// Whether what the user typed into a field counts as part of a page.
+    pub page_text_fields: bool,
+    /// Whether what stands in an editor inside a page counts as part of it.
+    pub page_text_drafts: bool,
     /// Hides the cookie banners the filter list knows.
     pub cookie_banners_hide: bool,
     /// Answers the cookie banners Atoll recognises with a refusal.
@@ -177,6 +183,9 @@ pub enum PreferenceKey {
     TorrentUpload,
     TorrentFiles,
     SearchInPages,
+    PageTextEnabled,
+    PageTextFields,
+    PageTextDrafts,
 }
 
 impl PreferenceKey {
@@ -215,6 +224,9 @@ impl PreferenceKey {
             PreferenceKey::TorrentUpload => "torrent_upload",
             PreferenceKey::TorrentFiles => "torrent_files",
             PreferenceKey::SearchInPages => "search_in_pages",
+            PreferenceKey::PageTextEnabled => "page_text_enabled",
+            PreferenceKey::PageTextFields => "page_text_fields",
+            PreferenceKey::PageTextDrafts => "page_text_drafts",
         }
     }
 }
@@ -249,6 +261,9 @@ impl Default for Preferences {
             torrent_upload: true,
             torrent_files: "ask".to_owned(),
             search_in_pages: false,
+            page_text_enabled: true,
+            page_text_fields: true,
+            page_text_drafts: true,
             archive_suggestion_weeks: DEFAULT_ARCHIVE_SUGGESTION_WEEKS,
             memory_limit_enabled: true,
             memory_limit_gb: DEFAULT_MEMORY_LIMIT_GB,
@@ -321,6 +336,9 @@ impl Preferences {
             torrent_upload: flag(PreferenceKey::TorrentUpload, defaults.torrent_upload),
             torrent_files: text(PreferenceKey::TorrentFiles).unwrap_or(defaults.torrent_files),
             search_in_pages: flag(PreferenceKey::SearchInPages, defaults.search_in_pages),
+            page_text_enabled: flag(PreferenceKey::PageTextEnabled, defaults.page_text_enabled),
+            page_text_fields: flag(PreferenceKey::PageTextFields, defaults.page_text_fields),
+            page_text_drafts: flag(PreferenceKey::PageTextDrafts, defaults.page_text_drafts),
             archive_suggestion_weeks: text(PreferenceKey::ArchiveSuggestionWeeks)
                 .and_then(|weeks| weeks.parse::<u32>().ok())
                 .map_or(defaults.archive_suggestion_weeks, |weeks| {
@@ -382,6 +400,9 @@ impl Preferences {
             PreferenceKey::TorrentUpload => flag(self.torrent_upload),
             PreferenceKey::TorrentFiles => self.torrent_files.clone(),
             PreferenceKey::SearchInPages => flag(self.search_in_pages),
+            PreferenceKey::PageTextEnabled => flag(self.page_text_enabled),
+            PreferenceKey::PageTextFields => flag(self.page_text_fields),
+            PreferenceKey::PageTextDrafts => flag(self.page_text_drafts),
             PreferenceKey::ArchiveSuggestionWeeks => self.archive_suggestion_weeks.to_string(),
             PreferenceKey::MemoryLimitEnabled => flag(self.memory_limit_enabled),
             PreferenceKey::MemoryLimitGb => self.memory_limit_gb.to_string(),
@@ -451,6 +472,9 @@ mod tests {
             torrent_upload: false,
             torrent_files: "load".to_owned(),
             search_in_pages: true,
+            page_text_enabled: false,
+            page_text_fields: false,
+            page_text_drafts: false,
             archive_suggestion_weeks: 9,
             memory_limit_enabled: false,
             memory_limit_gb: 12,
@@ -486,6 +510,9 @@ mod tests {
             PreferenceKey::TorrentUpload,
             PreferenceKey::TorrentFiles,
             PreferenceKey::SearchInPages,
+            PreferenceKey::PageTextEnabled,
+            PreferenceKey::PageTextFields,
+            PreferenceKey::PageTextDrafts,
             PreferenceKey::ArchiveSuggestionWeeks,
             PreferenceKey::MemoryLimitEnabled,
             PreferenceKey::MemoryLimitGb,

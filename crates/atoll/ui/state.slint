@@ -199,6 +199,7 @@ export global OverlayState {
     in property <int> page-search-index;
     in property <string> page-search-hint;
     in-out property <bool> page-search-in-pages;
+    in property <bool> page-search-remembers;
     callback page-search-edited(string);
     callback page-search-move(int);
     callback page-search-activate(int);
@@ -381,6 +382,12 @@ export global SettingsState {
     in-out property <int> torrent-route;
     in property <[string]> torrent-devices;
     in-out property <int> torrent-device;
+    in-out property <bool> page-text-enabled;
+    in-out property <bool> page-text-fields;
+    in-out property <bool> page-text-drafts;
+    in property <string> page-text-size;
+    callback forget-page-texts();
+
     in-out property <bool> torrent-upload;
     /// 0 fragen, 1 sofort laden, 2 nur die Datei behalten.
     in-out property <int> torrent-files;

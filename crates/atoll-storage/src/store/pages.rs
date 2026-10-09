@@ -48,6 +48,25 @@ pub trait PageTextStore: Connected {
         Ok(())
     }
 
+    /// How much is remembered, for the settings: how many pages and how much text.
+    fn page_text_size(&self) -> StorageResult<(usize, u64)> {
+        let mut statement = self
+            .connection()
+            .prepare_cached("SELECT count(*), coalesce(sum(length(text)), 0) FROM page_text")?;
+        let size = statement.query_row([], |row| {
+            Ok((row.get::<_, i64>(0)? as usize, row.get::<_, i64>(1)? as u64))
+        })?;
+        Ok(size)
+    }
+
+    /// Throws away everything that was remembered of the pages.
+    fn forget_all_page_texts(&self) -> StorageResult<()> {
+        self.connection()
+            .prepare_cached("DELETE FROM page_text")?
+            .execute([])?;
+        Ok(())
+    }
+
     fn forget_page_text(&self, tab: TabId) -> StorageResult<()> {
         self.connection()
             .prepare_cached("DELETE FROM page_text WHERE rowid = ?1")?
@@ -231,6 +250,30 @@ mod tests {
         let gone = storage.forget_closed_page_texts().unwrap();
         assert_eq!(gone, 1, "no tab of that number exists any more");
         assert!(storage.search_page_text("etwas", 10).unwrap().is_empty());
+    }
+
+    #[test]
+    fn what_is_remembered_can_be_counted_and_thrown_away() {
+        let storage = storage();
+        assert_eq!(storage.page_text_size().unwrap(), (0, 0));
+        for tab in [1, 2] {
+            storage
+                .set_page_text(
+                    TabId(tab),
+                    "https://example.org/",
+                    "Seite",
+                    "zwölf Zeichen",
+                    Timestamp(1),
+                )
+                .unwrap();
+        }
+        let (pages, bytes) = storage.page_text_size().unwrap();
+        assert_eq!(pages, 2);
+        assert!(bytes > 0);
+
+        storage.forget_all_page_texts().unwrap();
+        assert_eq!(storage.page_text_size().unwrap(), (0, 0));
+        assert!(storage.search_page_text("zwölf", 10).unwrap().is_empty());
     }
 
     #[test]

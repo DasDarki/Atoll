@@ -229,8 +229,14 @@ msgstr "With the consent tools Atoll knows, it presses the button that refuses e
 msgid "Atoll konnte nicht gestartet werden: {}"
 msgstr "Atoll could not be started: {}"
 
+msgid "Auch Entwürfe in Editoren auf Seiten"
+msgstr "Drafts in editors on pages as well"
+
 msgid "Auch wenn die Seite „nicht gefunden“ meldet"
 msgstr "Also when the page says “not found”"
+
+msgid "Auch, was du in Felder tippst"
+msgstr "What you type into fields as well"
 
 msgid "Auf Atolls Vorgaben zurücksetzen"
 msgstr "Back to what Atoll does anyway"
@@ -409,6 +415,9 @@ msgstr "DATA"
 msgid "DUPLIKATE"
 msgstr "DUPLICATES"
 
+msgid "Dafür muss Atoll sich in den Einstellungen merken dürfen, was die Seiten zeigen"
+msgstr "For that, the settings have to let Atoll remember what the pages show"
+
 msgid "Dafür zuerst eine Startseite eintragen."
 msgstr "Enter a start page first."
 
@@ -432,6 +441,9 @@ msgstr "Asking the archive …"
 
 msgid "Das Bild konnte nicht gespeichert werden"
 msgstr "The image could not be saved"
+
+msgid "Das Gemerkte ist gelöscht"
+msgstr "What was remembered is deleted"
 
 msgid "Das Gerät {} ist nicht da, Torrents bleiben stehen"
 msgstr "The device {} is not there, torrents stay put"
@@ -766,6 +778,12 @@ msgstr "A key in the configuration is not base64"
 msgid "Ein Schlüssel in der Konfiguration ist nicht 32 Byte lang"
 msgstr "A key in the configuration is not 32 bytes long"
 
+msgid "Ein halb geschriebener Brief in einem Webmailer gehört dann zum Text der Seite."
+msgstr "A half written letter in a webmailer then belongs to the text of the page."
+
+msgid "Eine Seite, {}"
+msgstr "One page, {}"
+
 msgid "Eingefroren"
 msgstr "Frozen"
 
@@ -774,6 +792,9 @@ msgstr "Frozen in the background"
 
 msgid "Eingefrorene Tabs im Hintergrund"
 msgstr "Frozen tabs in the background"
+
+msgid "Eingetipptes bleibt außen vor. Dann findest du eine Seite nur an dem, was auf ihr steht."
+msgstr "What you typed stays out. You then find a page only by what stands on it."
 
 msgid "Einmalcode"
 msgstr "One-time code"
@@ -903,6 +924,9 @@ msgstr "No login is stored for {}. Search in all logins:"
 
 msgid "GLEICHNAMIGE INSELN"
 msgstr "ISLANDS OF THE SAME NAME"
+
+msgid "Gemerkte Seiteninhalte"
+msgstr "Remembered page contents"
 
 msgid "Gerät wählen"
 msgstr "Choose a device"
@@ -1186,6 +1210,9 @@ msgstr "Load more"
 msgid "Meldet dich auf allen Websites ab."
 msgstr "Signs you out on every website."
 
+msgid "Merken, was die offenen Seiten zeigen"
+msgstr "Remember what the open pages show"
+
 msgid "Mit 1Password anmelden"
 msgstr "Sign in with 1Password"
 
@@ -1287,6 +1314,9 @@ msgstr "Nothing found"
 
 msgid "Nichts gefunden."
 msgstr "Nothing found."
+
+msgid "Nichts gemerkt"
+msgstr "Nothing remembered"
 
 msgid "Noch keine Downloads."
 msgstr "No downloads yet."
@@ -1405,6 +1435,9 @@ msgstr "Pink"
 msgid "SEITEN, DIE ES NICHT MEHR GIBT"
 msgstr "PAGES THAT ARE GONE"
 
+msgid "SEITENSUCHE"
+msgstr "PAGE SEARCH"
+
 msgid "SPEICHERORT"
 msgstr "LOCATION"
 
@@ -1483,6 +1516,12 @@ msgstr "Leave page?"
 msgid "Seiten dieses Arbeitsbereichs durchsuchen"
 msgstr "Search the pages of this workspace"
 
+msgid "Seiteninhalte werden nicht mehr gemerkt, das Gemerkte ist gelöscht"
+msgstr "Page contents are no longer remembered, what was remembered is deleted"
+
+msgid "Seiteninhalte werden wieder gemerkt, ab der nächsten Seite"
+msgstr "Page contents are remembered again, starting with the next page"
+
 msgid "Sidebar anzeigen"
 msgstr "Show sidebar"
 
@@ -1491,6 +1530,9 @@ msgstr "Hide sidebar"
 
 msgid "Sidebar einblenden"
 msgstr "Show sidebar"
+
+msgid "So findest du den Tab wieder, in dessen Suchfeld du etwas eingetippt hast. Passwortfelder bleiben immer außen vor."
+msgstr "This is how you find the tab again whose search field you typed something into. Password fields always stay out."
 
 msgid "So gehört es sich im Schwarm: Atoll gibt Stücke ab, solange ein Torrent lädt, und hört danach auf."
 msgstr "That is how a swarm works: Atoll gives pieces away while a torrent loads, and stops afterwards."
@@ -1593,6 +1635,9 @@ msgstr "Ctrl+Shift+B shows and hides it at any time."
 
 msgid "Strg+Umschalt+F"
 msgstr "Ctrl+Shift+F"
+
+msgid "Strg+Umschalt+F sucht dann auch im Text der Seiten, nicht nur in Adresse und Titel. Gemerkt wird nur für offene Tabs, nie für private."
+msgstr "Ctrl+Shift+F then searches the text of the pages as well, not only address and title. Only open tabs are remembered, never private ones."
 
 msgid "Strg+Umschalt+L"
 msgstr "Ctrl+Shift+L"
@@ -1815,6 +1860,9 @@ msgstr "AD BLOCKER"
 
 msgid "Warnung: "
 msgstr "Warning: "
+
+msgid "Was du selbst in einen Editor schreibst, bleibt außen vor."
+msgstr "What you write into an editor yourself stays out."
 
 msgid "Websitedaten gelöscht"
 msgstr "Site data deleted"
@@ -2144,6 +2192,9 @@ msgstr "{} If you load {} anyway, the swarm and your provider see that you are l
 
 msgid "{} Seiten"
 msgstr "{} pages"
+
+msgid "{} Seiten, {}"
+msgstr "{} pages, {}"
 
 msgid "{} Tabs in {} Inseln"
 msgstr "{} tabs in {} islands"

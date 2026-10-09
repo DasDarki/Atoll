@@ -469,6 +469,40 @@ export component SettingsPage inherits Modal {
                         }
                     }
                     Divider { }
+                    SectionTitle { text: @tr("SEITENSUCHE"); }
+                    SettingRow {
+                        title: @tr("Merken, was die offenen Seiten zeigen");
+                        description: @tr("Strg+Umschalt+F sucht dann auch im Text der Seiten, nicht nur in Adresse und Titel. Gemerkt wird nur für offene Tabs, nie für private.");
+                        Toggle {
+                            checked <=> SettingsState.page-text-enabled;
+                            toggled => { SettingsState.changed("page-text-enabled"); }
+                        }
+                    }
+                    if SettingsState.page-text-enabled : SettingRow {
+                        title: @tr("Auch, was du in Felder tippst");
+                        description: SettingsState.page-text-fields ? @tr("So findest du den Tab wieder, in dessen Suchfeld du etwas eingetippt hast. Passwortfelder bleiben immer außen vor.") : @tr("Eingetipptes bleibt außen vor. Dann findest du eine Seite nur an dem, was auf ihr steht.");
+                        Toggle {
+                            checked <=> SettingsState.page-text-fields;
+                            toggled => { SettingsState.changed("page-text-fields"); }
+                        }
+                    }
+                    if SettingsState.page-text-enabled : SettingRow {
+                        title: @tr("Auch Entwürfe in Editoren auf Seiten");
+                        description: SettingsState.page-text-drafts ? @tr("Ein halb geschriebener Brief in einem Webmailer gehört dann zum Text der Seite.") : @tr("Was du selbst in einen Editor schreibst, bleibt außen vor.");
+                        Toggle {
+                            checked <=> SettingsState.page-text-drafts;
+                            toggled => { SettingsState.changed("page-text-drafts"); }
+                        }
+                    }
+                    if SettingsState.page-text-enabled : SettingRow {
+                        title: @tr("Gemerkte Seiteninhalte");
+                        description: SettingsState.page-text-size;
+                        ActionButton {
+                            text: @tr("Löschen");
+                            clicked => { SettingsState.forget-page-texts(); }
+                        }
+                    }
+                    Divider { }
                     SectionTitle { text: @tr("TORRENTS"); }
                     VerticalLayout {
                         spacing: 8px;

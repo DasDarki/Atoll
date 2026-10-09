@@ -65,6 +65,7 @@ impl Browser {
         self.show_adblock_settings();
         self.show_vpn_settings();
         self.show_torrent_settings();
+        self.show_page_search_settings();
         self.show_memory_settings();
         self.show_password_settings();
         self.show_plugin_settings();
@@ -197,6 +198,9 @@ impl Browser {
                 });
                 self.vpn_settings_changed();
             }
+            "page-text-enabled" => self.set_page_text_enabled(state.get_page_text_enabled()),
+            "page-text-fields" => self.set_page_text_fields(state.get_page_text_fields()),
+            "page-text-drafts" => self.set_page_text_drafts(state.get_page_text_drafts()),
             "torrent-route" => self.set_torrent_route(state.get_torrent_route() == 1),
             "torrent-upload" => self.set_torrent_upload(state.get_torrent_upload()),
             "torrent-files" => self.set_torrent_files(state.get_torrent_files()),

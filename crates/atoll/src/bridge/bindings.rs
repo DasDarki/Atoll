@@ -407,6 +407,8 @@ fn connect_settings(window: &AppWindow, browser: &Rc<Browser>) {
         .clear_adblock_exceptions());
     on!(state, on_clear_vpn_exceptions, browser, |target| target
         .clear_vpn_exceptions());
+    on!(state, on_forget_page_texts, browser, |target| target
+        .forget_page_texts());
     on!(state, on_choose_vpn_config, browser, |target| target
         .choose_vpn_config());
     on!(state, on_torrent_device_chosen, browser, |target, index| {
