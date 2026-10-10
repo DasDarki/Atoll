@@ -5,7 +5,9 @@ import { IconButton } from "../widgets/icon-button.slint";
 
 export component TabRow inherits Rectangle {
     in property <length> island-drag-y;
+    in property <length> tab-drag-y;
     in property <SidebarRow> entry;
+    callback tab-drag-moved(length);
 
     property <length> press-x;
     property <length> press-y;
@@ -15,10 +17,20 @@ export component TabRow inherits Rectangle {
     property <bool> island-target: SidebarState.island-drag-id != -1
         && SidebarState.island-drag-id != root.entry.island-id
         && root.island-drag-y >= root.top && root.island-drag-y < root.top + root.height;
+    // Which half of this row a dragged tab stands over: -1 none, 0 above it, 1 below it.
+    property <int> tab-drag-half: SidebarState.tab-drag-id == -2
+        || root.tab-drag-y < root.top || root.tab-drag-y >= root.top + root.height ? -1
+        : root.tab-drag-y < root.top + root.height / 2 ? 0 : 1;
 
     changed island-target => {
         if (self.island-target) {
             SidebarState.island-drag-hover(root.entry.island-id, true);
+        }
+    }
+
+    changed tab-drag-half => {
+        if (self.tab-drag-half >= 0) {
+            SidebarState.tab-drag-over-tab(root.entry.tab-id, self.tab-drag-half == 1);
         }
     }
 
@@ -107,6 +119,10 @@ export component TabRow inherits Rectangle {
                 if (self.pressed && !root.dragging && (abs(self.mouse-x - root.press-x) > 8px || abs(self.mouse-y - root.press-y) > 8px)) {
                     root.dragging = true;
                     SidebarState.hovering = false;
+                    SidebarState.tab-drag-started(root.entry.tab-id);
+                }
+                if (root.dragging) {
+                    root.tab-drag-moved(root.top + self.mouse-y);
                 }
             }
             clicked => {

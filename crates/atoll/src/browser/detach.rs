@@ -12,16 +12,19 @@ use atoll_i18n::t;
 const DROP_OFFSET: (f32, f32) = (140.0, 90.0);
 
 impl Browser {
-    /// A tab row was dragged and released at `x`, `y` in window coordinates. Released outside the
-    /// window, the tab moves to the window under the pointer or into a new one.
+    /// A tab row was dragged and released at `x`, `y` in window coordinates. Inside the window it
+    /// lands where the line stood, outside it moves to the window under the pointer or into a new
+    /// one.
     pub fn tab_drag_released(&self, tab: TabId, x: f32, y: f32) {
         let Some(window) = self.window() else { return };
         let handle = window.window();
         let scale = handle.scale_factor();
         let size = handle.size().to_logical(scale);
         if (0.0..size.width).contains(&x) && (0.0..size.height).contains(&y) {
+            self.tab_drag_dropped();
             return;
         }
+        self.forget_tab_drag();
         let origin = handle.position().to_logical(scale);
         let position = (
             (origin.x + x - DROP_OFFSET.0).round() as i32,

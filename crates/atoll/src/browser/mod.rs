@@ -79,7 +79,7 @@ use passwords::{PasswordPopup, PasswordVault, PendingFill};
 use plugins::{OpenPanel, Plugins};
 pub use preferences::Preferences;
 use private::PrivatePages;
-use reorder::IslandDrag;
+use reorder::{IslandDrag, TabDrag};
 use session::Session;
 use sidebar::SidebarModels;
 use suggestions::SuggestionState;
@@ -189,6 +189,7 @@ pub struct Browser {
     history: RefCell<HistoryView>,
     opera: RefCell<OperaImport>,
     island_drag: RefCell<IslandDrag>,
+    tab_drag: RefCell<TabDrag>,
     page: RefCell<PageState>,
     dialogs: RefCell<DialogQueue>,
     context_menu: Cell<Option<(ViewId, RequestId)>>,
@@ -261,6 +262,7 @@ impl Browser {
             opera: RefCell::default(),
             island_drag: RefCell::default(),
             elsewhere: RefCell::default(),
+            tab_drag: RefCell::default(),
             page: RefCell::default(),
             dialogs: RefCell::default(),
             context_menu: Cell::new(None),

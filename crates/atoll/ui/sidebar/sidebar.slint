@@ -57,6 +57,7 @@ component FooterButton inherits Rectangle {
 
 export component Sidebar inherits Rectangle {
     property <length> island-drag-y;
+    property <length> tab-drag-y;
 
     width: Theme.sidebar-width;
     background: Theme.chrome;
@@ -71,11 +72,14 @@ export component Sidebar inherits Rectangle {
                 if row.kind == RowKind.island : IslandHeader {
                     entry: row;
                     drag-y: root.island-drag-y;
+                    tab-drag-y: root.tab-drag-y;
                     drag-moved(y) => { root.island-drag-y = y; }
                 }
                 if row.kind == RowKind.tab : TabRow {
                     entry: row;
                     island-drag-y: root.island-drag-y;
+                    tab-drag-y: root.tab-drag-y;
+                    tab-drag-moved(y) => { root.tab-drag-y = y; }
                 }
                 if row.kind == RowKind.island && SidebarState.island-drop-before == row.island-id : Rectangle {
                     y: 0;
@@ -86,6 +90,16 @@ export component Sidebar inherits Rectangle {
                     y: parent.height - 2px;
                     height: 2px;
                     background: Theme.accent;
+                }
+                if SidebarState.tab-drop-row == index : Rectangle {
+                    y: 0;
+                    height: 2px;
+                    background: Theme.accent-cyan;
+                }
+                if SidebarState.tab-drop-row == index + 1 && index == SidebarState.rows.length - 1 : Rectangle {
+                    y: parent.height - 2px;
+                    height: 2px;
+                    background: Theme.accent-cyan;
                 }
             }
         }

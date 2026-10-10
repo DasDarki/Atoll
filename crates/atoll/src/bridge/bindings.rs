@@ -128,6 +128,17 @@ fn connect_sidebar(window: &AppWindow, browser: &Rc<Browser>) {
     });
     on!(state, on_island_drag_ended, browser, |target| target
         .island_drag_ended());
+    on!(state, on_tab_drag_started, browser, |target, tab| target
+        .tab_drag_started(TabId(tab as i64)));
+    on!(
+        state,
+        on_tab_drag_over_tab,
+        browser,
+        |target, tab, after| target.tab_drag_over_tab(TabId(tab as i64), after)
+    );
+    on!(state, on_tab_drag_over_island, browser, |target, island| {
+        target.tab_drag_over_island(IslandId(island as i64))
+    });
     on!(state, on_open_archive, browser, |target| target
         .open_archive());
     on!(state, on_open_import, browser, |target| target

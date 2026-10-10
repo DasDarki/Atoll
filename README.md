@@ -16,6 +16,10 @@ saved tabs therefore cost nothing at startup.
   with a workspace of its own, dropping it on another Atoll window moves it there. The page keeps
   running either way. Tabs and islands can also be moved through their context menus, and a
   workspace can be opened in a window of its own. Open windows are restored at the next start.
+- **Moving tabs**: a tab is dragged to another place in the sidebar, inside its island or into
+  another one, with a line showing where it lands. Dropped on the header of an island it goes to
+  the top of it, which is the only way into one that is collapsed, and dropped outside the window
+  it moves to the window under the pointer or into a new one.
 - **Own window frame**: the toolbar doubles as the title bar with the window buttons, a double
   click maximizes the window, and the edges resize it.
 - **Four tab states**: *Live* (visible), *Frozen* (recently used, paused in the background),

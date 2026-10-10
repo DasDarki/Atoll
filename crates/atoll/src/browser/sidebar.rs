@@ -13,7 +13,7 @@ use crate::ui::{
 /// keeps the scroll position of the list.
 pub(super) struct SidebarModels {
     workspaces: Rc<VecModel<WorkspaceItem>>,
-    rows: Rc<VecModel<SidebarRow>>,
+    pub(super) rows: Rc<VecModel<SidebarRow>>,
     targets: Rc<VecModel<IslandTarget>>,
     windows: Rc<VecModel<WorkspaceItem>>,
 }

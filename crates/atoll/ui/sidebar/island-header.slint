@@ -6,6 +6,7 @@ import { IconButton } from "../widgets/icon-button.slint";
 export component IslandHeader inherits Rectangle {
     in property <SidebarRow> entry;
     in property <length> drag-y;
+    in property <length> tab-drag-y;
     callback drag-moved(length);
 
     property <bool> dragged;
@@ -15,9 +16,19 @@ export component IslandHeader inherits Rectangle {
         || root.drag-y < root.top || root.drag-y >= root.top + root.height ? -1
         : root.drag-y < root.top + root.height / 2 ? 0 : 1;
 
+    // A tab dropped on a header goes to the top of that island, the only way into a collapsed one.
+    property <bool> tab-target: SidebarState.tab-drag-id != -2
+        && root.tab-drag-y >= root.top && root.tab-drag-y < root.top + root.height;
+
     changed drag-mode => {
         if (self.drag-mode >= 0) {
             SidebarState.island-drag-hover(root.entry.island-id, self.drag-mode == 1);
+        }
+    }
+
+    changed tab-target => {
+        if (self.tab-target) {
+            SidebarState.tab-drag-over-island(root.entry.island-id);
         }
     }
 

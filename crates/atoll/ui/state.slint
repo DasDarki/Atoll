@@ -25,6 +25,12 @@ export global SidebarState {
     callback move-tab-to-island(int, int);
     callback move-tab-to-workspace(int, int);
     callback tab-drag-released(int, length, length);
+    in property <int> tab-drag-id: -2;
+    /// Die Zeile, über der die Linie steht, wo der Tab landen würde.
+    in property <int> tab-drop-row: -2;
+    callback tab-drag-started(int);
+    callback tab-drag-over-tab(int, bool);
+    callback tab-drag-over-island(int);
 
     callback toggle-island(int);
     callback island-action(int, string);

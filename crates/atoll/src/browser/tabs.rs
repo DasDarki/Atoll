@@ -330,7 +330,12 @@ impl Browser {
     }
 
     pub fn move_tab_to_island(&self, tab: TabId, island: IslandId) {
-        let result = self.storage.move_tab(tab, island, usize::MAX);
+        self.move_tab_to(tab, island, usize::MAX);
+    }
+
+    /// Moves `tab` to `index` inside `island`, which may be the one it is already in.
+    pub(super) fn move_tab_to(&self, tab: TabId, island: IslandId, index: usize) {
+        let result = self.storage.move_tab(tab, island, index);
         self.report(t!("Tab verschieben"), result);
         self.reload_session();
         self.refresh_sidebar();
