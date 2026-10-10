@@ -29,6 +29,9 @@ pub struct SuggestionState {
     displays: Vec<String>,
     typed: String,
     selected: i32,
+    /// Whether the user went through the list with the arrow keys. Only then does Enter do
+    /// anything other than open what was typed.
+    chosen: bool,
     tabs: Option<Vec<TabEntry>>,
     bookmarks: Option<Vec<Bookmark>>,
 }
@@ -50,6 +53,7 @@ impl Browser {
             let deleting = state.typed.len() > text.len() && state.typed.starts_with(text);
             state.typed = text.to_owned();
             state.selected = 0;
+            state.chosen = false;
             deleting
         };
         let unchanged = Completion {
@@ -131,6 +135,7 @@ impl Browser {
             let mut state = self.suggestions.borrow_mut();
             let last = (state.targets.len() as i32 - 1).max(0);
             state.selected = (state.selected + delta).clamp(0, last);
+            state.chosen = true;
             let text = usize::try_from(state.selected)
                 .ok()
                 .and_then(|index| state.displays.get(index).cloned())
@@ -158,12 +163,19 @@ impl Browser {
     }
 
     /// Handles Enter in the address bar or on the new tab page.
+    ///
+    /// What was typed is what is opened. Only a suggestion the user went to with the arrow keys
+    /// is carried out, so Enter never ends up in a tab that happens to show the same page: when
+    /// that is what someone wants, they say so by choosing the line that offers it.
     pub fn address_submitted(&self, text: &str) {
         let selected = {
             let state = self.suggestions.borrow();
             usize::try_from(state.selected)
                 .ok()
                 .filter(|index| *index < state.targets.len())
+                .filter(|index| {
+                    state.chosen || !matches!(state.targets[*index], Target::SwitchToTab(_))
+                })
         };
         match selected {
             Some(index) => self.suggestion_activate(index as i32),
