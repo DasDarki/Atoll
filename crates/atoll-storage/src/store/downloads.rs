@@ -68,6 +68,14 @@ pub trait DownloadStore: Connected {
         Ok(())
     }
 
+    /// Gives a download the file it ended up as, after it was turned into another format.
+    fn rename_download(&self, id: DownloadId, file_name: &str, path: &str) -> StorageResult<()> {
+        self.connection()
+            .prepare_cached("UPDATE download SET file_name = ?1, path = ?2 WHERE id = ?3")?
+            .execute(params![file_name, path, id.0])?;
+        Ok(())
+    }
+
     /// The most recent downloads, newest first.
     fn downloads(&self, limit: usize) -> StorageResult<Vec<Download>> {
         let mut statement = self.connection().prepare_cached(&format!(

@@ -230,7 +230,8 @@ impl Browser {
             Shortcut::History => self.open_history(),
             Shortcut::NewPrivateTab => self.new_private_tab(),
             Shortcut::Passwords => self.show_passwords(),
-            Shortcut::DownloadVideo => self.download_video(),
+            Shortcut::SavePage => self.save_page(),
+            Shortcut::SavePageAs => self.save_page_as(),
         }
     }
 }

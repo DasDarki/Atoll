@@ -14,11 +14,13 @@ use super::Browser;
 use crate::platform::opener;
 use crate::ui::{BrowserState, DownloadItem, DownloadItemStatus, OverlayState};
 
+mod save;
 mod streams;
 mod torrents;
 mod videos;
 
 use atoll_i18n::t;
+pub use save::{SaveState, SaveTarget};
 pub use torrents::{TorrentSession, is_magnet};
 pub use videos::VideoSearch;
 
@@ -156,6 +158,7 @@ impl Browser {
                 });
             }
             if status == DownloadStatus::Complete && entry.kind == DownloadKind::File {
+                self.convert_downloaded(id, &entry.url, entry.path.as_deref());
                 self.torrent_file_downloaded(entry.path.as_deref(), &entry.file_name);
             }
             match status {

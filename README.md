@@ -85,8 +85,17 @@ saved tabs therefore cost nothing at startup.
   searched and used after a confirmation. Atoll talks to the 1Password CLI (`op`, package
   `1password-cli`), which asks the 1Password app to unlock, so enable "Integrate with 1Password
   CLI" in the app's developer settings.
-- **Video download**: on pages with a video a download button appears in the address bar. It,
-  `Ctrl+Shift+S` and the command palette save the video that plays, else the largest one. Plain
+- **Saving and converting**: `Ctrl+S` saves what the page shows as a file, which is what one
+  wants on a page that is a picture, a sound or a video. `Ctrl+Shift+S` asks first: a dialog
+  offers the formats that fit (PNG, JPEG, WebP, GIF, BMP, TIFF, AVIF for pictures; MP4, WebM,
+  MKV, GIF for videos, or their sound alone as MP3, M4A, Opus, FLAC or WAV) and a switch that
+  mirrors a picture or a video from left to right. The same dialog is what the video download
+  uses, so a video can be saved as sound or mirrored on the way. Pictures are converted by Atoll
+  itself; everything else needs `ffmpeg` installed and is left out of the list without it. The
+  context menu of a picture offers "save" and "convert and save" with the same dialog.
+- **Video download**: on pages with a video a download button appears in the address bar. It and
+  the command palette save the video that plays, else the largest one, and `Ctrl+Shift+S` asks
+  for the format first. Plain
   video files go through the download list like any file. Streams that pages put together from
   pieces (HLS, DASH, for example on Reddit or YouTube) are downloaded by `yt-dlp` (package
   `yt-dlp`, merging with `ffmpeg`) and show up in the same list with progress and cancel.
@@ -297,7 +306,8 @@ storage).
 | `Ctrl+Shift+O` | Manage bookmarks |
 | `Ctrl+J` | Downloads |
 | `Ctrl+Shift+L` | Log in with 1Password |
-| `Ctrl+Shift+S` | Download the video of the page |
+| `Ctrl+S` | Save what the page shows as a file |
+| `Ctrl+Shift+S` | Save it after saying what should become of it |
 | `Ctrl+,` | Settings |
 | `Alt+Home` | Open the start page |
 | `Ctrl+Plus`, `Ctrl+Minus`, `Ctrl+0` | Zoom |

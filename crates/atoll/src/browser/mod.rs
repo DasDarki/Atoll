@@ -65,7 +65,7 @@ use adblock::Adblock;
 use bookmarks::BookmarkState;
 use clipboard::ClipboardSync;
 use dev_tools::DevToolsPresentation;
-use downloads::{Downloads, TorrentSession, VideoSearch};
+use downloads::{Downloads, SaveState, TorrentSession, VideoSearch};
 use duplicates::OpenElsewhere;
 use favicons::FaviconCache;
 use history::HistoryView;
@@ -209,6 +209,8 @@ pub struct Browser {
     pending_fill: RefCell<Option<PendingFill>>,
     yt_dlp: YtDlp,
     video_search: RefCell<Option<VideoSearch>>,
+    /// The open save dialog and what downloads still owe a conversion.
+    save: RefCell<SaveState>,
     plugins: Rc<Plugins>,
     /// The panel of an extension this window shows.
     panel: RefCell<Option<OpenPanel>>,
@@ -282,6 +284,7 @@ impl Browser {
             pending_fill: RefCell::default(),
             yt_dlp: shared.yt_dlp.clone(),
             video_search: RefCell::default(),
+            save: RefCell::default(),
             plugins: shared.plugins.clone(),
             panel: RefCell::default(),
             panel_geometry: Cell::new(ViewGeometry {

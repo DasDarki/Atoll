@@ -1,0 +1,83 @@
+import { ComboBox } from "std-widgets.slint";
+import { Theme } from "../theme.slint";
+import { OverlayState } from "../state.slint";
+import { Modal } from "modal.slint";
+import { ActionButton, ButtonKind } from "../widgets/button.slint";
+import { FieldLabel } from "../widgets/field-label.slint";
+import { Toggle } from "../widgets/toggle.slint";
+
+export component SaveDialog inherits Modal {
+    title: @tr("Speichern");
+    card-width: 480px;
+    dismissed => { OverlayState.save-cancel(); }
+    confirmed => { OverlayState.save-confirm(); }
+
+    VerticalLayout {
+        spacing: 3px;
+        Text {
+            text: OverlayState.save-name;
+            color: Theme.text;
+            font-size: Theme.font-normal;
+            font-weight: 600;
+            overflow: elide;
+        }
+        Text {
+            text: OverlayState.save-source;
+            color: Theme.text-faint;
+            font-size: Theme.font-small + 1px;
+            overflow: elide;
+        }
+    }
+
+    VerticalLayout {
+        spacing: 6px;
+        FieldLabel { text: @tr("FORMAT"); }
+        ComboBox {
+            model: OverlayState.save-formats;
+            current-index <=> OverlayState.save-format;
+        }
+        Text {
+            text: OverlayState.save-hint;
+            visible: OverlayState.save-hint != "";
+            color: Theme.text-faint;
+            font-size: Theme.font-small + 1px;
+            wrap: word-wrap;
+        }
+    }
+
+    if OverlayState.save-can-mirror : HorizontalLayout {
+        spacing: 10px;
+        VerticalLayout {
+            alignment: center;
+            horizontal-stretch: 1;
+            Text {
+                text: @tr("Spiegeln, von links nach rechts");
+                color: Theme.text;
+                font-size: Theme.font-normal;
+            }
+            Text {
+                text: @tr("Das Bild wird an der senkrechten Achse umgedreht.");
+                color: Theme.text-faint;
+                font-size: Theme.font-small + 1px;
+            }
+        }
+        VerticalLayout {
+            alignment: center;
+            Toggle { checked <=> OverlayState.save-mirror; }
+        }
+    }
+
+    HorizontalLayout {
+        alignment: end;
+        spacing: 8px;
+        ActionButton {
+            text: @tr("Abbrechen");
+            clicked => { OverlayState.save-cancel(); }
+        }
+        ActionButton {
+            text: @tr("Speichern");
+            kind: ButtonKind.primary;
+            clicked => { OverlayState.save-confirm(); }
+        }
+    }
+}

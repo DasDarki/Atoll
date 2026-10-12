@@ -39,6 +39,17 @@ impl Browser {
         name: Option<&str>,
         referer: Option<&str>,
     ) {
+        self.download_stream_converting(url, name, referer, atoll_convert::Recipe::default());
+    }
+
+    /// Downloads a video and turns it into what `recipe` says once it is through.
+    pub(in crate::browser) fn download_stream_converting(
+        &self,
+        url: &str,
+        name: Option<&str>,
+        referer: Option<&str>,
+        recipe: atoll_convert::Recipe,
+    ) {
         self.ensure_downloads_loaded();
         let directory = self.download_directory();
         if let Err(error) = std::fs::create_dir_all(&directory) {
@@ -62,6 +73,7 @@ impl Browser {
                 return;
             }
         };
+        self.convert_when_done(id, recipe);
         let download = self.yt_dlp.download(VideoRequest {
             url: url.to_owned(),
             directory,
@@ -219,7 +231,10 @@ impl Browser {
         self.store_download(&entry);
         self.refresh_downloads();
         match result {
-            Ok(_) => self.show_toast(&t!("Video gespeichert: {}", entry.file_name)),
+            Ok(_) => {
+                self.convert_downloaded(id, &entry.url, entry.path.as_deref());
+                self.show_toast(&t!("Video gespeichert: {}", entry.file_name));
+            }
             Err(VideoError::Failed(message)) => {
                 tracing::warn!(%message, "video download failed");
                 self.show_toast(&t!(

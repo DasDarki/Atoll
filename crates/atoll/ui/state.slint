@@ -328,6 +328,18 @@ export global OverlayState {
     in property <[string]> report-lines;
     callback report-close();
 
+    in property <bool> save-visible;
+    /// Der Dateiname, unter dem gespeichert wird.
+    in property <string> save-name;
+    in property <string> save-source;
+    in property <[string]> save-formats;
+    in-out property <int> save-format;
+    in property <bool> save-can-mirror;
+    in-out property <bool> save-mirror;
+    in property <string> save-hint;
+    callback save-confirm();
+    callback save-cancel();
+
     in property <bool> export-visible;
     in-out property <int> export-scope;
     in-out property <bool> export-markers;

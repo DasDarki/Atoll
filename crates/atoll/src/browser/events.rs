@@ -229,6 +229,10 @@ impl Browser {
                 }
                 Effect::NONE
             }
+            EngineEvent::SaveUrl { url, convert, .. } => {
+                self.save_from_page(&url, convert);
+                Effect::NONE
+            }
             EngineEvent::CopyText(text) => {
                 self.copy_text(&text);
                 Effect::NONE

@@ -361,6 +361,12 @@ msgstr "Image from the clipboard"
 msgid "Bild in neuem Tab öffnen"
 msgstr "Open image in a new tab"
 
+msgid "Bild speichern"
+msgstr "Save image"
+
+msgid "Bild umwandeln und speichern"
+msgstr "Convert and save image"
+
 msgid "Bildadresse kopieren"
 msgstr "Copy image address"
 
@@ -442,6 +448,9 @@ msgstr "Asking the archive …"
 msgid "Das Bild konnte nicht gespeichert werden"
 msgstr "The image could not be saved"
 
+msgid "Das Bild wird an der senkrechten Achse umgedreht."
+msgstr "The picture is turned around its upright axis."
+
 msgid "Das Gemerkte ist gelöscht"
 msgstr "What was remembered is deleted"
 
@@ -471,6 +480,9 @@ msgstr "The VPN does not stand yet, torrents wait for it"
 
 msgid "Das VPN wird verbunden. Bis es steht, lädt Atoll nichts."
 msgstr "The VPN is being connected. Until it stands, Atoll loads nothing."
+
+msgid "Datei"
+msgstr "File"
 
 msgid "Datei auswählen"
 msgstr "Choose file"
@@ -694,6 +706,9 @@ msgstr "This page"
 msgid "Diese Seite ist abgestürzt."
 msgstr "This page crashed."
 
+msgid "Diese Seite lässt sich nicht als Datei speichern"
+msgstr "This page cannot be saved as a file"
+
 msgid "Diese Seite wurde nicht aus dem Internet geladen."
 msgstr "This page was not loaded from the internet."
 
@@ -862,6 +877,9 @@ msgstr "Export"
 msgid "Exportieren"
 msgstr "Export"
 
+msgid "FORMAT"
+msgstr "FORMAT"
+
 msgid "Farbe"
 msgstr "Colour"
 
@@ -936,6 +954,9 @@ msgstr "Happens automatically every four days."
 
 msgid "Geschlossenen Tab wiederherstellen"
 msgstr "Reopen closed tab"
+
+msgid "Gespeichert als {}"
+msgstr "Saved as {}"
 
 msgid "Gestern"
 msgstr "Yesterday"
@@ -1336,6 +1357,9 @@ msgstr "Not allowed yet"
 msgid "Noch nichts besucht."
 msgstr "Nothing visited yet."
 
+msgid "Nur Ton, als {}"
+msgstr "Sound only, as {}"
+
 msgid "Nur die Datei"
 msgstr "The file alone"
 
@@ -1353,6 +1377,9 @@ msgstr "Without DNS inside the tunnel Atoll could only look names up outside it,
 
 msgid "Ohne Schutz laden"
 msgstr "Load without protection"
+
+msgid "Ohne ffmpeg lassen sich nur Bilder umwandeln. Installiere ffmpeg für Ton, Videos und WebP."
+msgstr "Without ffmpeg only pictures can be converted. Install ffmpeg for sound, videos and WebP."
 
 msgid "Opera wird gelesen …"
 msgstr "Reading Opera …"
@@ -1567,11 +1594,17 @@ msgstr "Otherwise only when the page does not answer at all."
 msgid "Sonst zeigen neue Tabs die Atoll-Startseite mit der Suche."
 msgstr "Otherwise new tabs show the Atoll start page with the search."
 
+msgid "Speichern"
+msgstr "Save"
+
 msgid "Speichern fehlgeschlagen: {}"
 msgstr "Saving failed: {}"
 
 msgid "Speichern unter"
 msgstr "Save as"
+
+msgid "Spiegeln, von links nach rechts"
+msgstr "Mirror, from left to right"
 
 msgid "Standard"
 msgstr "Default"
@@ -1783,8 +1816,14 @@ msgstr "Open URL list"
 msgid "Umbenennen"
 msgstr "Rename"
 
+msgid "Umwandeln fehlgeschlagen: {}"
+msgstr "Converting failed: {}"
+
 msgid "Unterbrochen: {}. Atoll lädt nichts."
 msgstr "Broken off: {}. Atoll loads nothing."
+
+msgid "Unverändert lassen"
+msgstr "Leave as it is"
 
 msgid "VORSCHLÄGE"
 msgstr "SUGGESTIONS"
@@ -2007,6 +2046,9 @@ msgstr "Switch to window"
 
 msgid "Zum Fenster wechseln: {}"
 msgstr "Switch to window: {}"
+
+msgid "Zum Speichern muss die Seite geladen sein"
+msgstr "The page has to be loaded to save from it"
 
 msgid "Zum erneuten Laden klicken oder F5 drücken."
 msgstr "Click to load it again or press F5."

@@ -17,6 +17,7 @@ atoll-adblock = { path = "crates/atoll-adblock" }
 atoll-consent = { path = "crates/atoll-consent" }
 atoll-onepassword = { path = "crates/atoll-onepassword" }
 atoll-video = { path = "crates/atoll-video" }
+atoll-convert = { path = "crates/atoll-convert" }
 atoll-plugin = { path = "crates/atoll-plugin" }
 atoll-i18n = { path = "crates/atoll-i18n" }
 atoll-net = { path = "crates/atoll-net" }
@@ -35,7 +36,7 @@ directories = "6"
 getrandom = "0.3"
 anyhow = "1"
 arboard = { version = "3.6", features = ["wayland-data-control"] }
-image = { version = "0.25", default-features = false, features = ["png"] }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "bmp", "tiff", "webp"] }
 libc = "0.2"
 librqbit = { version = "9", default-features = false, features = ["rust-tls", "disable-upload"] }
 mlua = { version = "0.12", features = ["luau", "vendored", "serialize"] }

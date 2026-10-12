@@ -37,7 +37,8 @@ pub enum Shortcut {
     History,
     NewPrivateTab,
     Passwords,
-    DownloadVideo,
+    SavePage,
+    SavePageAs,
 }
 
 impl Shortcut {
@@ -155,7 +156,8 @@ pub fn detect(event: &KeyEvent, modifiers: ModifiersState) -> Option<Shortcut> {
             ("j", false) => Shortcut::Downloads,
             ("h", false) => Shortcut::History,
             ("l", true) => Shortcut::Passwords,
-            ("s", true) => Shortcut::DownloadVideo,
+            ("s", false) => Shortcut::SavePage,
+            ("s", true) => Shortcut::SavePageAs,
             ("+" | "=", _) => Shortcut::ZoomIn,
             ("-", _) => Shortcut::ZoomOut,
             ("0", false) => Shortcut::ZoomReset,

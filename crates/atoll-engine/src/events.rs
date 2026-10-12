@@ -118,6 +118,13 @@ pub enum EngineEvent {
     },
     /// Text the user wants to copy through a context menu entry of Atoll.
     CopyText(String),
+    /// A file the user wants to save through a context menu entry of Atoll. With `convert` set
+    /// they asked to say first what should become of it.
+    SaveUrl {
+        view: ViewId,
+        url: String,
+        convert: bool,
+    },
     /// The content of Chromium's clipboard, read by the [`crate::ClipboardHelper`].
     ClipboardText(String),
     /// Text was written into Chromium's clipboard by the [`crate::ClipboardHelper`].
@@ -209,6 +216,7 @@ impl EngineEvent {
             | EngineEvent::VideoChanged { view, .. }
             | EngineEvent::VideosFound { view, .. }
             | EngineEvent::ScriptResult { view, .. }
+            | EngineEvent::SaveUrl { view, .. }
             | EngineEvent::PageMessage { view, .. } => Some(*view),
             EngineEvent::PopupOpened { opener, .. } => Some(*opener),
             EngineEvent::Download(_)

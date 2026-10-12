@@ -17,7 +17,9 @@ const OPEN_LINK_IN_TAB: i32 = FIRST_COMMAND;
 const COPY_LINK: i32 = FIRST_COMMAND + 1;
 const OPEN_IMAGE_IN_TAB: i32 = FIRST_COMMAND + 2;
 const COPY_IMAGE_ADDRESS: i32 = FIRST_COMMAND + 3;
-const INSPECT: i32 = FIRST_COMMAND + 4;
+const SAVE_IMAGE: i32 = FIRST_COMMAND + 4;
+const CONVERT_IMAGE: i32 = FIRST_COMMAND + 5;
+const INSPECT: i32 = FIRST_COMMAND + 6;
 
 wrap_context_menu_handler! {
     pub(crate) struct ViewContextMenuHandler {
@@ -45,6 +47,8 @@ wrap_context_menu_handler! {
             if is_image(params) {
                 insert(OPEN_IMAGE_IN_TAB, t!("Bild in neuem Tab öffnen"));
                 insert(COPY_IMAGE_ADDRESS, t!("Bildadresse kopieren"));
+                insert(SAVE_IMAGE, t!("Bild speichern"));
+                insert(CONVERT_IMAGE, t!("Bild umwandeln und speichern"));
             }
             if index > 0 && model.count() > index {
                 model.insert_separator_at(index);
@@ -95,6 +99,16 @@ wrap_context_menu_handler! {
                 COPY_LINK => EngineEvent::CopyText(link_url(params)),
                 OPEN_IMAGE_IN_TAB => open_in_tab(self.view, source_url(params)),
                 COPY_IMAGE_ADDRESS => EngineEvent::CopyText(source_url(params)),
+                SAVE_IMAGE => EngineEvent::SaveUrl {
+                    view: self.view,
+                    url: source_url(params),
+                    convert: false,
+                },
+                CONVERT_IMAGE => EngineEvent::SaveUrl {
+                    view: self.view,
+                    url: source_url(params),
+                    convert: true,
+                },
                 INSPECT => EngineEvent::InspectElement {
                     view: self.view,
                     x: params.xcoord(),

@@ -13,6 +13,7 @@ import { PromptDialog } from "overlays/prompt-dialog.slint";
 import { ImportDialog } from "overlays/import-dialog.slint";
 import { ImportReport } from "overlays/import-report.slint";
 import { ExportDialog } from "overlays/export-dialog.slint";
+import { SaveDialog } from "overlays/save-dialog.slint";
 import { ArchivePanel } from "overlays/archive-panel.slint";
 import { HistoryPanel } from "overlays/history-panel.slint";
 import { OperaDialog } from "overlays/opera-dialog.slint";
@@ -68,6 +69,7 @@ export component AppWindow inherits Window {
         || SettingsState.visible
         || OverlayState.import-visible
         || OverlayState.export-visible
+        || OverlayState.save-visible
         || OverlayState.archive-visible
         || OverlayState.history-visible
         || OverlayState.opera-visible
@@ -291,6 +293,8 @@ export component AppWindow inherits Window {
         width: root.width;
         height: root.height;
     }
+
+    if OverlayState.save-visible : SaveDialog { }
 
     if OverlayState.export-visible : ExportDialog {
         width: root.width;

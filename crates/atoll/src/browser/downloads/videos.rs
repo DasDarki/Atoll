@@ -15,6 +15,8 @@ pub struct VideoSearch {
     page_url: String,
     unanswered: usize,
     frames: Vec<FrameVideos>,
+    /// Whether the user is asked what should become of the video before it is saved.
+    asking: bool,
     _timeout: Timer,
 }
 
@@ -37,6 +39,16 @@ impl Browser {
     /// Ctrl+Shift+S, the button in the address bar and the palette: downloads the video that
     /// plays, or the largest one of the page.
     pub fn download_video(&self) {
+        self.search_for_video(false);
+    }
+
+    /// Ctrl+Shift+S on a page that is no file itself: the video of the page is saved, and the
+    /// user says first what should become of it.
+    pub(in crate::browser) fn download_video_asking(&self) {
+        self.search_for_video(true);
+    }
+
+    fn search_for_video(&self, asking: bool) {
         let Some(page_url) = self
             .current_page_url()
             .filter(|url| url.starts_with("https://") || url.starts_with("http://"))
@@ -62,6 +74,7 @@ impl Browser {
             page_url,
             unanswered: frames,
             frames: Vec::new(),
+            asking,
             _timeout: timeout,
         });
     }
@@ -104,9 +117,19 @@ impl Browser {
             VideoChoice::Protected => self.show_toast(t!(
                 "Dieses Video ist kopiergeschützt und lässt sich nicht speichern"
             )),
+            VideoChoice::File(url) if search.asking => {
+                self.open_save_dialog(crate::browser::downloads::SaveTarget::File { url });
+            }
             VideoChoice::File(url) => {
                 tracing::info!(url, "downloading a video file");
                 self.with_live_view(|view| view.start_download(&url));
+            }
+            VideoChoice::Stream { url, name, referer } if search.asking => {
+                self.open_save_dialog(crate::browser::downloads::SaveTarget::Video {
+                    url,
+                    name,
+                    referer: Some(referer),
+                });
             }
             VideoChoice::Stream { url, name, referer } => {
                 self.download_stream(&url, name.as_deref(), Some(&referer));

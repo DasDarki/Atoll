@@ -23,6 +23,7 @@ atoll-torrent.workspace = true
 libc.workspace = true
 ureq.workspace = true
 atoll-video.workspace = true
+atoll-convert.workspace = true
 atoll-storage.workspace = true
 atoll-transfer.workspace = true
 directories.workspace = true

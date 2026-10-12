@@ -397,6 +397,10 @@ fn connect_overlays(window: &AppWindow, browser: &Rc<Browser>) {
         .export_confirm());
     on!(state, on_export_cancel, browser, |target| target
         .export_cancel());
+    on!(state, on_save_confirm, browser, |target| target
+        .save_dialog_confirmed());
+    on!(state, on_save_cancel, browser, |target| target
+        .save_dialog_cancelled());
 }
 
 fn connect_settings(window: &AppWindow, browser: &Rc<Browser>) {
