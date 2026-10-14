@@ -292,6 +292,9 @@ fn connect_overlays(window: &AppWindow, browser: &Rc<Browser>) {
     );
     on!(state, on_passwords_choose, browser, |target, index| target
         .choose_password(index));
+    on!(state, on_passwords_copy, browser, |target, index, what| {
+        target.copy_password_field(index, what)
+    });
     on!(state, on_passwords_close, browser, |target| target
         .close_passwords());
     on!(state, on_palette_edited, browser, |target, text| target

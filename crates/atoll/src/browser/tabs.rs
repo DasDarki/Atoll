@@ -166,6 +166,7 @@ impl Browser {
 
     pub fn close_tab(&self, tab: TabId) {
         self.forget_page_text(tab);
+        self.forget_autofilled(tab);
         let (successor, was_active, closed) = {
             let session = self.session.borrow();
             let Some(record) = session.tab(tab) else {

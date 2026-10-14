@@ -9,6 +9,9 @@ pub struct LoginFill<'a> {
     pub username: &'a str,
     pub password: &'a str,
     pub one_time_code: Option<&'a str>,
+    /// Whether fields that already hold something are left alone, which is what filling by
+    /// itself does: it must never overwrite what the user typed.
+    pub only_empty: bool,
 }
 
 /// Which fields of a login form one frame filled.
@@ -32,6 +35,7 @@ pub(crate) fn fill_script(login: LoginFill<'_>) -> String {
         login.password,
         login.one_time_code.unwrap_or_default(),
         FILL_REPORT_PREFIX,
+        login.only_empty,
     ]);
     format!("({FILL_FUNCTION})(...{arguments});")
 }
@@ -50,7 +54,7 @@ pub(crate) fn parse_fill_report(message: &str) -> Option<FilledFields> {
 /// Fills username, password or one-time code into the visible fields that look like them, also
 /// inside open shadow roots, the way typing would, so pages built with frameworks notice the
 /// values. Reports which fields it filled.
-const FILL_FUNCTION: &str = r#"(username, secret, code, prefix) => {
+const FILL_FUNCTION: &str = r#"(username, secret, code, prefix, onlyEmpty) => {
   const inputs = [];
   const collect = (root) => {
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
@@ -64,6 +68,7 @@ const FILL_FUNCTION: &str = r#"(username, secret, code, prefix) => {
     && getComputedStyle(field).visibility !== "hidden" && !field.disabled && !field.readOnly;
   const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set;
   const fill = (field, value) => {
+    if (onlyEmpty && field.value) return false;
     field.focus();
     setter.call(field, value);
     field.dispatchEvent(new InputEvent("input", {
@@ -102,9 +107,12 @@ mod tests {
             username: "kim",
             password: "a\"b</script>\\",
             one_time_code: None,
+            only_empty: false,
         });
-        assert!(script.starts_with("((username, secret, code, prefix) =>"));
-        assert!(script.ends_with(r#")(...["kim","a\"b</script>\\","","\u0001atoll-fill:"]);"#));
+        assert!(script.starts_with("((username, secret, code, prefix, onlyEmpty) =>"));
+        assert!(
+            script.ends_with(r#")(...["kim","a\"b</script>\\","","\u0001atoll-fill:",false]);"#)
+        );
     }
 
     #[test]

@@ -198,6 +198,12 @@ impl Browser {
                 });
                 self.vpn_settings_changed();
             }
+            "password-autofill" => {
+                let on = state.get_password_autofill();
+                self.update_preference(PreferenceKey::PasswordAutofill, |preferences| {
+                    preferences.password_autofill = on;
+                });
+            }
             "page-text-enabled" => self.set_page_text_enabled(state.get_page_text_enabled()),
             "page-text-fields" => self.set_page_text_fields(state.get_page_text_fields()),
             "page-text-drafts" => self.set_page_text_drafts(state.get_page_text_drafts()),

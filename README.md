@@ -79,12 +79,21 @@ saved tabs therefore cost nothing at startup.
   that the answer is no instead of never hearing one. A site the ad blocker is switched off for
   answers for itself.
 - **1Password**: on pages with a login form a key appears in the address bar. It, `Ctrl+Shift+L`
-  and the command palette list the 1Password logins saved for the site and fill the chosen one
-  into every frame of that site, including fields inside shadow roots, and a message says what
-  was filled. A one-time password is copied to the clipboard. Logins of other sites can be
-  searched and used after a confirmation. Atoll talks to the 1Password CLI (`op`, package
-  `1password-cli`), which asks the 1Password app to unlock, so enable "Integrate with 1Password
-  CLI" in the app's developer settings.
+  and the command palette list the 1Password logins saved for the site. A click fills the chosen
+  one into every frame of that site, including fields inside shadow roots, and a message says
+  what was filled; the buttons next to it copy name, password or one-time code on their own. A
+  copied secret is taken back out of the clipboard after a minute and a half, as long as nothing
+  else was copied meanwhile. When a site has exactly one saved login, Atoll fills it in by itself
+  as the page opens, leaving anything already typed alone; that can be switched off in the
+  settings. Logins of other sites can be searched and used after a confirmation. Nothing is ever
+  written to 1Password.
+  Atoll talks to the 1Password CLI (`op`, package `1password-cli`), which asks the 1Password app
+  to unlock, so enable "Integrate with 1Password CLI" in the app's developer settings. The
+  1Password SDKs are no alternative here: there is no official Rust one, and their service
+  accounts cannot reach personal vaults at all.
+- **Passkeys** are refused, with the reason said plainly. 1Password hands its passkeys to its own
+  browser extension only, neither its CLI nor its SDKs can read them, and Chromium's own passkey
+  window cannot be shown by a browser that renders its pages off screen.
 - **Saving and converting**: `Ctrl+S` saves what the page shows as a file, which is what one
   wants on a page that is a picture, a sound or a video. `Ctrl+Shift+S` asks first: a dialog
   offers the formats that fit (PNG, JPEG, WebP, GIF, BMP, TIFF, AVIF for pictures; MP4, WebM,

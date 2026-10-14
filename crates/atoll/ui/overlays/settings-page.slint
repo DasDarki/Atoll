@@ -605,6 +605,18 @@ export component SettingsPage inherits Modal {
                         title: @tr("Anmeldungen mit 1Password ausfüllen");
                         description: SettingsState.onepassword-status;
                     }
+                    SettingRow {
+                        title: @tr("Von selbst ausfüllen");
+                        description: SettingsState.password-autofill ? @tr("Hat eine Seite genau eine gespeicherte Anmeldung, füllt Atoll sie beim Öffnen aus. Ist 1Password gesperrt, fragt es dabei nach dem Entsperren. Was du selbst getippt hast, bleibt stehen.") : @tr("Ausgefüllt wird nur auf Knopfdruck, über den Schlüssel in der Adressleiste oder Strg+Umschalt+L.");
+                        Toggle {
+                            checked <=> SettingsState.password-autofill;
+                            toggled => { SettingsState.changed("password-autofill"); }
+                        }
+                    }
+                    SettingRow {
+                        title: @tr("Passkeys");
+                        description: @tr("Atoll weist Passkeys ab. 1Password gibt seine Passkeys nur an die eigene Browser-Erweiterung heraus, weder die CLI noch die SDKs können sie lesen, und Chromiums eigenes Passkey-Fenster lässt sich hier nicht zeigen.");
+                    }
                     Divider { }
                     SectionTitle { text: @tr("SEITEN, DIE ES NICHT MEHR GIBT"); }
                     VerticalLayout {

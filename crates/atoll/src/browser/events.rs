@@ -91,6 +91,8 @@ impl Browser {
                 self.page_loaded(view);
                 if let Some(tab) = self.tab_of(view) {
                     self.page_will_settle(tab);
+                    // A page that loads again may be filled again.
+                    self.forget_autofilled(tab);
                 }
                 if matches!(http_status, 404 | 410)
                     && let Some(tab) = self.tab_of(view)
@@ -296,10 +298,14 @@ impl Browser {
                 }
             }
             EngineEvent::LoginFormChanged { view, present } => {
-                if let Some(tab) = self.tab_of(view)
+                let tab = self.tab_of(view);
+                if let Some(tab) = tab
                     && let Some(entry) = self.views.borrow_mut().get_mut(tab)
                 {
                     entry.login_form = present;
+                }
+                if present && let Some(tab) = tab {
+                    self.autofill_login(tab);
                 }
                 Effect {
                     sidebar: false,
@@ -356,7 +362,7 @@ impl Browser {
             EngineEvent::PasskeyRefused(view) => {
                 if self.is_live_view(view) {
                     self.show_toast(t!(
-                        "Passkeys werden in Atoll nicht unterstützt, melde dich anders an"
+                        "Passkeys gehen hier nicht, 1Password gibt sie nur an die eigene Erweiterung heraus"
                     ));
                 }
                 Effect::NONE

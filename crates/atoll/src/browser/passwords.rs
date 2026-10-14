@@ -1,7 +1,9 @@
 use std::cell::RefCell;
+use std::collections::HashSet;
 use std::rc::Rc;
 use std::time::{Duration, Instant};
 
+use atoll_core::TabId;
 use atoll_core::address::display_host;
 use atoll_engine::{FilledFields, LoginFill, ViewId};
 use atoll_onepassword::{Credentials, Login, OnePassword, OpError, logins_for, matches};
@@ -18,10 +20,58 @@ const LOGIN_CACHE: Duration = Duration::from_secs(5 * 60);
 /// How long the frames of a page get to answer a fill.
 const FILL_TIMEOUT: Duration = Duration::from_secs(3);
 
+/// How long a copied secret stays in the clipboard before Atoll takes it back out, the way
+/// 1Password does it itself. Only what is still there is cleared.
+const CLIPBOARD_TIME: Duration = Duration::from_secs(90);
+
+/// What a copy button of a login copies.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Part {
+    Username,
+    Password,
+    Code,
+}
+
+impl Part {
+    fn of(what: i32) -> Option<Self> {
+        match what {
+            0 => Some(Part::Username),
+            1 => Some(Part::Password),
+            2 => Some(Part::Code),
+            _ => None,
+        }
+    }
+
+    fn name(self) -> &'static str {
+        match self {
+            Part::Username => t!("Benutzername"),
+            Part::Password => t!("Passwort"),
+            Part::Code => t!("Einmalcode"),
+        }
+    }
+
+    /// Whether what is copied is a secret that should not linger in the clipboard.
+    fn is_secret(self) -> bool {
+        self != Part::Username
+    }
+
+    fn value(self, credentials: &Credentials) -> Option<String> {
+        match self {
+            Part::Username => Some(credentials.username.clone()),
+            Part::Password => Some(credentials.password.clone()),
+            Part::Code => credentials.one_time_code.clone(),
+        }
+    }
+}
+
 /// 1Password, shared by all windows.
 pub struct PasswordVault {
     cli: OnePassword,
     logins: RefCell<Option<(Instant, Rc<Vec<Login>>)>>,
+    /// The pages that were filled by themselves already, so it happens once each.
+    filled: RefCell<HashSet<(TabId, String)>>,
+    /// The timer that takes a copied secret back out of the clipboard.
+    clipboard: RefCell<Option<Timer>>,
 }
 
 impl PasswordVault {
@@ -33,6 +83,8 @@ impl PasswordVault {
         Self {
             cli,
             logins: RefCell::default(),
+            filled: RefCell::default(),
+            clipboard: RefCell::default(),
         }
     }
 
@@ -57,7 +109,18 @@ pub struct PendingFill {
     unanswered: usize,
     filled: FilledFields,
     code_copied: bool,
+    /// A fill nobody asked for says nothing when it found no fields.
+    quiet: bool,
     _timeout: Timer,
+}
+
+/// Why a login is being fetched.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Reason {
+    /// The user chose it in the list; with `other_site` they agreed to use it elsewhere.
+    Chosen { other_site: bool },
+    /// Atoll fills it by itself because the site has exactly this one login.
+    ByItself,
 }
 
 /// The login popup of one window.
@@ -123,7 +186,7 @@ impl Browser {
             (login, popup.page_url.clone())
         };
         if matches(&login, &page_url) {
-            self.fetch_credentials(login, false);
+            self.fetch_credentials(login, Reason::Chosen { other_site: false });
             return;
         }
         let saved_for = login
@@ -145,10 +208,147 @@ impl Browser {
             t!("Trotzdem einfügen"),
             move || {
                 if let Some(browser) = this.upgrade() {
-                    browser.fetch_credentials(login, true);
+                    browser.fetch_credentials(login, Reason::Chosen { other_site: true });
                 }
             },
         );
+    }
+
+    /// A copy button of the list: puts one part of the login into the clipboard.
+    pub fn copy_password_field(&self, index: i32, what: i32) {
+        let Some(part) = Part::of(what) else { return };
+        let login = {
+            let popup = self.passwords.borrow();
+            usize::try_from(index)
+                .ok()
+                .and_then(|index| popup.shown.get(index).cloned())
+        };
+        let Some(login) = login else { return };
+        self.set_password_status(&t!("{} wird geholt…", part.name()), true);
+        let cli = self.vault.cli.clone();
+        let this = self.this();
+        let id = login.id.clone();
+        run_in_background(
+            "onepassword",
+            move || cli.credentials(&id),
+            move |result| {
+                if let Some(browser) = this.upgrade() {
+                    browser.copy_credentials(part, &login, result);
+                }
+            },
+        );
+    }
+
+    fn copy_credentials(&self, part: Part, login: &Login, result: Result<Credentials, OpError>) {
+        let credentials = match result {
+            Ok(credentials) => credentials,
+            Err(error) => {
+                tracing::warn!(%error, "1Password credentials could not be read");
+                self.set_password_status(&error_text(&error), false);
+                return;
+            }
+        };
+        let Some(value) = part.value(&credentials).filter(|value| !value.is_empty()) else {
+            self.set_password_status(&t!("„{}“ hat keinen {}", login.title, part.name()), false);
+            return;
+        };
+        if !self.clipboard.set_text(&value) {
+            self.set_password_status(t!("Zwischenablage nicht verfügbar"), false);
+            return;
+        }
+        self.close_passwords();
+        if part.is_secret() {
+            self.clear_clipboard_later(value);
+            self.show_toast(&t!(
+                "{} kopiert, in anderthalb Minuten wieder entfernt",
+                part.name()
+            ));
+        } else {
+            self.show_toast(&t!("{} kopiert", part.name()));
+        }
+    }
+
+    /// Takes `secret` out of the clipboard after a while, if nothing else was copied since.
+    fn clear_clipboard_later(&self, secret: String) {
+        let this = self.this();
+        let timer = Timer::default();
+        timer.start(TimerMode::SingleShot, CLIPBOARD_TIME, move || {
+            let Some(browser) = this.upgrade() else {
+                return;
+            };
+            if browser.clipboard.text().as_deref() == Some(secret.as_str()) {
+                browser.clipboard.set_text("");
+            }
+            browser.vault.clipboard.borrow_mut().take();
+        });
+        *self.vault.clipboard.borrow_mut() = Some(timer);
+    }
+
+    /// A page shows a login form: fills it by itself when exactly one login is saved for the
+    /// site and the user asked for that.
+    pub(super) fn autofill_login(&self, tab: TabId) {
+        if !self.preferences.borrow().password_autofill {
+            return;
+        }
+        let Some(url) = self
+            .current_page_url()
+            .filter(|url| url.starts_with("https://") || url.starts_with("http://"))
+        else {
+            return;
+        };
+        if self.session.borrow().active_tab != Some(tab) || self.is_private(tab) {
+            return;
+        }
+        if !self.vault.filled.borrow_mut().insert((tab, url.clone())) {
+            return;
+        }
+        match self.vault.cached_logins() {
+            Some(logins) => self.autofill_from(logins, &url),
+            None => {
+                let cli = self.vault.cli.clone();
+                let this = self.this();
+                run_in_background(
+                    "onepassword",
+                    move || cli.logins(),
+                    move |result| {
+                        let Some(browser) = this.upgrade() else {
+                            return;
+                        };
+                        match result {
+                            Ok(logins) => {
+                                let logins = browser.vault.remember_logins(logins);
+                                browser.autofill_from(logins, &url);
+                            }
+                            Err(error) => {
+                                tracing::debug!(%error, "1Password did not answer for autofill");
+                            }
+                        }
+                    },
+                );
+            }
+        }
+    }
+
+    /// Fills when the site has exactly one login, so nothing is guessed.
+    fn autofill_from(&self, logins: Rc<Vec<Login>>, url: &str) {
+        if self.current_page_url().as_deref() != Some(url) {
+            return;
+        }
+        let matching = logins_for(&logins, url);
+        let [login] = matching.as_slice() else {
+            return;
+        };
+        let login = (*login).clone();
+        tracing::info!(title = %login.title, "filling a login by itself");
+        self.fetch_credentials(login, Reason::ByItself);
+    }
+
+    /// The page changed, so it may be filled again.
+    pub(super) fn forget_autofilled(&self, tab: TabId) {
+        self.vault
+            .filled
+            .borrow_mut()
+            .retain(|(filled, _)| *filled != tab);
     }
 
     fn load_logins(&self) {
@@ -236,8 +436,10 @@ impl Browser {
         overlay.set_passwords_busy(false);
     }
 
-    fn fetch_credentials(&self, login: Login, other_site: bool) {
-        self.set_password_status(t!("Zugangsdaten werden geholt…"), true);
+    fn fetch_credentials(&self, login: Login, reason: Reason) {
+        if reason != Reason::ByItself {
+            self.set_password_status(t!("Zugangsdaten werden geholt…"), true);
+        }
         let cli = self.vault.cli.clone();
         let this = self.this();
         let id = login.id.clone();
@@ -246,7 +448,7 @@ impl Browser {
             move || cli.credentials(&id),
             move |result| {
                 if let Some(browser) = this.upgrade() {
-                    browser.credentials_loaded(&login, other_site, result);
+                    browser.credentials_loaded(&login, reason, result);
                 }
             },
         );
@@ -255,21 +457,35 @@ impl Browser {
     fn credentials_loaded(
         &self,
         login: &Login,
-        other_site: bool,
+        reason: Reason,
         result: Result<Credentials, OpError>,
     ) {
+        let by_itself = reason == Reason::ByItself;
+        let other_site = reason == Reason::Chosen { other_site: true };
         let credentials = match result {
             Ok(credentials) => credentials,
             Err(error) => {
+                if by_itself {
+                    tracing::debug!(%error, "1Password did not answer for a fill by itself");
+                    return;
+                }
                 tracing::warn!(%error, "1Password credentials could not be read");
                 self.set_password_status(&error_text(&error), false);
                 return;
             }
         };
-        let page_url = self.passwords.borrow().page_url.clone();
-        if !self.passwords_visible() || self.current_page_url().as_deref() != Some(&page_url) {
+        let page_url = if by_itself {
+            self.current_page_url().unwrap_or_default()
+        } else {
+            self.passwords.borrow().page_url.clone()
+        };
+        if self.current_page_url().as_deref() != Some(&page_url)
+            || (!by_itself && !self.passwords_visible())
+        {
             self.close_passwords();
-            self.show_toast(t!("Die Seite hat sich geändert, es wurde nichts eingefügt"));
+            if !by_itself {
+                self.show_toast(t!("Die Seite hat sich geändert, es wurde nichts eingefügt"));
+            }
             return;
         }
         let page_host = display_host(&page_url);
@@ -277,6 +493,8 @@ impl Browser {
             username: &credentials.username,
             password: &credentials.password,
             one_time_code: credentials.one_time_code.as_deref(),
+            // What the user typed themselves stays, a fill nobody asked for only adds.
+            only_empty: by_itself,
         };
         let mut asked = None;
         self.with_live_view(|view| {
@@ -287,9 +505,11 @@ impl Browser {
         });
         self.close_passwords();
         let Some((view, frames)) = asked.filter(|(_, frames)| *frames > 0) else {
-            self.show_toast(t!(
-                "Das Anmeldefeld gehört zu einer anderen Seite, es wurde nichts eingefügt"
-            ));
+            if !by_itself {
+                self.show_toast(t!(
+                    "Das Anmeldefeld gehört zu einer anderen Seite, es wurde nichts eingefügt"
+                ));
+            }
             return;
         };
         tracing::info!(frames, "filling a login from 1Password");
@@ -297,6 +517,9 @@ impl Browser {
             .one_time_code
             .as_deref()
             .is_some_and(|code| self.clipboard.set_text(code));
+        if code_copied {
+            self.clear_clipboard_later(credentials.one_time_code.clone().unwrap_or_default());
+        }
         let this = self.this();
         let timeout = Timer::default();
         timeout.start(TimerMode::SingleShot, FILL_TIMEOUT, move || {
@@ -309,6 +532,7 @@ impl Browser {
             unanswered: frames,
             filled: FilledFields::default(),
             code_copied,
+            quiet: by_itself,
             _timeout: timeout,
         });
     }
@@ -333,7 +557,9 @@ impl Browser {
         };
         if let Some(fill) = finished {
             tracing::info!(filled = ?fill.filled, "login filled");
-            self.show_toast(&fill_message(fill.filled, fill.code_copied));
+            if !fill.quiet || fill.filled.any() {
+                self.show_toast(&fill_message(fill.filled, fill.code_copied));
+            }
         }
     }
 
@@ -342,15 +568,17 @@ impl Browser {
             return;
         };
         tracing::info!(unanswered = fill.unanswered, "no frame filled the login");
-        self.show_toast(&fill_message(fill.filled, fill.code_copied));
+        if !fill.quiet || fill.filled.any() {
+            self.show_toast(&fill_message(fill.filled, fill.code_copied));
+        }
     }
 
     /// Settings: shows whether the 1Password CLI can be used.
     pub(super) fn show_password_settings(&self) {
         let Some(window) = self.window() else { return };
-        window
-            .global::<SettingsState>()
-            .set_onepassword_status(t!("Die 1Password-CLI wird gesucht…").into());
+        let state = window.global::<SettingsState>();
+        state.set_password_autofill(self.preferences.borrow().password_autofill);
+        state.set_onepassword_status(t!("Die 1Password-CLI wird gesucht…").into());
         let cli = self.vault.cli.clone();
         let this = self.this();
         run_in_background(

@@ -229,6 +229,9 @@ msgstr "With the consent tools Atoll knows, it presses the button that refuses e
 msgid "Atoll konnte nicht gestartet werden: {}"
 msgstr "Atoll could not be started: {}"
 
+msgid "Atoll weist Passkeys ab. 1Password gibt seine Passkeys nur an die eigene Browser-Erweiterung heraus, weder die CLI noch die SDKs können sie lesen, und Chromiums eigenes Passkey-Fenster lässt sich hier nicht zeigen."
+msgstr "Atoll refuses passkeys. 1Password hands its passkeys to its own browser extension only, neither the CLI nor the SDKs can read them, and Chromium's own passkey window cannot be shown here."
+
 msgid "Auch Entwürfe in Editoren auf Seiten"
 msgstr "Drafts in editors on pages as well"
 
@@ -297,6 +300,9 @@ msgstr "From {}"
 
 msgid "Aus. Atoll geht direkt ins Netz."
 msgstr "Off. Atoll goes out directly."
+
+msgid "Ausgefüllt wird nur auf Knopfdruck, über den Schlüssel in der Adressleiste oder Strg+Umschalt+L."
+msgstr "Filling happens on request only, through the key in the address bar or Ctrl+Shift+L."
 
 msgid "Ausgeschaltet"
 msgstr "Switched off"
@@ -384,6 +390,9 @@ msgstr "Budget in GB"
 
 msgid "COOKIE-BANNER"
 msgstr "COOKIE BANNERS"
+
+msgid "Code"
+msgstr "Code"
 
 msgid "Cookie-Banner werden abgelehnt, ab dem nächsten Laden einer Seite"
 msgstr "Cookie banners are refused, from the next page load on"
@@ -988,6 +997,9 @@ msgstr "Green"
 msgid "Gültig bis"
 msgstr "Valid until"
 
+msgid "Hat eine Seite genau eine gespeicherte Anmeldung, füllt Atoll sie beim Öffnen aus. Ist 1Password gesperrt, fragt es dabei nach dem Entsperren. Was du selbst getippt hast, bleibt stehen."
+msgstr "When a site has exactly one saved login, Atoll fills it in when the page opens. If 1Password is locked it asks to unlock. What you typed yourself stays."
+
 msgid "Heute"
 msgstr "Today"
 
@@ -1144,6 +1156,9 @@ msgstr "No special permissions"
 msgid "Keine gültigen Adressen gefunden · {} ungültige Zeilen"
 msgstr "No valid addresses found · {} invalid lines"
 
+msgid "Klick füllt die Anmeldung aus, die Knöpfe kopieren einzeln."
+msgstr "A click fills the login in, the buttons copy single parts."
+
 msgid "Konfiguration wählen…"
 msgstr "Choose a configuration…"
 
@@ -1263,6 +1278,9 @@ msgstr "Move right"
 
 msgid "Nach unten"
 msgstr "Move down"
+
+msgid "Name"
+msgstr "Name"
 
 msgid "Name der neuen Insel"
 msgstr "Name of the new island"
@@ -1420,8 +1438,11 @@ msgstr "Folder \"{}\" created in the bookmarks bar"
 msgid "Panel konnte nicht geöffnet werden: {}"
 msgstr "The panel could not be opened: {}"
 
-msgid "Passkeys werden in Atoll nicht unterstützt, melde dich anders an"
-msgstr "Atoll does not support passkeys, sign in another way"
+msgid "Passkeys"
+msgstr "Passkeys"
+
+msgid "Passkeys gehen hier nicht, 1Password gibt sie nur an die eigene Erweiterung heraus"
+msgstr "Passkeys do not work here, 1Password hands them to its own extension only"
 
 msgid "Passwort"
 msgstr "Password"
@@ -1897,6 +1918,9 @@ msgstr "Reload completely, without the cache"
 msgid "Vollständig neu laden, ohne Cache (Strg+F5)"
 msgstr "Reload completely, without the cache (Ctrl+F5)"
 
+msgid "Von selbst ausfüllen"
+msgstr "Fill in by itself"
+
 msgid "Vor jedem Download nach dem Speicherort fragen"
 msgstr "Ask where to save before every download"
 
@@ -2170,6 +2194,9 @@ msgstr "search pages tabs content text find"
 msgid "tab öffnen"
 msgstr "open tab"
 
+msgid "tab öffnen neu new blank leer"
+msgstr "tab open new blank empty"
+
 msgid "tor privat anonym zwiebel"
 msgstr "tor private anonymous onion"
 
@@ -2286,6 +2313,12 @@ msgstr "{} could not be loaded. Trying again in an hour."
 msgid "{} konnte nicht geöffnet werden"
 msgstr "{} could not be opened"
 
+msgid "{} kopiert"
+msgstr "{} copied"
+
+msgid "{} kopiert, in anderthalb Minuten wieder entfernt"
+msgstr "{} copied, taken back out in a minute and a half"
+
 msgid "{} und {}"
 msgstr "{} and {}"
 
@@ -2297,6 +2330,9 @@ msgstr "{} of {}"
 
 msgid "{} wird geholt"
 msgstr "{} is being fetched"
+
+msgid "{} wird geholt…"
+msgstr "Fetching {}…"
 
 msgid "{} wird geladen"
 msgstr "{} is being loaded"
@@ -2375,6 +2411,9 @@ msgstr "Remove \"{}\"?"
 
 msgid "„{}“ entfernt"
 msgstr "“{}” removed"
+
+msgid "„{}“ hat keinen {}"
+msgstr "\"{}\" has no {}"
 
 msgid "„{}“ installiert"
 msgstr "“{}” installed"

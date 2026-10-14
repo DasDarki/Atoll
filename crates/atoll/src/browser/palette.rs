@@ -209,6 +209,25 @@ impl Browser {
         let mut results: Vec<(PaletteItem, Entry)> = Vec::new();
         let mut seen = HashSet::new();
 
+        // Opening a tab is what the palette is asked for most often, so it stands above the
+        // search as long as the search is not about something else.
+        let new_tab = t!("Neuer Tab");
+        if matcher.is_empty()
+            || matcher
+                .score(&[new_tab, t!("tab öffnen neu new blank leer")])
+                .is_some()
+        {
+            results.push((
+                PaletteItem {
+                    kind: PaletteKind::Command,
+                    title: new_tab.into(),
+                    shortcut: t!("Strg+T").into(),
+                    ..PaletteItem::default()
+                },
+                Entry::Command(Command::NewTab),
+            ));
+        }
+
         let mut tabs: Vec<(i64, &TabEntry)> = state
             .tabs
             .iter()
