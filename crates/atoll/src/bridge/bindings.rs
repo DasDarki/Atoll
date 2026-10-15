@@ -410,6 +410,10 @@ fn connect_settings(window: &AppWindow, browser: &Rc<Browser>) {
     let state = window.global::<SettingsState>();
     on!(state, on_changed, browser, |target, key| target
         .setting_changed(&key));
+    on!(state, on_check_for_updates, browser, |target| target
+        .check_for_updates_now());
+    on!(state, on_open_release_page, browser, |target| target
+        .open_release_page());
     on!(state, on_use_current_page, browser, |target| target
         .use_current_page_as_start_page());
     on!(state, on_clear_history, browser, |target| target

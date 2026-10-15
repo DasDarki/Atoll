@@ -133,6 +133,9 @@ msgstr "Search all tabs"
 msgid "Alle Tabs schlafen legen"
 msgstr "Put all tabs to sleep"
 
+msgid "Alle Versionen mit ihren Anmerkungen, auf GitHub."
+msgstr "Every version with its notes, on GitHub."
+
 msgid "Alle Workspaces"
 msgstr "All workspaces"
 
@@ -231,6 +234,15 @@ msgstr "Atoll could not be started: {}"
 
 msgid "Atoll weist Passkeys ab. 1Password gibt seine Passkeys nur an die eigene Browser-Erweiterung heraus, weder die CLI noch die SDKs können sie lesen, und Chromiums eigenes Passkey-Fenster lässt sich hier nicht zeigen."
 msgstr "Atoll refuses passkeys. 1Password hands its passkeys to its own browser extension only, neither the CLI nor the SDKs can read them, and Chromium's own passkey window cannot be shown here."
+
+msgid "Atoll {} ist da, auf der Release-Seite liegt sie bereit."
+msgstr "Atoll {} is out, the release page has it ready."
+
+msgid "Atoll {} ist da. Dein Paketsystem bringt sie, zum Beispiel mit „paru -S atoll-bin“."
+msgstr "Atoll {} is out. Your package manager brings it, for example with \"paru -S atoll-bin\"."
+
+msgid "Atoll {} ist die neueste Version"
+msgstr "Atoll {} is the newest version"
 
 msgid "Auch Entwürfe in Editoren auf Seiten"
 msgstr "Drafts in editors on pages as well"
@@ -489,6 +501,9 @@ msgstr "The VPN does not stand yet, torrents wait for it"
 
 msgid "Das VPN wird verbunden. Bis es steht, lädt Atoll nichts."
 msgstr "The VPN is being connected. Until it stands, Atoll loads nothing."
+
+msgid "Das ist die neueste Version."
+msgstr "This is the newest version."
 
 msgid "Datei"
 msgstr "File"
@@ -820,6 +835,9 @@ msgstr "Frozen tabs in the background"
 msgid "Eingetipptes bleibt außen vor. Dann findest du eine Seite nur an dem, was auf ihr steht."
 msgstr "What you typed stays out. You then find a page only by what stands on it."
 
+msgid "Einmal am Tag fragt Atoll bei GitHub nach der neuesten Version. Heruntergeladen wird nichts, und die Frage nimmt denselben Weg wie alles andere, also auch durch dein VPN."
+msgstr "Once a day Atoll asks GitHub for the newest version. Nothing is downloaded, and the question takes the same way as everything else, through your VPN as well."
+
 msgid "Einmalcode"
 msgstr "One-time code"
 
@@ -879,6 +897,9 @@ msgstr "Allow the extension \"{}\"?"
 
 msgid "Erweiterungen"
 msgstr "Extensions"
+
+msgid "Es wird nicht nach neuen Versionen gesehen."
+msgstr "Nothing is looked up about new versions."
 
 msgid "Export"
 msgstr "Export"
@@ -990,6 +1011,12 @@ msgstr "Counts for {} alone."
 
 msgid "Gilt sofort, ohne Neustart."
 msgstr "Applies at once, without a restart."
+
+msgid "GitHub antwortet nicht: {}"
+msgstr "GitHub does not answer: {}"
+
+msgid "GitHub wird gefragt…"
+msgstr "Asking GitHub…"
 
 msgid "Grün"
 msgstr "Green"
@@ -1122,6 +1149,9 @@ msgstr "With this off, Atoll leaves this page alone."
 
 msgid "Jetzt aktualisieren"
 msgstr "Update now"
+
+msgid "Jetzt sehen"
+msgstr "Look now"
 
 msgid "Kein Login gefunden"
 msgstr "No login found"
@@ -1269,6 +1299,9 @@ msgstr "To the very bottom"
 
 msgid "Nach links verschieben"
 msgstr "Move left"
+
+msgid "Nach neuen Versionen sehen"
+msgstr "Look for new versions"
 
 msgid "Nach oben"
 msgstr "Move up"
@@ -1476,6 +1509,9 @@ msgstr "Log"
 
 msgid "Protokoll von „{}“"
 msgstr "Log of \"{}\""
+
+msgid "Release-Seite"
+msgstr "Release page"
 
 msgid "Rosa"
 msgstr "Pink"
@@ -1888,6 +1924,9 @@ msgstr "Delete history?"
 msgid "Verlauf übernehmen"
 msgstr "Take over the history"
 
+msgid "Version {}"
+msgstr "Version {}"
+
 msgid "Versteckt die Banner, die die EasyList-Cookie-Liste kennt"
 msgstr "Hides the banners the EasyList Cookie List knows"
 
@@ -2206,6 +2245,9 @@ msgstr "invalid line"
 msgid "ungültige Zeilen"
 msgstr "invalid lines"
 
+msgid "unverständliche Antwort"
+msgstr "an answer that makes no sense"
+
 msgid "video speichern download film clip"
 msgstr "video save download film clip"
 
@@ -2375,6 +2417,9 @@ msgstr "Change…"
 
 msgid "Öffnen"
 msgstr "Open"
+
+msgid "ÜBER ATOLL"
+msgstr "ABOUT ATOLL"
 
 msgid "Über ein System-VPN"
 msgstr "Over a system VPN"

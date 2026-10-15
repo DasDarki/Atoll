@@ -94,6 +94,10 @@ saved tabs therefore cost nothing at startup.
 - **Passkeys** are refused, with the reason said plainly. 1Password hands its passkeys to its own
   browser extension only, neither its CLI nor its SDKs can read them, and Chromium's own passkey
   window cannot be shown by a browser that renders its pages off screen.
+- **New versions**: once a day Atoll asks GitHub which release is the newest, and says so when
+  it is not the one that runs. It only looks: where a package manager put Atoll, that manager
+  does the updating, and the message says so. The question goes the same way as everything else
+  Atoll fetches, so a VPN stays in front of it, and the settings switch it off entirely.
 - **Saving and converting**: `Ctrl+S` saves what the page shows as a file, which is what one
   wants on a page that is a picture, a sound or a video. `Ctrl+Shift+S` asks first: a dialog
   offers the formats that fit (PNG, JPEG, WebP, GIF, BMP, TIFF, AVIF for pictures; MP4, WebM,
@@ -255,6 +259,14 @@ The build copies the CEF runtime files next to the binary in `target/<profile>/`
 
 ### Installing on Arch and CachyOS
 
+The quickest way is the package in the AUR, which carries the build of the newest release:
+
+```sh
+paru -S atoll-bin   # or yay -S atoll-bin
+```
+
+It puts the same tree in place that `install.sh` builds. To build it yourself instead:
+
 ```sh
 ./install.sh            # build a release, package it for pacman and install it
 ./install.sh --package  # only build the package under target/package/
@@ -322,6 +334,31 @@ storage).
 | `Ctrl+Plus`, `Ctrl+Minus`, `Ctrl+0` | Zoom |
 | `F11` | Full screen |
 | `F12`, `Ctrl+Shift+I` | Show or hide the developer tools |
+
+## Releasing
+
+A tag starts everything, the version is never written by hand anywhere else:
+
+```sh
+git tag v1.2.0 && git push origin v1.2.0
+```
+
+[`.github/workflows/release.yml`](.github/workflows/release.yml) then builds Atoll in an Arch
+container, writes the version from the tag into the workspace, packs
+`atoll-<version>-x86_64.tar.zst` with the binary, the CEF runtime, the starter, the desktop entry
+and the icons, hangs it into a GitHub release together with its checksum, and pushes a fresh
+`PKGBUILD` for `atoll-bin` to the AUR.
+
+The AUR step needs one secret in the repository, `AUR_SSH_KEY`: the private half of an SSH key
+whose public half lies in the AUR account under "My Account". Without it the workflow does
+everything else and leaves the AUR alone. [`packaging/aur/PKGBUILD.in`](packaging/aur/PKGBUILD.in)
+is the template the step fills in, and `scripts/package.sh` builds the archive, also by hand:
+
+```sh
+scripts/package.sh --version 1.2.0
+```
+
+The release carries the free codecs of CEF. H.264 and AAC need a CEF of one's own, see below.
 
 ## URL list format
 

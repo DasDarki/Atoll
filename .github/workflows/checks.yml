@@ -1,0 +1,53 @@
+name: Pruefungen
+
+# Was vor jedem Zusammenfuehren stimmen muss: Form, Linter, Tests und die Uebersetzungen.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: fmt, clippy, tests
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:base-devel
+    steps:
+      - name: Werkzeuge
+        run: |
+          pacman -Syu --noconfirm --needed git rust clang llvm pkgconf cmake python perl \
+            fontconfig libxkbcommon nss nspr alsa-lib
+          rustc --version
+
+      - uses: actions/checkout@v4
+
+      - name: CEF aus dem Zwischenlager
+        uses: actions/cache@v4
+        with:
+          path: .cef
+          key: cef-${{ hashFiles('Cargo.lock') }}
+          restore-keys: cef-
+
+      - name: Kisten aus dem Zwischenlager
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-${{ hashFiles('Cargo.lock') }}
+          restore-keys: cargo-
+
+      - name: Form
+        run: cargo fmt --all --check
+
+      - name: Linter
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Tests
+        run: cargo test --workspace --locked

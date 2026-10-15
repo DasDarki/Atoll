@@ -36,6 +36,7 @@ mod startup;
 mod suggestions;
 mod tabs;
 mod transfer;
+mod updates;
 mod upload;
 mod views;
 mod vpn;
@@ -85,6 +86,7 @@ use sidebar::SidebarModels;
 use suggestions::SuggestionState;
 use tabs::ClosedTab;
 use transfer::TransferState;
+use updates::Updates;
 use upload::UploadState;
 use views::ViewRegistry;
 use web_input::InputTarget;
@@ -218,6 +220,7 @@ pub struct Browser {
     suggestions: RefCell<SuggestionState>,
     palette: RefCell<PaletteState>,
     bookmarks: RefCell<BookmarkState>,
+    updates: RefCell<Updates>,
     upload: RefCell<UploadState>,
     this: Weak<Browser>,
 }
@@ -295,6 +298,7 @@ impl Browser {
             suggestions: RefCell::default(),
             palette: RefCell::default(),
             bookmarks: RefCell::default(),
+            updates: RefCell::default(),
             upload: RefCell::default(),
             this: this.clone(),
         }))

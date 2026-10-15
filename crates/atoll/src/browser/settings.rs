@@ -66,6 +66,7 @@ impl Browser {
         self.show_vpn_settings();
         self.show_torrent_settings();
         self.show_page_search_settings();
+        self.show_update_settings();
         self.show_memory_settings();
         self.show_password_settings();
         self.show_plugin_settings();
@@ -198,6 +199,7 @@ impl Browser {
                 });
                 self.vpn_settings_changed();
             }
+            "update-check" => self.set_update_check(state.get_update_check()),
             "password-autofill" => {
                 let on = state.get_password_autofill();
                 self.update_preference(PreferenceKey::PasswordAutofill, |preferences| {

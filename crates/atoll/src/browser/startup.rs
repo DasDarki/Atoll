@@ -21,6 +21,9 @@ impl Browser {
         if let Some(tab) = active {
             self.activate_tab(tab);
         }
+        // Once a run, and only the window that starts the engine does it.
+        static ASKED: std::sync::Once = std::sync::Once::new();
+        ASKED.call_once(|| self.check_for_updates_in_time());
     }
 
     /// Pinned tabs keep their engine instance once they have one.

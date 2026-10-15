@@ -241,6 +241,32 @@ export component SettingsPage inherits Modal {
                             wrap: word-wrap;
                         }
                     }
+                    Divider { }
+                    SectionTitle { text: @tr("ÜBER ATOLL"); }
+                    SettingRow {
+                        title: @tr("Version {}", SettingsState.version);
+                        description: SettingsState.update-status;
+                        ActionButton {
+                            text: @tr("Jetzt sehen");
+                            clicked => { SettingsState.check-for-updates(); }
+                        }
+                    }
+                    SettingRow {
+                        title: @tr("Nach neuen Versionen sehen");
+                        description: @tr("Einmal am Tag fragt Atoll bei GitHub nach der neuesten Version. Heruntergeladen wird nichts, und die Frage nimmt denselben Weg wie alles andere, also auch durch dein VPN.");
+                        Toggle {
+                            checked <=> SettingsState.update-check;
+                            toggled => { SettingsState.changed("update-check"); }
+                        }
+                    }
+                    SettingRow {
+                        title: @tr("Release-Seite");
+                        description: @tr("Alle Versionen mit ihren Anmerkungen, auf GitHub.");
+                        ActionButton {
+                            text: @tr("Öffnen");
+                            clicked => { SettingsState.open-release-page(); }
+                        }
+                    }
                 }
 
                 if SettingsState.section == 1 : VerticalLayout {

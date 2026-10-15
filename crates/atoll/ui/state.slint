@@ -379,6 +379,13 @@ export global SettingsState {
     in-out property <int> memory-limit-gb;
     in property <int> max-memory-limit-gb;
     in property <string> memory-usage;
+    /// Die Version, die laeuft, und was ueber neuere bekannt ist.
+    in property <string> version;
+    in property <string> update-status;
+    in-out property <bool> update-check;
+    callback check-for-updates();
+    callback open-release-page();
+
     in property <string> onepassword-status;
     in-out property <bool> password-autofill;
 
