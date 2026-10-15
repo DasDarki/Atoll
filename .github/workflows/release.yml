@@ -110,6 +110,88 @@ jobs:
             Dieser Build traegt die freien Codecs von CEF. Fuer H.264 und AAC braucht es einen
             eigenen CEF-Build, siehe `scripts/build-cef.sh` in den Quellen.
 
+  arch-repo:
+    name: pacman-Repo nachziehen
+    needs: [build, release]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    container:
+      image: archlinux:base-devel
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GPG_KEY: ${{ secrets.REPO_GPG_KEY }}
+      VERSION: ${{ needs.build.outputs.version }}
+      # Der Ort, der in der pacman.conf steht und sich nie aendert.
+      REPO_TAG: arch-repo
+    steps:
+      - name: Werkzeuge
+        run: pacman -Syu --noconfirm --needed git github-cli gnupg
+
+      - uses: actions/checkout@v4
+
+      - name: Ohne Schluessel nichts tun
+        id: guard
+        run: |
+          if [ -z "$GPG_KEY" ]; then
+            echo "Kein REPO_GPG_KEY hinterlegt, das pacman-Repo bleibt unberuehrt."
+            echo "skip=yes" >>"$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/download-artifact@v4
+        if: steps.guard.outputs.skip != 'yes'
+        with:
+          name: atoll-linux-x86_64
+          path: paket
+
+      - name: Paket bauen und signieren
+        if: steps.guard.outputs.skip != 'yes'
+        run: |
+          git config --global --add safe.directory '*'
+          # makepkg laeuft nicht als root, also bekommt es einen eigenen Benutzer.
+          useradd -m packager
+          install -dm755 /tmp/repo
+          sed "s/@VERSION@/$VERSION/g" packaging/repo/PKGBUILD.in >/tmp/repo/PKGBUILD
+          cp "paket/atoll-$VERSION-x86_64.tar.zst" /tmp/repo/
+          chown -R packager /tmp/repo
+          # Der Schluessel geht ueber eine Datei, damit er in keiner Befehlszeile steht.
+          printf '%s\n' "$GPG_KEY" >/tmp/key.asc
+          chown packager /tmp/key.asc
+          su - packager -c 'gpg --batch --quiet --import /tmp/key.asc'
+          shred -u /tmp/key.asc
+          key="$(su - packager -c 'gpg --list-secret-keys --with-colons' |
+            awk -F: '/^sec:/ {print $5; exit}')"
+          [ -n "$key" ] || { echo 'Im Schluessel steckt kein geheimer Teil.' >&2; exit 1; }
+          echo "Signiert wird mit $key."
+          su - packager -c "cd /tmp/repo && makepkg --nodeps --noconfirm --sign --key $key"
+          su - packager -c "cd /tmp/repo && repo-add --sign --key $key atoll.db.tar.zst atoll-*.pkg.tar.zst"
+          # Die Datenbank liegt als Verweis daneben, ein Release traegt aber nur echte Dateien.
+          cd /tmp/repo
+          for name in db files; do
+            cp -L --remove-destination "atoll.$name.tar.zst" "atoll.$name"
+            cp -L --remove-destination "atoll.$name.tar.zst.sig" "atoll.$name.sig"
+          done
+          su - packager -c "gpg --armor --export $key" >atoll-repo.gpg
+          ls -l /tmp/repo
+
+      - name: Ins Repo-Release legen
+        if: steps.guard.outputs.skip != 'yes'
+        run: |
+          cd /tmp/repo
+          gh release view "$REPO_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
+            gh release create "$REPO_TAG" --repo "$GITHUB_REPOSITORY" \
+              --title 'pacman-Repository' \
+              --notes 'Das Paketverzeichnis fuer Arch. Die Dateien hier werden mit jeder Version ersetzt, die Adresse bleibt.'
+          # Was von der vorigen Version liegt, geht: die Datenbank kennt nur die neue.
+          gh release view "$REPO_TAG" --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name' |
+            while read -r asset; do
+              gh release delete-asset "$REPO_TAG" "$asset" --repo "$GITHUB_REPOSITORY" --yes
+            done
+          gh release upload "$REPO_TAG" --repo "$GITHUB_REPOSITORY" --clobber \
+            atoll-*.pkg.tar.zst atoll-*.pkg.tar.zst.sig \
+            atoll.db atoll.db.sig atoll.db.tar.zst atoll.db.tar.zst.sig \
+            atoll.files atoll.files.sig atoll.files.tar.zst atoll.files.tar.zst.sig \
+            atoll-repo.gpg
+
   aur:
     name: AUR nachziehen
     needs: [build, release]
@@ -162,7 +244,7 @@ jobs:
           su packager -c 'cd /tmp/aur && makepkg --printsrcinfo >.SRCINFO'
           cd /tmp/aur
           git config user.name 'Atoll CI'
-          git config user.email 'lukas@hufnagel-dellbrueck.de'
+          git config user.email 'thedasdarki@gmail.com'
           git add PKGBUILD .SRCINFO
           if git diff --cached --quiet; then
             echo 'Nichts zu schieben.'

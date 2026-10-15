@@ -1,0 +1,35 @@
+# Maintainer: DasDarki <thedasdarki@gmail.com>
+# Diese Datei ist eine Vorlage fuer das eigene pacman-Repo. Die Werkbank setzt @VERSION@ ein und
+# legt das Release-Archiv daneben, siehe .github/workflows/release.yml.
+pkgname=atoll
+pkgver=@VERSION@
+pkgrel=1
+pkgdesc='Browser mit Inseln, Workspaces und Erweiterungen'
+arch=('x86_64')
+url='https://github.com/DasDarki/Atoll'
+license=('custom')
+provides=('atoll-bin')
+conflicts=('atoll-bin')
+depends=('alsa-lib' 'at-spi2-core' 'cairo' 'dbus' 'expat' 'fontconfig' 'glib2' 'libcups'
+         'libstdc++' 'libx11' 'libxcb' 'libxcomposite' 'libxdamage' 'libxext' 'libxfixes'
+         'libxkbcommon' 'libxrandr' 'mesa' 'nspr' 'nss' 'pango' 'systemd-libs')
+optdepends=('yt-dlp: gestreamte Videos herunterladen'
+            'ffmpeg: heruntergeladene Dateien umwandeln und Streams zusammenfuehren'
+            '1password-cli: Anmeldungen mit 1Password ausfuellen'
+            'git: Erweiterungen aus Git installieren')
+options=('!strip' '!debug' '!lto')
+source=("atoll-$pkgver-x86_64.tar.zst")
+sha256sums=('SKIP')
+
+package() {
+  cd "$srcdir"
+  install -dm755 "$pkgdir/opt/Atoll"
+  cp -a opt/Atoll/. "$pkgdir/opt/Atoll/"
+  install -Dm755 usr/bin/atoll "$pkgdir/usr/bin/atoll"
+  install -Dm644 usr/share/applications/dev.dasdarki.Atoll.desktop \
+    "$pkgdir/usr/share/applications/dev.dasdarki.Atoll.desktop"
+  for icon in usr/share/icons/hicolor/*/apps/dev.dasdarki.Atoll.png; do
+    install -Dm644 "$icon" "$pkgdir/$icon"
+  done
+  install -Dm644 share/CEF-CREDITS.html "$pkgdir/usr/share/licenses/$pkgname/CEF-CREDITS.html"
+}

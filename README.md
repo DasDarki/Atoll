@@ -259,13 +259,23 @@ The build copies the CEF runtime files next to the binary in `target/<profile>/`
 
 ### Installing on Arch and CachyOS
 
-The quickest way is the package in the AUR, which carries the build of the newest release:
+Atoll has a package repository of its own, signed, so `pacman` keeps it up to date like
+everything else. The key is added once, then two lines go into `/etc/pacman.conf`:
 
 ```sh
-paru -S atoll-bin   # or yay -S atoll-bin
+curl -LO https://github.com/DasDarki/Atoll/releases/download/arch-repo/atoll-repo.gpg
+sudo pacman-key --add atoll-repo.gpg
+sudo pacman-key --lsign-key 'Atoll'
+sudo tee -a /etc/pacman.conf >/dev/null <<'EOF'
+
+[atoll]
+Server = https://github.com/DasDarki/Atoll/releases/download/arch-repo
+EOF
+sudo pacman -Sy atoll
 ```
 
-It puts the same tree in place that `install.sh` builds. To build it yourself instead:
+From then on `sudo pacman -Syu` brings every new version. The package puts the same tree in
+place that `install.sh` builds. To build it yourself instead:
 
 ```sh
 ./install.sh            # build a release, package it for pacman and install it
@@ -349,10 +359,25 @@ container, writes the version from the tag into the workspace, packs
 and the icons, hangs it into a GitHub release together with its checksum, and pushes a fresh
 `PKGBUILD` for `atoll-bin` to the AUR.
 
-The AUR step needs one secret in the repository, `AUR_SSH_KEY`: the private half of an SSH key
-whose public half lies in the AUR account under "My Account". Without it the workflow does
-everything else and leaves the AUR alone. [`packaging/aur/PKGBUILD.in`](packaging/aur/PKGBUILD.in)
-is the template the step fills in, and `scripts/package.sh` builds the archive, also by hand:
+Two secrets steer the last two steps, and each step that misses its secret is skipped while the
+rest runs:
+
+- `REPO_GPG_KEY` signs the packages of the repository. A key of its own is made for it, without
+  a passphrase, because the workbench has to sign unattended:
+
+  ```sh
+  gpg --batch --passphrase '' --quick-generate-key 'Atoll <thedasdarki@gmail.com>' rsa4096 sign never
+  gpg --armor --export-secret-keys 'Atoll <thedasdarki@gmail.com>' | gh secret set REPO_GPG_KEY
+  ```
+
+  The packages, the database and the public key land in the release under the tag `arch-repo`,
+  whose address never changes. [`packaging/repo/PKGBUILD.in`](packaging/repo/PKGBUILD.in) is the
+  template for it.
+- `AUR_SSH_KEY` is the private half of an SSH key whose public half lies in an AUR account under
+  "My Account". With it, every tag also updates `atoll-bin` in the AUR;
+  [`packaging/aur/PKGBUILD.in`](packaging/aur/PKGBUILD.in) is that template.
+
+`scripts/package.sh` builds the archive everything else is made of, also by hand:
 
 ```sh
 scripts/package.sh --version 1.2.0

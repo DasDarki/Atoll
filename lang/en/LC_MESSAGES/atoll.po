@@ -238,8 +238,8 @@ msgstr "Atoll refuses passkeys. 1Password hands its passkeys to its own browser 
 msgid "Atoll {} ist da, auf der Release-Seite liegt sie bereit."
 msgstr "Atoll {} is out, the release page has it ready."
 
-msgid "Atoll {} ist da. Dein Paketsystem bringt sie, zum Beispiel mit „paru -S atoll-bin“."
-msgstr "Atoll {} is out. Your package manager brings it, for example with \"paru -S atoll-bin\"."
+msgid "Atoll {} ist da. Dein Paketsystem bringt sie, mit „pacman -Syu“."
+msgstr "Atoll {} is out. Your package manager brings it, with \"pacman -Syu\"."
 
 msgid "Atoll {} ist die neueste Version"
 msgstr "Atoll {} is the newest version"

@@ -1,4 +1,4 @@
-# Maintainer: DasDarki <lukas@hufnagel-dellbrueck.de>
+# Maintainer: DasDarki <thedasdarki@gmail.com>
 # Diese Datei ist eine Vorlage. Die Werkbank setzt @VERSION@ und @SHA256@ ein und schiebt das
 # Ergebnis ins AUR, siehe .github/workflows/release.yml.
 pkgname=atoll-bin

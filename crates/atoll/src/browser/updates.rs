@@ -195,7 +195,7 @@ fn installed_by_a_manager() -> bool {
 fn update_message(version: &str, by_a_manager: bool) -> String {
     if by_a_manager {
         t!(
-            "Atoll {} ist da. Dein Paketsystem bringt sie, zum Beispiel mit „paru -S atoll-bin“.",
+            "Atoll {} ist da. Dein Paketsystem bringt sie, mit „pacman -Syu“.",
             version
         )
     } else {
@@ -295,7 +295,7 @@ mod tests {
 
     #[test]
     fn the_message_says_who_does_the_updating() {
-        assert!(update_message("1.2.0", true).contains("paru"));
+        assert!(update_message("1.2.0", true).contains("pacman"));
         assert!(update_message("1.2.0", false).contains("Release"));
     }
 }
