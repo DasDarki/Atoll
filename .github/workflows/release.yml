@@ -1,5 +1,7 @@
 name: Release
 
+# Ausgeloest von einem Tag, von Hand ueber "Run workflow" auch ohne einen.
+
 # Ein Tag wie v1.2.0 loest alles aus: bauen, schnueren, veroeffentlichen und das AUR-Paket
 # nachziehen. Die Version im Programm kommt aus dem Tag, damit sie nicht zweimal gepflegt wird.
 on:
