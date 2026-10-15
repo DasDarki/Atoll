@@ -87,7 +87,9 @@ fn peers_in(answer: &[u8]) -> Vec<SocketAddr> {
         return Vec::new();
     };
     peers
-        .chunks_exact(6)
+        .as_chunks::<6>()
+        .0
+        .iter()
         .map(|peer| {
             let address = Ipv4Addr::new(peer[0], peer[1], peer[2], peer[3]);
             let port = u16::from_be_bytes([peer[4], peer[5]]);
