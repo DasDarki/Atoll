@@ -388,6 +388,15 @@ impl Browser {
             })
             .collect();
         commands.sort_by_key(|entry| std::cmp::Reverse(entry.0));
+        // Ein neuer Tab ist der haeufigste Wunsch an die Palette und steht deshalb vor allem
+        // anderen, sobald er ueberhaupt gemeint sein kann.
+        if let Some(at) = commands
+            .iter()
+            .position(|(_, _, entry)| matches!(entry, Entry::Command(Command::NewTab)))
+        {
+            let favourite = commands.remove(at);
+            commands.insert(0, favourite);
+        }
         commands
             .into_iter()
             .map(|(_, item, entry)| (item, entry))

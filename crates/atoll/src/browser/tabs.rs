@@ -336,8 +336,28 @@ impl Browser {
 
     /// Moves `tab` to `index` inside `island`, which may be the one it is already in.
     pub(super) fn move_tab_to(&self, tab: TabId, island: IslandId, index: usize) {
-        let result = self.storage.move_tab(tab, island, index);
-        self.report(t!("Tab verschieben"), result);
+        self.move_tabs_to(&[tab], island, index);
+    }
+
+    /// Moves `tabs` to `index` inside `island`, where `index` counts the island's tabs without
+    /// the ones that are moving. They end up next to each other in the order they are given.
+    pub(super) fn move_tabs_to(&self, tabs: &[TabId], island: IslandId, index: usize) {
+        let here: Vec<TabId> = self
+            .session
+            .borrow()
+            .island(island)
+            .map(|entry| entry.tabs.iter().map(|tab| tab.id).collect())
+            .unwrap_or_default();
+        let order = order_after_move(&here, tabs, index);
+        let moved = self.storage.transaction(|transaction| {
+            // The island is written out from the front: every single move shifts what comes
+            // after it, and tabs that travel together must not be scattered on the way.
+            for (place, tab) in order.iter().enumerate() {
+                transaction.move_tab(*tab, island, place)?;
+            }
+            Ok(())
+        });
+        self.report(t!("Tab verschieben"), moved);
         self.reload_session();
         self.refresh_sidebar();
     }
@@ -516,5 +536,66 @@ impl Browser {
         } else {
             self.refresh_sidebar();
         }
+    }
+}
+
+/// How an island's tabs lie after `moving` landed at `index`, which counts the tabs that stay.
+/// Tabs that come from another island are simply inserted there.
+fn order_after_move(here: &[TabId], moving: &[TabId], index: usize) -> Vec<TabId> {
+    let staying: Vec<TabId> = here
+        .iter()
+        .copied()
+        .filter(|tab| !moving.contains(tab))
+        .collect();
+    let at = index.min(staying.len());
+    let mut order = Vec::with_capacity(staying.len() + moving.len());
+    order.extend_from_slice(&staying[..at]);
+    order.extend_from_slice(moving);
+    order.extend_from_slice(&staying[at..]);
+    order
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn tabs(ids: &[i64]) -> Vec<TabId> {
+        ids.iter().map(|id| TabId(*id)).collect()
+    }
+
+    #[test]
+    fn what_travels_together_lands_together() {
+        let here = tabs(&[1, 2, 3]);
+        assert_eq!(
+            order_after_move(&here, &tabs(&[1, 2]), 1),
+            tabs(&[3, 1, 2]),
+            "behind the only tab that stays"
+        );
+        assert_eq!(
+            order_after_move(&here, &tabs(&[1, 3]), 0),
+            tabs(&[1, 3, 2]),
+            "in front of it"
+        );
+    }
+
+    #[test]
+    fn tabs_from_elsewhere_are_put_in_place() {
+        let here = tabs(&[1, 2]);
+        assert_eq!(
+            order_after_move(&here, &tabs(&[7, 8]), 1),
+            tabs(&[1, 7, 8, 2])
+        );
+        assert_eq!(
+            order_after_move(&here, &tabs(&[7]), 99),
+            tabs(&[1, 2, 7]),
+            "a place beyond the end is the end"
+        );
+    }
+
+    #[test]
+    fn a_single_tab_moves_as_before() {
+        let here = tabs(&[1, 2, 3]);
+        assert_eq!(order_after_move(&here, &tabs(&[1]), 2), tabs(&[2, 3, 1]));
+        assert_eq!(order_after_move(&here, &tabs(&[3]), 0), tabs(&[3, 1, 2]));
     }
 }

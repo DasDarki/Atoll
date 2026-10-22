@@ -189,7 +189,12 @@ impl WindowManager {
 
     /// A tab of `source` was dropped outside of it. Once the pointer had time to enter the window
     /// it was dropped on, the tab moves there, or into a new window at `position`.
-    pub(super) fn tab_dropped_outside(&self, source: WindowId, tab: TabId, position: (i32, i32)) {
+    pub(super) fn tabs_dropped_outside(
+        &self,
+        source: WindowId,
+        tabs: Vec<TabId>,
+        position: (i32, i32),
+    ) {
         let dropped = Instant::now();
         let manager = self.this.clone();
         slint::Timer::single_shot(DROP_SETTLE, move || {
@@ -207,8 +212,8 @@ impl WindowManager {
                 })
                 .and_then(|(window, _)| manager.browser(window));
             match target {
-                Some(target) => browser.move_tab_to_window(tab, &target),
-                None => browser.move_tab_to_new_window(tab, Some(position)),
+                Some(target) => browser.move_tabs_to_window(&tabs, &target),
+                None => browser.move_tabs_to_new_window(&tabs, Some(position)),
             }
         });
     }

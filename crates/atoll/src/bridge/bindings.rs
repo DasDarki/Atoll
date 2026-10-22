@@ -71,6 +71,12 @@ fn connect_sidebar(window: &AppWindow, browser: &Rc<Browser>) {
     );
     on!(state, on_activate_tab, browser, |target, id| target
         .activate_tab(tab(id)));
+    on!(
+        state,
+        on_tab_clicked,
+        browser,
+        |target, id, control, shift| target.tab_clicked(tab(id), control, shift)
+    );
     on!(state, on_close_tab, browser, |target, id| target
         .close_tab(tab(id)));
     on!(

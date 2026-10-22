@@ -38,6 +38,7 @@ impl SidebarModels {
 impl Browser {
     /// Rebuilds the workspace chips, the island and tab rows and the move targets.
     pub(super) fn refresh_sidebar(&self) {
+        self.prune_picks();
         let shown_elsewhere = self.workspaces_shown_elsewhere();
         let cutoff = self.archive_cutoff();
         let suggestions = cutoff.is_some() && self.has_archive_suggestions();
@@ -95,6 +96,7 @@ impl Browser {
                     .is_some_and(|entry| entry.view.is_loading());
                 rows.push(SidebarRow {
                     kind: RowKind::Tab,
+                    picked: self.shows_as_picked(tab.id),
                     private: tab.private,
                     through_tor: tab.private && self.is_tor(tab.id),
                     island_id: entry.island.id.0 as i32,
@@ -122,10 +124,20 @@ impl Browser {
                 .global::<SidebarState>()
                 .set_archive_suggestion(suggestions);
         }
+        let hovered = self
+            .window()
+            .map(|window| window.global::<SidebarState>().get_hover_tab());
+        let gone = hovered.is_some_and(|hovered| {
+            hovered >= 0 && !session.tabs().any(|tab| tab.id.0 as i32 == hovered)
+        });
         drop(favicons);
         drop(views);
         drop(lifecycle);
         drop(session);
+        if gone && let Some(window) = self.window() {
+            // The row the card belongs to is not there any more, so nobody would take it away.
+            window.global::<SidebarState>().set_hovering(false);
+        }
         // Whatever moved the tabs may have added or taken away a tab showing this page.
         self.refresh_open_elsewhere();
     }

@@ -24,25 +24,37 @@ impl Browser {
             self.tab_drag_dropped();
             return;
         }
+        // Everything that was dragged goes along, not only the row under the pointer.
+        let mut tabs = self.dragged_tabs();
+        if !tabs.contains(&tab) {
+            tabs = vec![tab];
+        }
         self.forget_tab_drag();
+        self.forget_picks();
         let origin = handle.position().to_logical(scale);
         let position = (
             (origin.x + x - DROP_OFFSET.0).round() as i32,
             (origin.y + y - DROP_OFFSET.1).round() as i32,
         );
         if let Some(manager) = self.manager() {
-            manager.tab_dropped_outside(self.id, tab, position);
+            manager.tabs_dropped_outside(self.id, tabs, position);
         }
     }
 
     /// Moves `tab` into a new window with a workspace of its own. The page keeps running.
     pub fn move_tab_to_new_window(&self, tab: TabId, position: Option<(i32, i32)>) {
+        self.move_tabs_to_new_window(&[tab], position);
+    }
+
+    /// The same for several tabs, which land in one island of the new workspace, in order.
+    pub(super) fn move_tabs_to_new_window(&self, tabs: &[TabId], position: Option<(i32, i32)>) {
         let Some(manager) = self.manager() else {
             return;
         };
+        let Some(&first) = tabs.first() else { return };
         let (record, island, departure) = {
             let session = self.session.borrow();
-            let Some(record) = session.tab(tab).cloned() else {
+            let Some(record) = session.tab(first).cloned() else {
                 return;
             };
             let Some(island) = session
@@ -51,12 +63,16 @@ impl Browser {
             else {
                 return;
             };
-            let departure = Departure::of(&session, [tab]);
+            let departure = Departure::of(&session, tabs.iter().copied());
             (record, island, departure)
         };
-        let name = display_host(&record.url)
-            .or_else(|| record.title.clone())
-            .unwrap_or_else(|| island.name.clone());
+        let name = if tabs.len() > 1 {
+            t!("{} Tabs", tabs.len())
+        } else {
+            display_host(&record.url)
+                .or_else(|| record.title.clone())
+                .unwrap_or_else(|| island.name.clone())
+        };
         let created = self.storage.transaction(|transaction| {
             let workspace = transaction.create_workspace(&name)?;
             let target = transaction.create_island(NewIsland {
@@ -66,10 +82,12 @@ impl Browser {
                 index: None,
                 created_at: Self::now(),
             })?;
-            transaction.move_tab(tab, target.id, 0)?;
+            for (step, tab) in tabs.iter().enumerate() {
+                transaction.move_tab(*tab, target.id, step)?;
+            }
             transaction.set_setting(
                 &Self::active_workspace_key(workspace.id),
-                &tab.0.to_string(),
+                &first.0.to_string(),
             )?;
             Ok(workspace.id)
         });
@@ -85,15 +103,21 @@ impl Browser {
 
     /// Moves `tab` into the window `target` and shows it there. The page keeps running.
     pub(super) fn move_tab_to_window(&self, tab: TabId, target: &Browser) {
+        self.move_tabs_to_window(&[tab], target);
+    }
+
+    /// The same for several tabs, which arrive next to each other.
+    pub(super) fn move_tabs_to_window(&self, tabs: &[TabId], target: &Browser) {
         if target.id == self.id {
             return;
         }
+        let Some(&first) = tabs.first() else { return };
         let departure = {
             let session = self.session.borrow();
-            if !session.contains_tab(tab) {
+            if !tabs.iter().all(|tab| session.contains_tab(*tab)) {
                 return;
             }
-            Departure::of(&session, [tab])
+            Departure::of(&session, tabs.iter().copied())
         };
         let destination = target
             .insertion_point_after_active()
@@ -101,13 +125,19 @@ impl Browser {
         let Some((island, index)) = destination else {
             return;
         };
-        if let Err(error) = self.storage.move_tab(tab, island, index) {
+        let moved = self.storage.transaction(|transaction| {
+            for (step, tab) in tabs.iter().enumerate() {
+                transaction.move_tab(*tab, island, index.saturating_add(step))?;
+            }
+            Ok(())
+        });
+        if let Err(error) = moved {
             self.report(t!("Tab verschieben"), Err::<(), _>(error));
             return;
         }
         self.reload_session_here();
         target.reload_session_here();
-        target.activate_tab(tab);
+        target.activate_tab(first);
         if let Some(manager) = self.manager() {
             manager.focus_window(target.id);
         }

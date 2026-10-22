@@ -121,7 +121,8 @@ pub struct Preferences {
     pub torrent_upload: bool,
     /// What happens with a torrent file that was downloaded: `ask`, `load` or `keep`.
     pub torrent_files: String,
-    /// Whether Atoll fills a login by itself when the site has exactly one in 1Password.
+    /// Whether Atoll fills a login by itself when the site has exactly one in 1Password. Off,
+    /// because every page with a login form would otherwise ask 1Password for permission.
     pub password_autofill: bool,
     /// Whether Atoll looks at GitHub now and then whether a newer version was released.
     pub update_check: bool,
@@ -268,7 +269,7 @@ impl Default for Preferences {
             torrent_device: String::new(),
             torrent_upload: true,
             torrent_files: "ask".to_owned(),
-            password_autofill: true,
+            password_autofill: false,
             update_check: true,
             search_in_pages: false,
             page_text_enabled: true,
@@ -485,7 +486,7 @@ mod tests {
             torrent_device: "wg0".to_owned(),
             torrent_upload: false,
             torrent_files: "load".to_owned(),
-            password_autofill: false,
+            password_autofill: true,
             update_check: false,
             search_in_pages: true,
             page_text_enabled: false,

@@ -24,6 +24,8 @@ export struct SidebarRow {
     count: int,
     state: TabLoadState,
     active: bool,
+    /// Ob die Zeile zu den Tabs gehoert, die gemeinsam verschoben werden sollen.
+    picked: bool,
     pinned: bool,
     loading: bool,
     idle: bool,

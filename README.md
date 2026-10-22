@@ -19,7 +19,10 @@ saved tabs therefore cost nothing at startup.
 - **Moving tabs**: a tab is dragged to another place in the sidebar, inside its island or into
   another one, with a line showing where it lands. Dropped on the header of an island it goes to
   the top of it, which is the only way into one that is collapsed, and dropped outside the window
-  it moves to the window under the pointer or into a new one.
+  it moves to the window under the pointer or into a new one. `Ctrl+click` picks several tabs out,
+  `Shift+click` everything between the last one and this; they are marked, they travel as one and
+  land next to each other, and dropped outside the window they take a window of their own
+  together.
 - **Own window frame**: the toolbar doubles as the title bar with the window buttons, a double
   click maximizes the window, and the edges resize it.
 - **Four tab states**: *Live* (visible), *Frozen* (recently used, paused in the background),
@@ -83,9 +86,10 @@ saved tabs therefore cost nothing at startup.
   one into every frame of that site, including fields inside shadow roots, and a message says
   what was filled; the buttons next to it copy name, password or one-time code on their own. A
   copied secret is taken back out of the clipboard after a minute and a half, as long as nothing
-  else was copied meanwhile. When a site has exactly one saved login, Atoll fills it in by itself
-  as the page opens, leaving anything already typed alone; that can be switched off in the
-  settings. Logins of other sites can be searched and used after a confirmation. Nothing is ever
+  else was copied meanwhile. One visit to the list asks 1Password once, however many parts are
+  copied, and the list of logins is kept for half an hour, because every question means another
+  permission prompt in the 1Password app. Filling a page by itself, for sites with exactly one
+  saved login, is switched off for the same reason and can be switched on in the settings. Logins of other sites can be searched and used after a confirmation. Nothing is ever
   written to 1Password.
   Atoll talks to the 1Password CLI (`op`, package `1password-cli`), which asks the 1Password app
   to unlock, so enable "Integrate with 1Password CLI" in the app's developer settings. The

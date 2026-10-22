@@ -62,6 +62,17 @@ export component Sidebar inherits Rectangle {
     width: Theme.sidebar-width;
     background: Theme.chrome;
 
+    // Unter allem: wer die Seitenleiste verlaesst, nimmt die Vorschaukarte mit. Eine Zeile, die
+    // waehrend des Zeigens verschwindet, kann das selbst nicht mehr melden.
+    leaving := TouchArea {
+        mouse-cursor: default;
+        changed has-hover => {
+            if (!self.has-hover) {
+                SidebarState.hovering = false;
+            }
+        }
+    }
+
     VerticalLayout {
         WorkspaceBar { }
 

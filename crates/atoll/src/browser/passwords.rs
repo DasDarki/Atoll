@@ -14,8 +14,15 @@ use crate::platform::tasks::run_in_background;
 use crate::ui::{OverlayState, PasswordItem, SettingsState};
 use atoll_i18n::t;
 
-/// How long the list of logins is reused before 1Password is asked again.
-const LOGIN_CACHE: Duration = Duration::from_secs(5 * 60);
+/// How long the list of logins is reused before 1Password is asked again. It holds no secrets,
+/// only titles, user names and addresses, and every fresh question means another permission
+/// prompt in the 1Password app, so it is kept for a good while.
+const LOGIN_CACHE: Duration = Duration::from_secs(30 * 60);
+
+/// How long the secrets of one login are kept after they were fetched. Copying the user name and
+/// then the password is one thought of the user, and it must not be two questions to 1Password.
+/// They are dropped with the window, when the popup closes and at the latest after this.
+const SECRET_CACHE: Duration = Duration::from_secs(2 * 60);
 
 /// How long the frames of a page get to answer a fill.
 const FILL_TIMEOUT: Duration = Duration::from_secs(3);
@@ -68,6 +75,8 @@ impl Part {
 pub struct PasswordVault {
     cli: OnePassword,
     logins: RefCell<Option<(Instant, Rc<Vec<Login>>)>>,
+    /// The secrets of the login last asked for, so one visit to the popup asks once.
+    secrets: RefCell<Option<(Instant, String, Credentials)>>,
     /// The pages that were filled by themselves already, so it happens once each.
     filled: RefCell<HashSet<(TabId, String)>>,
     /// The timer that takes a copied secret back out of the clipboard.
@@ -83,9 +92,28 @@ impl PasswordVault {
         Self {
             cli,
             logins: RefCell::default(),
+            secrets: RefCell::default(),
             filled: RefCell::default(),
             clipboard: RefCell::default(),
         }
+    }
+
+    /// The secrets of `id` if they were fetched a moment ago.
+    fn cached_secrets(&self, id: &str) -> Option<Credentials> {
+        self.secrets
+            .borrow()
+            .as_ref()
+            .filter(|(fetched, known, _)| fetched.elapsed() < SECRET_CACHE && known == id)
+            .map(|(_, _, credentials)| credentials.clone())
+    }
+
+    fn remember_secrets(&self, id: &str, credentials: &Credentials) {
+        *self.secrets.borrow_mut() = Some((Instant::now(), id.to_owned(), credentials.clone()));
+    }
+
+    /// Lets go of the secrets, which happens as soon as the popup is closed.
+    fn forget_secrets(&self) {
+        self.secrets.borrow_mut().take();
     }
 
     fn cached_logins(&self) -> Option<Rc<Vec<Login>>> {
@@ -160,6 +188,7 @@ impl Browser {
     }
 
     pub fn close_passwords(&self) {
+        self.vault.forget_secrets();
         *self.passwords.borrow_mut() = PasswordPopup::default();
         if let Some(window) = self.window() {
             window.global::<OverlayState>().set_passwords_visible(false);
@@ -224,6 +253,10 @@ impl Browser {
                 .and_then(|index| popup.shown.get(index).cloned())
         };
         let Some(login) = login else { return };
+        if let Some(credentials) = self.vault.cached_secrets(&login.id) {
+            self.copy_credentials(part, &login, Ok(credentials));
+            return;
+        }
         self.set_password_status(&t!("{} wird geholt…", part.name()), true);
         let cli = self.vault.cli.clone();
         let this = self.this();
@@ -241,7 +274,10 @@ impl Browser {
 
     fn copy_credentials(&self, part: Part, login: &Login, result: Result<Credentials, OpError>) {
         let credentials = match result {
-            Ok(credentials) => credentials,
+            Ok(credentials) => {
+                self.vault.remember_secrets(&login.id, &credentials);
+                credentials
+            }
             Err(error) => {
                 tracing::warn!(%error, "1Password credentials could not be read");
                 self.set_password_status(&error_text(&error), false);
@@ -256,15 +292,19 @@ impl Browser {
             self.set_password_status(t!("Zwischenablage nicht verfügbar"), false);
             return;
         }
-        self.close_passwords();
+        // The popup stays open: copying the user name and then the password is one visit, and
+        // every visit asks 1Password once.
         if part.is_secret() {
             self.clear_clipboard_later(value);
-            self.show_toast(&t!(
-                "{} kopiert, in anderthalb Minuten wieder entfernt",
-                part.name()
-            ));
+            self.set_password_status(
+                &t!(
+                    "{} kopiert, in anderthalb Minuten wieder entfernt",
+                    part.name()
+                ),
+                false,
+            );
         } else {
-            self.show_toast(&t!("{} kopiert", part.name()));
+            self.set_password_status(&t!("{} kopiert", part.name()), false);
         }
     }
 
@@ -437,6 +477,10 @@ impl Browser {
     }
 
     fn fetch_credentials(&self, login: Login, reason: Reason) {
+        if let Some(credentials) = self.vault.cached_secrets(&login.id) {
+            self.credentials_loaded(&login, reason, Ok(credentials));
+            return;
+        }
         if reason != Reason::ByItself {
             self.set_password_status(t!("Zugangsdaten werden geholt…"), true);
         }
@@ -463,7 +507,10 @@ impl Browser {
         let by_itself = reason == Reason::ByItself;
         let other_site = reason == Reason::Chosen { other_site: true };
         let credentials = match result {
-            Ok(credentials) => credentials,
+            Ok(credentials) => {
+                self.vault.remember_secrets(&login.id, &credentials);
+                credentials
+            }
             Err(error) => {
                 if by_itself {
                     tracing::debug!(%error, "1Password did not answer for a fill by itself");

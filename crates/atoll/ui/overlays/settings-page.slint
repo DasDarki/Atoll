@@ -633,7 +633,7 @@ export component SettingsPage inherits Modal {
                     }
                     SettingRow {
                         title: @tr("Von selbst ausfüllen");
-                        description: SettingsState.password-autofill ? @tr("Hat eine Seite genau eine gespeicherte Anmeldung, füllt Atoll sie beim Öffnen aus. Ist 1Password gesperrt, fragt es dabei nach dem Entsperren. Was du selbst getippt hast, bleibt stehen.") : @tr("Ausgefüllt wird nur auf Knopfdruck, über den Schlüssel in der Adressleiste oder Strg+Umschalt+L.");
+                        description: SettingsState.password-autofill ? @tr("Hat eine Seite genau eine gespeicherte Anmeldung, füllt Atoll sie beim Öffnen aus. Dafür fragt 1Password auf jeder Anmeldeseite nach Erlaubnis, das kann lästig werden. Was du selbst getippt hast, bleibt stehen.") : @tr("Ausgefüllt wird nur auf Knopfdruck, über den Schlüssel in der Adressleiste oder Strg+Umschalt+L. Dann fragt 1Password auch nur dann.");
                         Toggle {
                             checked <=> SettingsState.password-autofill;
                             toggled => { SettingsState.changed("password-autofill"); }

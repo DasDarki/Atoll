@@ -12,6 +12,8 @@ export component TabRow inherits Rectangle {
     property <length> press-x;
     property <length> press-y;
     property <bool> dragging;
+    property <bool> control-held;
+    property <bool> shift-held;
     property <length> top: self.absolute-position.y;
     // While an island is dragged over the tabs of an island, it would land below that island.
     property <bool> island-target: SidebarState.island-drag-id != -1
@@ -35,7 +37,7 @@ export component TabRow inherits Rectangle {
     }
 
     height: 32px;
-    opacity: root.dragging ? 0.5 : 1.0;
+    opacity: root.dragging || (root.entry.picked && SidebarState.tab-drag-id != -2) ? 0.5 : 1.0;
 
     menu := ContextMenuArea {
         Menu {
@@ -103,6 +105,8 @@ export component TabRow inherits Rectangle {
                     root.press-x = self.mouse-x;
                     root.press-y = self.mouse-y;
                     root.dragging = false;
+                    root.control-held = event.modifiers.control;
+                    root.shift-held = event.modifiers.shift;
                 }
                 if (event.kind == PointerEventKind.up && event.button == PointerEventButton.left && root.dragging) {
                     root.dragging = false;
@@ -127,7 +131,7 @@ export component TabRow inherits Rectangle {
             }
             clicked => {
                 SidebarState.hovering = false;
-                SidebarState.activate-tab(root.entry.tab-id);
+                SidebarState.tab-clicked(root.entry.tab-id, root.control-held, root.shift-held);
             }
             changed has-hover => {
                 if (self.has-hover) {
@@ -149,7 +153,11 @@ export component TabRow inherits Rectangle {
         x: 6px;
         width: parent.width - 12px;
         border-radius: Theme.radius-small;
-        background: root.entry.active ? Theme.selected : touch.has-hover || close.hovered ? Theme.hover : transparent;
+        background: root.entry.active ? Theme.selected
+            : root.entry.picked ? Theme.accent.transparentize(0.86)
+            : touch.has-hover || close.hovered ? Theme.hover : transparent;
+        border-width: root.entry.picked ? 1px : 0px;
+        border-color: Theme.accent.transparentize(0.5);
         animate background { duration: 100ms; }
 
         Rectangle {

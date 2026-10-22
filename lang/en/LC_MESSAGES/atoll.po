@@ -313,8 +313,8 @@ msgstr "From {}"
 msgid "Aus. Atoll geht direkt ins Netz."
 msgstr "Off. Atoll goes out directly."
 
-msgid "Ausgefüllt wird nur auf Knopfdruck, über den Schlüssel in der Adressleiste oder Strg+Umschalt+L."
-msgstr "Filling happens on request only, through the key in the address bar or Ctrl+Shift+L."
+msgid "Ausgefüllt wird nur auf Knopfdruck, über den Schlüssel in der Adressleiste oder Strg+Umschalt+L. Dann fragt 1Password auch nur dann."
+msgstr "Filling happens on request only, through the key in the address bar or Ctrl+Shift+L. 1Password then asks only then as well."
 
 msgid "Ausgeschaltet"
 msgstr "Switched off"
@@ -1024,8 +1024,8 @@ msgstr "Green"
 msgid "Gültig bis"
 msgstr "Valid until"
 
-msgid "Hat eine Seite genau eine gespeicherte Anmeldung, füllt Atoll sie beim Öffnen aus. Ist 1Password gesperrt, fragt es dabei nach dem Entsperren. Was du selbst getippt hast, bleibt stehen."
-msgstr "When a site has exactly one saved login, Atoll fills it in when the page opens. If 1Password is locked it asks to unlock. What you typed yourself stays."
+msgid "Hat eine Seite genau eine gespeicherte Anmeldung, füllt Atoll sie beim Öffnen aus. Dafür fragt 1Password auf jeder Anmeldeseite nach Erlaubnis, das kann lästig werden. Was du selbst getippt hast, bleibt stehen."
+msgstr "When a site has exactly one saved login, Atoll fills it in when the page opens. For that 1Password asks for permission on every login page, which can get tiresome. What you typed yourself stays."
 
 msgid "Heute"
 msgstr "Today"
@@ -2315,6 +2315,9 @@ msgstr "{} pages"
 
 msgid "{} Seiten, {}"
 msgstr "{} pages, {}"
+
+msgid "{} Tabs"
+msgstr "{} tabs"
 
 msgid "{} Tabs in {} Inseln"
 msgstr "{} tabs in {} islands"

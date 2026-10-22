@@ -23,6 +23,7 @@ mod page;
 mod pages;
 mod palette;
 mod passwords;
+mod picks;
 mod plugins;
 mod preferences;
 mod private;
@@ -77,6 +78,7 @@ use page::PageState;
 use pages::PageSearch;
 use palette::PaletteState;
 use passwords::{PasswordPopup, PasswordVault, PendingFill};
+use picks::Picks;
 use plugins::{OpenPanel, Plugins};
 pub use preferences::Preferences;
 use private::PrivatePages;
@@ -192,6 +194,8 @@ pub struct Browser {
     opera: RefCell<OperaImport>,
     island_drag: RefCell<IslandDrag>,
     tab_drag: RefCell<TabDrag>,
+    /// The tabs picked in the sidebar, to be moved together.
+    picks: RefCell<Picks>,
     page: RefCell<PageState>,
     dialogs: RefCell<DialogQueue>,
     context_menu: Cell<Option<(ViewId, RequestId)>>,
@@ -268,6 +272,7 @@ impl Browser {
             island_drag: RefCell::default(),
             elsewhere: RefCell::default(),
             tab_drag: RefCell::default(),
+            picks: RefCell::default(),
             page: RefCell::default(),
             dialogs: RefCell::default(),
             context_menu: Cell::new(None),

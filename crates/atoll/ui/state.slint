@@ -20,6 +20,8 @@ export global SidebarState {
     callback move-island-to-workspace(int, int);
 
     callback activate-tab(int);
+    /// Ein Klick auf eine Tab-Zeile, mit Strg und Umschalt wie sie gehalten wurden.
+    callback tab-clicked(int, bool, bool);
     callback close-tab(int);
     callback tab-action(int, string);
     callback move-tab-to-island(int, int);

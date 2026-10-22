@@ -28,11 +28,12 @@ pub struct IslandDrag {
     insert: Option<usize>,
 }
 
-/// A tab on its way to another place.
+/// Tabs on their way to another place, more than one when several were picked beforehand.
 #[derive(Debug, Default, Clone)]
 pub struct TabDrag {
-    tab: Option<TabId>,
-    /// The island it would land in and its place among that island's tabs.
+    /// What is being dragged, in the order the sidebar shows it.
+    tabs: Vec<TabId>,
+    /// The island they would land in and their place among that island's tabs.
     target: Option<(IslandId, usize)>,
 }
 
@@ -93,12 +94,16 @@ impl Browser {
         }
     }
 
-    /// A tab is being dragged.
+    /// A tab is being dragged. One that was picked beforehand takes everything picked along,
+    /// one that was not is dragged alone and the picking ends.
     pub fn tab_drag_started(&self, tab: TabId) {
-        *self.tab_drag.borrow_mut() = TabDrag {
-            tab: Some(tab),
-            target: None,
+        let tabs = if self.is_picked(tab) {
+            self.picked_tabs()
+        } else {
+            self.forget_picks_quietly();
+            vec![tab]
         };
+        *self.tab_drag.borrow_mut() = TabDrag { tabs, target: None };
         if let Some(window) = self.window() {
             let state = window.global::<SidebarState>();
             state.set_tab_drag_id(tab.0 as i32);
@@ -117,18 +122,19 @@ impl Browser {
     }
 
     fn tab_drag_over(&self, over: Over) {
-        let Some(dragged) = self.tab_drag.borrow().tab else {
+        let dragged = self.tab_drag.borrow().tabs.clone();
+        if dragged.is_empty() {
             return;
-        };
+        }
         let target = {
             let session = self.session.borrow();
             let islands = islands_with_tabs(&session);
-            placement_of_tab(&islands, dragged, over)
+            placement_of_tabs(&islands, &dragged, over)
         };
         self.tab_drag.borrow_mut().target = target;
         if let Some(window) = self.window() {
             let row = target.map_or(NOTHING, |(island, index)| {
-                self.drop_row_of(dragged, island, index)
+                self.drop_row_of(&dragged, island, index)
             });
             window.global::<SidebarState>().set_tab_drop_row(row);
         }
@@ -142,9 +148,15 @@ impl Browser {
             state.set_tab_drag_id(NOTHING);
             state.set_tab_drop_row(NOTHING);
         }
-        if let (Some(tab), Some((island, index))) = (drag.tab, drag.target) {
-            self.move_tab_to(tab, island, index);
+        if let Some((island, index)) = drag.target.filter(|_| !drag.tabs.is_empty()) {
+            self.move_tabs_to(&drag.tabs, island, index);
         }
+        self.forget_picks();
+    }
+
+    /// What the running drag carries.
+    pub(super) fn dragged_tabs(&self) -> Vec<TabId> {
+        self.tab_drag.borrow().tabs.clone()
     }
 
     /// The tab was let go where it cannot land, so the line goes away.
@@ -157,17 +169,18 @@ impl Browser {
         }
     }
 
-    /// Where the line is drawn: above the row that would follow the tab, or below the last row of
-    /// the island when nothing follows. The dragged tab is passed over while counting, because the
-    /// place was counted without it.
-    fn drop_row_of(&self, dragged: TabId, island: IslandId, index: usize) -> i32 {
+    /// Where the line is drawn: above the row that would follow the tabs, or below the last row
+    /// of the island when nothing follows. The dragged tabs are passed over while counting,
+    /// because the place was counted without them.
+    fn drop_row_of(&self, dragged: &[TabId], island: IslandId, index: usize) -> i32 {
+        let is_dragged = |tab: i32| dragged.iter().any(|one| one.0 as i32 == tab);
         let mut seen = 0;
         let mut after = None;
         for (row, entry) in self.sidebar.rows.iter().enumerate() {
             if entry.island_id != island.0 as i32 {
                 continue;
             }
-            if entry.kind != crate::ui::RowKind::Tab || entry.tab_id == dragged.0 as i32 {
+            if entry.kind != crate::ui::RowKind::Tab || is_dragged(entry.tab_id) {
                 after = Some(row as i32 + 1);
                 continue;
             }
@@ -195,29 +208,40 @@ fn islands_with_tabs(session: &super::session::Session) -> Vec<(IslandId, Vec<Ta
         .collect()
 }
 
-/// The island a dragged tab would land in and its place among that island's tabs, counted
-/// without the tab itself. Answers with nothing when it would stay where it is.
-fn placement_of_tab(
+/// The island the dragged tabs would land in and their place among that island's tabs, counted
+/// without themselves. Answers with nothing when they would stay where they are.
+fn placement_of_tabs(
     islands: &[(IslandId, Vec<TabId>)],
-    dragged: TabId,
+    dragged: &[TabId],
     over: Over,
 ) -> Option<(IslandId, usize)> {
+    let is_dragged = |tab: &TabId| dragged.contains(tab);
     let (island, index) = match over {
         Over::Tab(target, after) => {
-            if target == dragged {
+            if is_dragged(&target) {
                 return None;
             }
             let (island, tabs) = islands.iter().find(|(_, tabs)| tabs.contains(&target))?;
-            let without: Vec<TabId> = tabs.iter().copied().filter(|tab| *tab != dragged).collect();
+            let without: Vec<TabId> = tabs
+                .iter()
+                .copied()
+                .filter(|tab| !is_dragged(tab))
+                .collect();
             let at = without.iter().position(|tab| *tab == target)?;
             (*island, at + usize::from(after))
         }
         Over::Island(island) => (island, 0),
     };
+    // They stay where they are when they already lie together right at that place.
     let stays = islands
         .iter()
         .find(|(id, _)| *id == island)
-        .is_some_and(|(_, tabs)| tabs.get(index) == Some(&dragged));
+        .is_some_and(|(_, tabs)| {
+            tabs.iter().filter(|tab| is_dragged(tab)).count() == dragged.len()
+                && tabs
+                    .get(index..index + dragged.len())
+                    .is_some_and(|here| here.iter().all(is_dragged))
+        });
     if stays {
         return None;
     }
@@ -274,17 +298,17 @@ mod tests {
     fn a_tab_lands_above_or_below_the_tab_it_is_dropped_on() {
         let islands = with_tabs(&[(1, &[10, 11, 12])]);
         assert_eq!(
-            placement_of_tab(&islands, TabId(12), Over::Tab(TabId(10), false)),
+            placement_of_tabs(&islands, &[TabId(12)], Over::Tab(TabId(10), false)),
             Some((IslandId(1), 0)),
             "above the first tab"
         );
         assert_eq!(
-            placement_of_tab(&islands, TabId(12), Over::Tab(TabId(10), true)),
+            placement_of_tabs(&islands, &[TabId(12)], Over::Tab(TabId(10), true)),
             Some((IslandId(1), 1)),
             "below it, counted without the dragged tab"
         );
         assert_eq!(
-            placement_of_tab(&islands, TabId(10), Over::Tab(TabId(12), true)),
+            placement_of_tabs(&islands, &[TabId(10)], Over::Tab(TabId(12), true)),
             Some((IslandId(1), 2)),
             "to the very end"
         );
@@ -294,22 +318,58 @@ mod tests {
     fn a_tab_dropped_where_it_already_is_stays() {
         let islands = with_tabs(&[(1, &[10, 11, 12])]);
         assert_eq!(
-            placement_of_tab(&islands, TabId(11), Over::Tab(TabId(10), true)),
+            placement_of_tabs(&islands, &[TabId(11)], Over::Tab(TabId(10), true)),
             None
         );
         assert_eq!(
-            placement_of_tab(&islands, TabId(11), Over::Tab(TabId(12), false)),
+            placement_of_tabs(&islands, &[TabId(11)], Over::Tab(TabId(12), false)),
             None
         );
         assert_eq!(
-            placement_of_tab(&islands, TabId(11), Over::Tab(TabId(11), false)),
+            placement_of_tabs(&islands, &[TabId(11)], Over::Tab(TabId(11), false)),
             None,
             "a tab cannot be dropped on itself"
         );
         assert_eq!(
-            placement_of_tab(&islands, TabId(10), Over::Island(IslandId(1))),
+            placement_of_tabs(&islands, &[TabId(10)], Over::Island(IslandId(1))),
             None,
             "it already is the first one"
+        );
+    }
+
+    #[test]
+    fn several_tabs_land_together() {
+        let islands = with_tabs(&[(1, &[10, 11, 12, 13])]);
+        let picked = [TabId(11), TabId(13)];
+        assert_eq!(
+            placement_of_tabs(&islands, &picked, Over::Tab(TabId(10), false)),
+            Some((IslandId(1), 0)),
+            "above the first tab, counted without the picked ones"
+        );
+        assert_eq!(
+            placement_of_tabs(&islands, &picked, Over::Tab(TabId(12), true)),
+            Some((IslandId(1), 2)),
+            "below the last one that stays"
+        );
+        assert_eq!(
+            placement_of_tabs(&islands, &picked, Over::Tab(TabId(11), false)),
+            None,
+            "a picked tab is no target"
+        );
+    }
+
+    #[test]
+    fn tabs_that_already_lie_together_there_stay() {
+        let islands = with_tabs(&[(1, &[10, 11, 12])]);
+        assert_eq!(
+            placement_of_tabs(&islands, &[TabId(10), TabId(11)], Over::Island(IslandId(1))),
+            None,
+            "they are the first two already"
+        );
+        assert_eq!(
+            placement_of_tabs(&islands, &[TabId(11), TabId(12)], Over::Island(IslandId(1))),
+            Some((IslandId(1), 0)),
+            "to the top of the island"
         );
     }
 
@@ -317,16 +377,16 @@ mod tests {
     fn a_tab_crosses_into_another_island() {
         let islands = with_tabs(&[(1, &[10, 11]), (2, &[20])]);
         assert_eq!(
-            placement_of_tab(&islands, TabId(10), Over::Tab(TabId(20), true)),
+            placement_of_tabs(&islands, &[TabId(10)], Over::Tab(TabId(20), true)),
             Some((IslandId(2), 1))
         );
         assert_eq!(
-            placement_of_tab(&islands, TabId(10), Over::Island(IslandId(2))),
+            placement_of_tabs(&islands, &[TabId(10)], Over::Island(IslandId(2))),
             Some((IslandId(2), 0)),
             "the header means the top of that island"
         );
         assert_eq!(
-            placement_of_tab(&islands, TabId(20), Over::Island(IslandId(1))),
+            placement_of_tabs(&islands, &[TabId(20)], Over::Island(IslandId(1))),
             Some((IslandId(1), 0))
         );
     }
@@ -335,7 +395,7 @@ mod tests {
     fn an_empty_island_takes_a_tab_through_its_header() {
         let islands = with_tabs(&[(1, &[10]), (2, &[])]);
         assert_eq!(
-            placement_of_tab(&islands, TabId(10), Over::Island(IslandId(2))),
+            placement_of_tabs(&islands, &[TabId(10)], Over::Island(IslandId(2))),
             Some((IslandId(2), 0))
         );
     }
