@@ -26,6 +26,7 @@ pub fn install(window: &AppWindow, browser: &Rc<Browser>) {
         match event {
             WindowEvent::ModifiersChanged(state) => {
                 modifiers.set(state.state());
+                browser.keys_held(state.state());
                 EventResult::Propagate
             }
             WindowEvent::KeyboardInput {
@@ -47,11 +48,14 @@ pub fn install(window: &AppWindow, browser: &Rc<Browser>) {
                 EventResult::Propagate
             }
             WindowEvent::Focused(true) => {
+                // A window that has the keyboard is not minimized, whatever Slint still thinks.
+                window.window().set_minimized(false);
                 browser.window_focused();
                 EventResult::Propagate
             }
             WindowEvent::Focused(false) => {
                 modifiers.set(ModifiersState::empty());
+                browser.keys_held(ModifiersState::empty());
                 EventResult::Propagate
             }
             _ => EventResult::Propagate,

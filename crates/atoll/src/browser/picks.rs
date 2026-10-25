@@ -6,9 +6,22 @@
 //! it lands together where the line stands, and let go outside the window it takes a window of
 //! its own, all of it in one island.
 
+use std::cell::Cell;
+
 use atoll_core::TabId;
+use slint::winit_030::winit::keyboard::ModifiersState;
 
 use super::Browser;
+
+/// The keys held down, as the window itself saw them.
+#[derive(Debug, Default, Clone, Copy)]
+pub struct Held {
+    pub control: bool,
+    pub shift: bool,
+}
+
+/// Where the window keeps what it saw.
+pub type HeldKeys = Cell<Held>;
 
 /// The tabs picked in one window.
 #[derive(Debug, Default, Clone)]
@@ -19,8 +32,23 @@ pub struct Picks {
 }
 
 impl Browser {
-    /// A click on a tab row, with the keys that were held.
+    /// What winit says is held right now. Atoll takes the keys of a page away from the user
+    /// interface, so the keys it reports are the only ones the sidebar can go by while a page
+    /// has the keyboard.
+    pub(crate) fn keys_held(&self, state: ModifiersState) {
+        self.held.set(Held {
+            control: state.control_key(),
+            shift: state.shift_key(),
+        });
+    }
+
+    /// A click on a tab row, with the keys Slint saw held. What the window itself saw counts as
+    /// well, because a page with the keyboard keeps the key presses from Slint.
     pub fn tab_clicked(&self, tab: TabId, control: bool, shift: bool) {
+        let held = self.held.get();
+        let control = control || held.control;
+        let shift = shift || held.shift;
+        tracing::debug!(tab = tab.0, control, shift, "a tab row was clicked");
         if control {
             self.toggle_pick(tab);
             return;

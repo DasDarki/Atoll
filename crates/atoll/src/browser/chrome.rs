@@ -83,7 +83,16 @@ impl Browser {
     pub fn window_control(&self, action: &str) {
         let Some(window) = self.window() else { return };
         match action {
-            "minimize" => window.window().set_minimized(true),
+            "minimize" => {
+                let handle = window.window();
+                // Only a change is passed on to the window system, and on Wayland nobody says
+                // that a window was brought back, so the state is set straight first. Without
+                // this the button works once and never again.
+                if handle.is_minimized() {
+                    handle.set_minimized(false);
+                }
+                handle.set_minimized(true);
+            }
             "maximize" => self.toggle_maximized(),
             "close" => self.close_window(),
             other => tracing::warn!(action = other, "unknown window action"),

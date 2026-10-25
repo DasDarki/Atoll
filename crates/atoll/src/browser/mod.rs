@@ -78,7 +78,7 @@ use page::PageState;
 use pages::PageSearch;
 use palette::PaletteState;
 use passwords::{PasswordPopup, PasswordVault, PendingFill};
-use picks::Picks;
+use picks::{HeldKeys, Picks};
 use plugins::{OpenPanel, Plugins};
 pub use preferences::Preferences;
 use private::PrivatePages;
@@ -196,6 +196,8 @@ pub struct Browser {
     tab_drag: RefCell<TabDrag>,
     /// The tabs picked in the sidebar, to be moved together.
     picks: RefCell<Picks>,
+    /// The keys held down, seen by the window before a page takes them.
+    held: HeldKeys,
     page: RefCell<PageState>,
     dialogs: RefCell<DialogQueue>,
     context_menu: Cell<Option<(ViewId, RequestId)>>,
@@ -273,6 +275,7 @@ impl Browser {
             elsewhere: RefCell::default(),
             tab_drag: RefCell::default(),
             picks: RefCell::default(),
+            held: HeldKeys::default(),
             page: RefCell::default(),
             dialogs: RefCell::default(),
             context_menu: Cell::new(None),
