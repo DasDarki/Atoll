@@ -99,6 +99,9 @@ impl Browser {
                     self.activate_tab(tab.id);
                 } else {
                     self.refresh_sidebar();
+                    // Nobody is going to look at this one yet, so its address is all the sidebar
+                    // has. The site is asked what the page is called.
+                    self.fetch_title(tab.id);
                 }
                 self.plugin_tab_opened(tab.id);
                 Some(tab.id)

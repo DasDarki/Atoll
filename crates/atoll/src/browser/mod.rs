@@ -36,6 +36,7 @@ mod site_info;
 mod startup;
 mod suggestions;
 mod tabs;
+mod titles;
 mod transfer;
 mod updates;
 mod upload;
@@ -87,6 +88,7 @@ use session::Session;
 use sidebar::SidebarModels;
 use suggestions::SuggestionState;
 use tabs::ClosedTab;
+use titles::TitleQueue;
 use transfer::TransferState;
 use updates::Updates;
 use upload::UploadState;
@@ -198,6 +200,8 @@ pub struct Browser {
     picks: RefCell<Picks>,
     /// The keys held down, seen by the window before a page takes them.
     held: HeldKeys,
+    /// The tabs whose sites are still to be asked what their page is called.
+    titles: TitleQueue,
     page: RefCell<PageState>,
     dialogs: RefCell<DialogQueue>,
     context_menu: Cell<Option<(ViewId, RequestId)>>,
@@ -276,6 +280,7 @@ impl Browser {
             tab_drag: RefCell::default(),
             picks: RefCell::default(),
             held: HeldKeys::default(),
+            titles: TitleQueue::default(),
             page: RefCell::default(),
             dialogs: RefCell::default(),
             context_menu: Cell::new(None),

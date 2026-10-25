@@ -16,6 +16,11 @@ saved tabs therefore cost nothing at startup.
   with a workspace of its own, dropping it on another Atoll window moves it there. The page keeps
   running either way. Tabs and islands can also be moved through their context menus, and a
   workspace can be opened in a window of its own. Open windows are restored at the next start.
+- **Titles before the first look**: a tab opened with the middle mouse button stays a record,
+  nothing is loaded for it, and the sidebar would only have its address to show. Atoll therefore
+  asks the site for the beginning of the page, reads the title out of its head and shows that
+  instead. It is one request of at most 128 KB, three at a time at the most, the way everything
+  else Atoll fetches goes, and private tabs are left out of it entirely.
 - **Moving tabs**: a tab is dragged to another place in the sidebar, inside its island or into
   another one, with a line showing where it lands. Dropped on the header of an island it goes to
   the top of it, which is the only way into one that is collapsed, and dropped outside the window
