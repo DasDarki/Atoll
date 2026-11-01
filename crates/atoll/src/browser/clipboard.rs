@@ -105,6 +105,10 @@ impl Browser {
                 return;
             }
         }
+        // A picture cannot travel through Chromium's clipboard, so it is handed over directly.
+        if kind == ClipboardKey::Paste && self.paste_image_into_page() {
+            return;
+        }
         if kind == ClipboardKey::Paste && self.start_clipboard_write(None) {
             if let Some(pending) = self.clipboard_sync.borrow_mut().pending.as_mut() {
                 pending.keys = keys;

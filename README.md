@@ -10,12 +10,16 @@ saved tabs therefore cost nothing at startup.
 ## Features
 
 - **Workspaces, islands, tabs**: a workspace is a complete context, islands are named, colored,
-  collapsible tab groups inside it.
+  collapsible tab groups inside it. A new island whose name is left empty takes the next free
+  number: the largest number any island of the workspace carries, one higher.
 - **Windows**: every window shows one workspace, and a workspace is shown in at most one window.
   Dragging a tab out of the sidebar and releasing it outside the window moves it into a new window
   with a workspace of its own, dropping it on another Atoll window moves it there. The page keeps
   running either way. Tabs and islands can also be moved through their context menus, and a
   workspace can be opened in a window of its own. Open windows are restored at the next start.
+- **Sound in the sidebar**: a tab that can be heard carries a speaker next to its name, and a
+  click on it takes its sound away or gives it back. A tab kept silent that way stays silent when
+  it goes to sleep and wakes up again.
 - **Titles before the first look**: a tab opened with the middle mouse button stays a record,
   nothing is loaded for it, and the sidebar would only have its address to show. Atoll therefore
   asks the site for the beginning of the page, reads the title out of its head and shows that
@@ -40,7 +44,8 @@ saved tabs therefore cost nothing at startup.
   weeks, configurable in the settings, are marked in the sidebar and suggested in the archive.
   Nothing is archived without confirmation.
 - **Quick search and command palette**: `Ctrl+K` searches the tabs of all workspaces (archived
-  ones included), bookmarks and history. `Ctrl+Shift+P` or a leading `>` lists commands instead.
+  ones included), bookmarks and history. `Ctrl+Shift+P` or a leading `>` lists commands instead,
+  with a new tab first and the rest in the order they were last used.
 - **Already open**: when the page in front of you is open in another tab, the address bar says
   so with a pill, and a click goes there. It counts the tabs of every workspace, names the
   workspace when the other tab lives in one of its own, and counts them when there are several;
@@ -62,6 +67,10 @@ saved tabs therefore cost nothing at startup.
 - **Bookmarks**: a bookmarks bar with folders, `Ctrl+D` to bookmark the current page, whole
   islands saved as folders, a bookmark manager and import from the HTML export of other browsers.
   Entries of the bar are rearranged and moved into folders by drag and drop.
+- **Pasting pictures**: `Ctrl+V` with a picture in the clipboard hands it to the page the way a
+  paste hands it over, so message boxes, editors and upload fields take it. A field that holds
+  formatted text gets the picture itself, and where nothing takes it Atoll says so instead of
+  leaving the user guessing.
 - **Uploads**: when a page asks for a file, Atoll first offers the image in the clipboard, saved
   as a PNG, and the newest matching files from the download folder and the download history.
   The system dialog is one click away and opens directly if there is nothing to offer.

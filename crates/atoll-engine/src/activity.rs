@@ -31,6 +31,8 @@ pub(crate) struct ActivityChange {
     pub(crate) busy: Option<bool>,
     pub(crate) login_form: Option<bool>,
     pub(crate) video: Option<bool>,
+    /// Whether anything on the page makes a sound right now.
+    pub(crate) audible: Option<bool>,
 }
 
 impl PageActivity {
@@ -44,6 +46,11 @@ impl PageActivity {
 
     pub(crate) fn has_video(&self) -> bool {
         self.frames.values().any(|frame| frame.video)
+    }
+
+    /// Whether a frame plays something that can be heard.
+    pub(crate) fn is_audible(&self) -> bool {
+        self.frames.values().any(|frame| frame.media)
     }
 
     /// Applies the report of a frame.
@@ -62,17 +69,23 @@ impl PageActivity {
         self.change_since(before)
     }
 
-    fn summary(&self) -> [bool; 3] {
-        [self.is_busy(), self.has_login_form(), self.has_video()]
+    fn summary(&self) -> [bool; 4] {
+        [
+            self.is_busy(),
+            self.has_login_form(),
+            self.has_video(),
+            self.is_audible(),
+        ]
     }
 
-    fn change_since(&self, before: [bool; 3]) -> ActivityChange {
-        let [busy, login_form, video] = self.summary();
+    fn change_since(&self, before: [bool; 4]) -> ActivityChange {
+        let [busy, login_form, video, audible] = self.summary();
         let changed = |now: bool, then: bool| (now != then).then_some(now);
         ActivityChange {
             busy: changed(busy, before[0]),
             login_form: changed(login_form, before[1]),
             video: changed(video, before[2]),
+            audible: changed(audible, before[3]),
         }
     }
 }
@@ -214,13 +227,51 @@ mod tests {
         assert_eq!(activity.update("main".to_owned(), typing), busy(true));
         assert_eq!(
             activity.update("video".to_owned(), playing),
-            ActivityChange::default()
+            ActivityChange {
+                audible: Some(true),
+                ..ActivityChange::default()
+            },
+            "the page was busy already, but now it can be heard"
         );
         assert_eq!(
             activity.update("main".to_owned(), IDLE),
             ActivityChange::default()
         );
-        assert_eq!(activity.update("video".to_owned(), IDLE), busy(false));
+        assert_eq!(
+            activity.update("video".to_owned(), IDLE),
+            ActivityChange {
+                busy: Some(false),
+                audible: Some(false),
+                ..ActivityChange::default()
+            }
+        );
+    }
+
+    #[test]
+    fn a_page_can_be_heard_while_any_frame_plays() {
+        let mut activity = PageActivity::default();
+        assert!(!activity.is_audible());
+        let playing = FrameActivity {
+            media: true,
+            ..IDLE
+        };
+        activity.update("video".to_owned(), playing);
+        assert!(activity.is_audible());
+        activity.update("other".to_owned(), playing);
+        assert_eq!(
+            activity.update("video".to_owned(), IDLE),
+            ActivityChange::default(),
+            "the other frame still plays"
+        );
+        assert!(activity.is_audible());
+        assert_eq!(
+            activity.update("other".to_owned(), IDLE),
+            ActivityChange {
+                busy: Some(false),
+                audible: Some(false),
+                ..ActivityChange::default()
+            }
+        );
     }
 
     #[test]
@@ -285,6 +336,7 @@ mod tests {
                 busy: Some(false),
                 login_form: Some(false),
                 video: Some(false),
+                audible: Some(false),
             }
         );
         assert!(!activity.is_busy());

@@ -23,6 +23,7 @@ mod page;
 mod pages;
 mod palette;
 mod passwords;
+mod paste;
 mod picks;
 mod plugins;
 mod preferences;
@@ -79,6 +80,7 @@ use page::PageState;
 use pages::PageSearch;
 use palette::PaletteState;
 use passwords::{PasswordPopup, PasswordVault, PendingFill};
+use paste::PendingPastes;
 use picks::{HeldKeys, Picks};
 use plugins::{OpenPanel, Plugins};
 pub use preferences::Preferences;
@@ -202,6 +204,10 @@ pub struct Browser {
     held: HeldKeys,
     /// The tabs whose sites are still to be asked what their page is called.
     titles: TitleQueue,
+    /// The tabs whose sound is turned off, kept while Atoll runs.
+    muted: RefCell<std::collections::HashSet<atoll_core::TabId>>,
+    /// The pictures handed to a page that have not been answered for yet.
+    pasting: PendingPastes,
     page: RefCell<PageState>,
     dialogs: RefCell<DialogQueue>,
     context_menu: Cell<Option<(ViewId, RequestId)>>,
@@ -281,6 +287,8 @@ impl Browser {
             picks: RefCell::default(),
             held: HeldKeys::default(),
             titles: TitleQueue::default(),
+            muted: RefCell::default(),
+            pasting: PendingPastes::default(),
             page: RefCell::default(),
             dialogs: RefCell::default(),
             context_menu: Cell::new(None),

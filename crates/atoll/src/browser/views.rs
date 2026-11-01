@@ -20,6 +20,8 @@ pub struct TabView {
     pub login_form: bool,
     /// Whether the page shows a video of a noticeable size.
     pub video: bool,
+    /// Whether something on the page can be heard right now.
+    pub audible: bool,
 }
 
 impl TabView {
@@ -36,6 +38,7 @@ impl TabView {
             dev_tools: None,
             login_form: false,
             video: false,
+            audible: false,
         }
     }
 }

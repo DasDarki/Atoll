@@ -333,6 +333,28 @@ impl Browser {
         }
     }
 
+    /// The sound button in the sidebar: takes the sound of a tab away or gives it back. A tab
+    /// that sleeps and wakes again stays silent, because what is remembered here is asked for
+    /// whenever an engine instance is created.
+    pub fn toggle_mute(&self, tab: TabId) {
+        let muted = !self.is_muted(tab);
+        if muted {
+            self.muted.borrow_mut().insert(tab);
+        } else {
+            self.muted.borrow_mut().remove(&tab);
+        }
+        if let Some(entry) = self.views.borrow().get(tab) {
+            entry.view.set_audio_muted(muted);
+        }
+        self.refresh_sidebar();
+        self.for_other_windows(Browser::refresh_sidebar);
+    }
+
+    /// Whether the sound of `tab` is turned off.
+    pub(super) fn is_muted(&self, tab: TabId) -> bool {
+        self.muted.borrow().contains(&tab)
+    }
+
     pub fn move_tab_to_island(&self, tab: TabId, island: IslandId) {
         self.move_tab_to(tab, island, usize::MAX);
     }

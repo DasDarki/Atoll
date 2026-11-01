@@ -297,6 +297,18 @@ impl Browser {
                     page: false,
                 }
             }
+            EngineEvent::AudibleChanged { view, audible } => {
+                let tab = self.tab_of(view);
+                if let Some(tab) = tab
+                    && let Some(entry) = self.views.borrow_mut().get_mut(tab)
+                {
+                    entry.audible = audible;
+                }
+                Effect {
+                    sidebar: tab.is_some(),
+                    page: false,
+                }
+            }
             EngineEvent::LoginFormChanged { view, present } => {
                 let tab = self.tab_of(view);
                 if let Some(tab) = tab
@@ -328,7 +340,9 @@ impl Browser {
                 request,
                 result,
             } => {
-                if !self.page_text_arrived(view, request, &result) {
+                if !self.page_text_arrived(view, request, &result)
+                    && !self.image_pasted(view, request, &result)
+                {
                     self.plugins.script_finished(view, request, result);
                 }
                 Effect::NONE

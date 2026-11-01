@@ -21,6 +21,12 @@ const MAX_BOOKMARKS: usize = 10;
 const MAX_PAGES: usize = 10;
 const HISTORY_SOURCE: usize = 2000;
 
+/// How many commands are remembered as recently used.
+const RECENT_COMMANDS: usize = 12;
+
+/// Where that order is kept between runs.
+const RECENT_KEY: &str = "palette_recent";
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum Command {
     NewWindow,
@@ -86,6 +92,12 @@ enum Entry {
     Tab(TabId),
     Url(String),
     Command(Command),
+}
+
+/// How a command is written down when its use is remembered: the name of the thing itself, so an
+/// order written by an older Atoll still makes sense and what it does not know sorts in behind.
+fn key_of(command: &Command) -> String {
+    format!("{command:?}")
 }
 
 /// The command palette: a quick search over every tab, bookmark and visited page, and a list of
@@ -356,6 +368,28 @@ impl Browser {
         results.into_iter().unzip()
     }
 
+    /// Writes down that a command was used, so the empty palette offers it again first.
+    fn remember_command(&self, command: &Command) {
+        let key = key_of(command);
+        let mut order = self.recent_commands();
+        order.retain(|known| *known != key);
+        order.insert(0, key);
+        order.truncate(RECENT_COMMANDS);
+        if let Err(error) = self.storage.set_setting(RECENT_KEY, &order.join("\n")) {
+            tracing::warn!(%error, "the order of the commands could not be stored");
+        }
+    }
+
+    /// The commands last used, the newest first.
+    fn recent_commands(&self) -> Vec<String> {
+        self.storage
+            .setting(RECENT_KEY)
+            .ok()
+            .flatten()
+            .map(|order| order.lines().map(str::to_owned).collect())
+            .unwrap_or_default()
+    }
+
     fn command_results(&self, query: &str) -> (Vec<PaletteItem>, Vec<Entry>) {
         let matcher = Matcher::new(query);
         let entries: Vec<(Command, String, String, String)> = self
@@ -366,12 +400,18 @@ impl Browser {
             })
             .chain(self.plugin_commands())
             .collect();
+        // With nothing typed the palette shows what was used last, and what was never used in
+        // the order it stands in.
+        let recent = matcher.is_empty().then(|| self.recent_commands());
         let mut commands: Vec<(i64, PaletteItem, Entry)> = entries
             .into_iter()
             .enumerate()
             .filter_map(|(index, (command, title, shortcut, keywords))| {
-                let score = if matcher.is_empty() {
-                    -(index as i64)
+                let score = if let Some(recent) = &recent {
+                    match recent.iter().position(|key| *key == key_of(&command)) {
+                        Some(place) => RECENT_COMMANDS as i64 - place as i64,
+                        None => -(index as i64),
+                    }
                 } else {
                     matcher.score(&[&title, &keywords])?
                 };
@@ -823,6 +863,7 @@ impl Browser {
     }
 
     fn run_command(&self, command: Command) {
+        self.remember_command(&command);
         match command {
             Command::NewWindow => self.open_new_window(),
             Command::CloseWindow => self.close_window(),

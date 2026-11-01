@@ -119,4 +119,7 @@ pub(crate) fn emit_activity(runtime: &Runtime, view: ViewId, change: ActivityCha
     if let Some(present) = change.video {
         runtime.emit(EngineEvent::VideoChanged { view, present });
     }
+    if let Some(audible) = change.audible {
+        runtime.emit(EngineEvent::AudibleChanged { view, audible });
+    }
 }

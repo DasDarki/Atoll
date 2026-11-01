@@ -26,6 +26,10 @@ export struct SidebarRow {
     active: bool,
     /// Ob die Zeile zu den Tabs gehoert, die gemeinsam verschoben werden sollen.
     picked: bool,
+    /// Ob auf der Seite gerade etwas zu hoeren ist.
+    audible: bool,
+    /// Ob der Ton dieses Tabs abgestellt ist.
+    muted: bool,
     pinned: bool,
     loading: bool,
     idle: bool,

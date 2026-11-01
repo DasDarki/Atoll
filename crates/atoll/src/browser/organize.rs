@@ -226,16 +226,21 @@ impl Browser {
 
     pub fn create_island(&self) {
         let this = self.this();
-        self.prompt_text(
+        self.prompt_text_or_nothing(
             t!("Neue Insel"),
-            t!("Wie soll die Insel heißen?"),
-            "",
+            t!("Wie soll die Insel heißen? Ohne Namen wird durchnummeriert."),
             t!("Anlegen"),
             move |name| {
                 let Some(browser) = this.upgrade() else {
                     return;
                 };
                 let workspace = browser.session.borrow().workspace;
+                let name = if name.is_empty() {
+                    let names = browser.storage.island_names(workspace).unwrap_or_default();
+                    next_number(&names)
+                } else {
+                    name
+                };
                 let color = browser.next_island_color();
                 let created = browser.storage.create_island(NewIsland {
                     workspace_id: workspace,
@@ -438,5 +443,46 @@ impl Browser {
             .island(island)
             .map(|entry| entry.tabs.iter().map(|tab| tab.id).collect())
             .unwrap_or_default()
+    }
+}
+
+/// The name a new island gets when the user says none: the largest number any island of the
+/// workspace carries, one higher. Names that are no number are passed over, and where there is
+/// no number at all the first island is the first number.
+fn next_number(names: &[String]) -> String {
+    let highest = names
+        .iter()
+        .filter_map(|name| name.trim().parse::<u64>().ok())
+        .max();
+    match highest {
+        Some(number) => (number.saturating_add(1)).to_string(),
+        None => "1".to_owned(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_next_island_carries_the_next_number() {
+        assert_eq!(next_number(&[]), "1");
+        assert_eq!(next_number(&["Tabs".to_owned(), "Lesen".to_owned()]), "1");
+        assert_eq!(next_number(&["1".to_owned(), "2".to_owned()]), "3");
+        assert_eq!(
+            next_number(&["9".to_owned(), "Arbeit".to_owned(), "11".to_owned()]),
+            "12",
+            "the largest one counts, not the last"
+        );
+        assert_eq!(
+            next_number(&[" 4 ".to_owned()]),
+            "5",
+            "spaces around a number do not hide it"
+        );
+        assert_eq!(
+            next_number(&["Insel 7".to_owned()]),
+            "1",
+            "a number with something written next to it is no number"
+        );
     }
 }

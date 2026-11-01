@@ -22,6 +22,8 @@ export global SidebarState {
     callback activate-tab(int);
     /// Ein Klick auf eine Tab-Zeile, mit Strg und Umschalt wie sie gehalten wurden.
     callback tab-clicked(int, bool, bool);
+    /// Stellt den Ton eines Tabs ab oder wieder an.
+    callback toggle-mute(int);
     callback close-tab(int);
     callback tab-action(int, string);
     callback move-tab-to-island(int, int);

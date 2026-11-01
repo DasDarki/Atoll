@@ -141,6 +141,11 @@ pub enum EngineEvent {
         view: ViewId,
         busy: bool,
     },
+    /// The page started or stopped making a sound.
+    AudibleChanged {
+        view: ViewId,
+        audible: bool,
+    },
     /// A password field appeared on the page or the last one disappeared.
     LoginFormChanged {
         view: ViewId,
@@ -211,6 +216,7 @@ impl EngineEvent {
             | EngineEvent::FindResult { view, .. }
             | EngineEvent::InspectElement { view, .. }
             | EngineEvent::PageBusy { view, .. }
+            | EngineEvent::AudibleChanged { view, .. }
             | EngineEvent::LoginFormChanged { view, .. }
             | EngineEvent::LoginFilled { view, .. }
             | EngineEvent::VideoChanged { view, .. }

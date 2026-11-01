@@ -40,6 +40,17 @@ pub trait IslandStore: Connected {
         Ok(islands)
     }
 
+    /// The names of every island of a workspace, the archived ones included.
+    fn island_names(&self, workspace: WorkspaceId) -> StorageResult<Vec<String>> {
+        let mut statement = self
+            .connection()
+            .prepare_cached("SELECT name FROM island WHERE workspace_id = ?1")?;
+        let names = statement
+            .query_map([workspace.0], |row| row.get(0))?
+            .collect::<Result<_, _>>()?;
+        Ok(names)
+    }
+
     fn island(&self, id: IslandId) -> StorageResult<Island> {
         self.connection()
             .prepare_cached(&format!(

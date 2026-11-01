@@ -77,6 +77,8 @@ fn connect_sidebar(window: &AppWindow, browser: &Rc<Browser>) {
         browser,
         |target, id, control, shift| target.tab_clicked(tab(id), control, shift)
     );
+    on!(state, on_toggle_mute, browser, |target, id| target
+        .toggle_mute(tab(id)));
     on!(state, on_close_tab, browser, |target, id| target
         .close_tab(tab(id)));
     on!(

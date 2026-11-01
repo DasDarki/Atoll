@@ -466,6 +466,9 @@ msgstr "The archive is empty."
 msgid "Das Archiv wird gefragt …"
 msgstr "Asking the archive …"
 
+msgid "Das Bild in der Zwischenablage ist zu groß zum Einfügen"
+msgstr "The picture in the clipboard is too large to paste"
+
 msgid "Das Bild konnte nicht gespeichert werden"
 msgstr "The image could not be saved"
 
@@ -1029,6 +1032,9 @@ msgstr "When a site has exactly one saved login, Atoll fills it in when the page
 
 msgid "Heute"
 msgstr "Today"
+
+msgid "Hier lässt sich kein Bild einfügen"
+msgstr "No picture can be pasted here"
 
 msgid "INSEL FÜR ADRESSEN OHNE MARKIERUNG"
 msgstr "ISLAND FOR ADDRESSES WITHOUT A MARKER"
@@ -2023,8 +2029,8 @@ msgstr "Advertising, trackers and what the filter lists hide."
 msgid "Wie soll der Workspace heißen?"
 msgstr "What should the workspace be called?"
 
-msgid "Wie soll die Insel heißen?"
-msgstr "What should the island be called?"
+msgid "Wie soll die Insel heißen? Ohne Namen wird durchnummeriert."
+msgstr "What should the island be called? Without a name it is numbered."
 
 msgid "Wiederherstellen"
 msgstr "Restore"

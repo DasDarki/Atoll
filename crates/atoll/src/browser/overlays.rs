@@ -58,6 +58,34 @@ impl Browser {
         });
     }
 
+    /// Asks for a line of text and hands over what was typed, an empty answer included: there
+    /// are names Atoll can think of itself when the user simply presses Enter.
+    pub(super) fn prompt_text_or_nothing(
+        &self,
+        title: &str,
+        message: &str,
+        accept_label: &str,
+        on_accept: impl FnOnce(String) + 'static,
+    ) {
+        self.enqueue_dialog(Dialog {
+            data: DialogData {
+                kind: DialogKind::Prompt,
+                title: title.into(),
+                message: message.into(),
+                input: "".into(),
+                accept_label: accept_label.into(),
+                cancel_label: t!("Abbrechen").into(),
+                destructive: false,
+            },
+            on_close: Box::new(move |_, accepted, text| {
+                if accepted {
+                    on_accept(text.trim().to_owned());
+                }
+            }),
+            origin: None,
+        });
+    }
+
     /// Shows a message with nothing to decide, for example a log.
     pub(super) fn inform(&self, title: &str, message: &str) {
         self.enqueue_dialog(Dialog {

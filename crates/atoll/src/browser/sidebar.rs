@@ -97,6 +97,8 @@ impl Browser {
                 rows.push(SidebarRow {
                     kind: RowKind::Tab,
                     picked: self.shows_as_picked(tab.id),
+                    audible: views.get(tab.id).is_some_and(|entry| entry.audible),
+                    muted: self.is_muted(tab.id),
                     private: tab.private,
                     through_tor: tab.private && self.is_tor(tab.id),
                     island_id: entry.island.id.0 as i32,

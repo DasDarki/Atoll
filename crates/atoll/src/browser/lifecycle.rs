@@ -84,6 +84,9 @@ impl Browser {
                 // The way to the page is opened at once: what a page shows can only be read
                 // through it, and it has to be there before the page is loaded.
                 view.start_bridge();
+                if self.is_muted(tab) {
+                    view.set_audio_muted(true);
+                }
                 if session == atoll_engine::Session::Normal {
                     // Extensions stay out of private pages.
                     self.plugin_prepare_view(&view);
