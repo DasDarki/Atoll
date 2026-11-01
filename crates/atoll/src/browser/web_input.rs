@@ -44,6 +44,7 @@ impl Browser {
 
         if pointer.action == PointerAction::Down {
             self.cancel_context_menu();
+            self.forget_live_tooltip();
             match pointer.button {
                 PointerButton::Back => return self.go_back(),
                 PointerButton::Forward => return self.go_forward(),
@@ -92,6 +93,7 @@ impl Browser {
 
     pub fn web_scroll(&self, scroll: WebScroll) -> bool {
         let modifiers = modifiers_of(scroll.shift, scroll.control, scroll.alt, scroll.meta);
+        self.forget_live_tooltip();
         let mut handled = false;
         self.with_live_view(|view| {
             view.mouse_wheel(
@@ -108,6 +110,7 @@ impl Browser {
 
     pub fn web_hover(&self, inside: bool, x: f32, y: f32) {
         if !inside {
+            self.forget_live_tooltip();
             self.with_live_view(|view| {
                 view.mouse_leave(x.round() as i32, y.round() as i32, Modifiers::default())
             });

@@ -62,8 +62,10 @@ export component Sidebar inherits Rectangle {
     width: Theme.sidebar-width;
     background: Theme.chrome;
 
-    // Unter allem: wer die Seitenleiste verlaesst, nimmt die Vorschaukarte mit. Eine Zeile, die
-    // waehrend des Zeigens verschwindet, kann das selbst nicht mehr melden.
+    // Around everything: whoever leaves the sidebar takes the preview card with them. A row that
+    // is replaced while it is being pointed at cannot report that itself any more, and the rows
+    // are replaced whenever anything about a tab changes, which happens a lot right after
+    // starting up. The area around them stays, so that is the one that is asked.
     leaving := TouchArea {
         mouse-cursor: default;
         changed has-hover => {
@@ -71,83 +73,85 @@ export component Sidebar inherits Rectangle {
                 SidebarState.hovering = false;
             }
         }
-    }
 
-    VerticalLayout {
-        WorkspaceBar { }
+        VerticalLayout {
+            width: 100%;
+            height: 100%;
+            WorkspaceBar { }
 
-        ListView {
-            vertical-stretch: 1;
-            for row[index] in SidebarState.rows : Rectangle {
-                height: row.kind == RowKind.island ? 34px : 32px;
-                if row.kind == RowKind.island : IslandHeader {
-                    entry: row;
-                    drag-y: root.island-drag-y;
-                    tab-drag-y: root.tab-drag-y;
-                    drag-moved(y) => { root.island-drag-y = y; }
-                }
-                if row.kind == RowKind.tab : TabRow {
-                    entry: row;
-                    island-drag-y: root.island-drag-y;
-                    tab-drag-y: root.tab-drag-y;
-                    tab-drag-moved(y) => { root.tab-drag-y = y; }
-                }
-                if row.kind == RowKind.island && SidebarState.island-drop-before == row.island-id : Rectangle {
-                    y: 0;
-                    height: 2px;
-                    background: Theme.accent;
-                }
-                if index == SidebarState.rows.length - 1 && SidebarState.island-drop-before == -1 : Rectangle {
-                    y: parent.height - 2px;
-                    height: 2px;
-                    background: Theme.accent;
-                }
-                if SidebarState.tab-drop-row == index : Rectangle {
-                    y: 0;
-                    height: 2px;
-                    background: Theme.accent-cyan;
-                }
-                if SidebarState.tab-drop-row == index + 1 && index == SidebarState.rows.length - 1 : Rectangle {
-                    y: parent.height - 2px;
-                    height: 2px;
-                    background: Theme.accent-cyan;
+            ListView {
+                vertical-stretch: 1;
+                for row[index] in SidebarState.rows : Rectangle {
+                    height: row.kind == RowKind.island ? 34px : 32px;
+                    if row.kind == RowKind.island : IslandHeader {
+                        entry: row;
+                        drag-y: root.island-drag-y;
+                        tab-drag-y: root.tab-drag-y;
+                        drag-moved(y) => { root.island-drag-y = y; }
+                    }
+                    if row.kind == RowKind.tab : TabRow {
+                        entry: row;
+                        island-drag-y: root.island-drag-y;
+                        tab-drag-y: root.tab-drag-y;
+                        tab-drag-moved(y) => { root.tab-drag-y = y; }
+                    }
+                    if row.kind == RowKind.island && SidebarState.island-drop-before == row.island-id : Rectangle {
+                        y: 0;
+                        height: 2px;
+                        background: Theme.accent;
+                    }
+                    if index == SidebarState.rows.length - 1 && SidebarState.island-drop-before == -1 : Rectangle {
+                        y: parent.height - 2px;
+                        height: 2px;
+                        background: Theme.accent;
+                    }
+                    if SidebarState.tab-drop-row == index : Rectangle {
+                        y: 0;
+                        height: 2px;
+                        background: Theme.accent-cyan;
+                    }
+                    if SidebarState.tab-drop-row == index + 1 && index == SidebarState.rows.length - 1 : Rectangle {
+                        y: parent.height - 2px;
+                        height: 2px;
+                        background: Theme.accent-cyan;
+                    }
                 }
             }
-        }
 
-        Rectangle {
-            height: 1px;
-            background: Theme.border;
-        }
+            Rectangle {
+                height: 1px;
+                background: Theme.border;
+            }
 
-        HorizontalLayout {
-            padding: 6px;
-            spacing: 0px;
+            HorizontalLayout {
+                padding: 6px;
+                spacing: 0px;
 
-            FooterButton {
-                icon: @image-url("../icons/island.svg");
-                label: @tr("Insel");
-                horizontal-stretch: 1;
-                clicked => { SidebarState.create-island(); }
-            }
-            FooterButton {
-                icon: @image-url("../icons/archive.svg");
-                label: @tr("Archiv");
-                badge: SidebarState.archive-suggestion;
-                horizontal-stretch: 1;
-                clicked => { SidebarState.open-archive(); }
-            }
-            FooterButton {
-                icon: @image-url("../icons/import.svg");
-                label: @tr("Import");
-                horizontal-stretch: 1;
-                clicked => { SidebarState.open-import(); }
-            }
-            FooterButton {
-                icon: @image-url("../icons/export.svg");
-                label: @tr("Export");
-                horizontal-stretch: 1;
-                clicked => { SidebarState.open-export(); }
+                FooterButton {
+                    icon: @image-url("../icons/island.svg");
+                    label: @tr("Insel");
+                    horizontal-stretch: 1;
+                    clicked => { SidebarState.create-island(); }
+                }
+                FooterButton {
+                    icon: @image-url("../icons/archive.svg");
+                    label: @tr("Archiv");
+                    badge: SidebarState.archive-suggestion;
+                    horizontal-stretch: 1;
+                    clicked => { SidebarState.open-archive(); }
+                }
+                FooterButton {
+                    icon: @image-url("../icons/import.svg");
+                    label: @tr("Import");
+                    horizontal-stretch: 1;
+                    clicked => { SidebarState.open-import(); }
+                }
+                FooterButton {
+                    icon: @image-url("../icons/export.svg");
+                    label: @tr("Export");
+                    horizontal-stretch: 1;
+                    clicked => { SidebarState.open-export(); }
+                }
             }
         }
     }

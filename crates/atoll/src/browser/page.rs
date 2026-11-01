@@ -37,6 +37,7 @@ impl Browser {
             state.set_login_form(false);
             state.set_page_video(false);
             state.set_status_text("".into());
+            state.set_tooltip("".into());
             state.set_find_visible(false);
             state.set_also_open("".into());
             state.set_page_frame(Image::default());
@@ -73,6 +74,7 @@ impl Browser {
         state.set_login_form(entry.is_some_and(|entry| entry.login_form));
         state.set_page_video(entry.is_some_and(|entry| entry.video));
         state.set_status_text(entry.map_or("", |entry| entry.status.as_str()).into());
+        state.set_tooltip(entry.map_or("", |entry| entry.tooltip.as_str()).into());
         state.set_cursor(web_cursor(
             entry.map_or(CursorKind::Default, |entry| entry.cursor),
         ));
@@ -100,6 +102,30 @@ impl Browser {
         self.sync_dev_tools();
         self.update_bookmark_star();
         self.update_open_elsewhere();
+    }
+
+    /// Takes back what a page said about the place under the pointer. A page says it once and
+    /// has no second word for it, so Atoll drops it itself as soon as it cannot be true any more.
+    pub(super) fn forget_tooltip(&self, view: ViewId) {
+        if let Some(tab) = self.tab_of(view)
+            && let Some(entry) = self.views.borrow_mut().get_mut(tab)
+        {
+            entry.tooltip.clear();
+        }
+        if self.is_live_view(view)
+            && let Some(window) = self.window()
+        {
+            window.global::<BrowserState>().set_tooltip("".into());
+        }
+    }
+
+    /// The same for the page the window is showing.
+    pub(super) fn forget_live_tooltip(&self) {
+        let mut live = None;
+        self.with_live_view(|view| live = Some(view.id()));
+        if let Some(view) = live {
+            self.forget_tooltip(view);
+        }
     }
 
     /// Shows the newest frame of the live view.

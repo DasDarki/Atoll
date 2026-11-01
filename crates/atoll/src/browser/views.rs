@@ -11,6 +11,9 @@ pub struct TabView {
     pub crashed: bool,
     pub cursor: CursorKind,
     pub status: String,
+    /// What the page wants shown next to the pointer, kept per tab so a tooltip never shows up
+    /// over another page.
+    pub tooltip: String,
     /// Set while back navigation walks the replacement history instead of the engine history.
     pub replacement_history: bool,
     pub expected_address: Option<String>,
@@ -33,6 +36,7 @@ impl TabView {
             crashed: false,
             cursor: CursorKind::Default,
             status: String::new(),
+            tooltip: String::new(),
             replacement_history: false,
             expected_address: None,
             dev_tools: None,

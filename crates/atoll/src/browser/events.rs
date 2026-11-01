@@ -157,6 +157,11 @@ impl Browser {
                 Effect::NONE
             }
             EngineEvent::Tooltip { view, text } => {
+                if let Some(tab) = self.tab_of(view)
+                    && let Some(entry) = self.views.borrow_mut().get_mut(tab)
+                {
+                    entry.tooltip = text.clone();
+                }
                 if self.is_live_view(view)
                     && let Some(window) = self.window()
                 {
@@ -404,6 +409,8 @@ impl Browser {
         let Some(tab) = self.tab_of(view) else {
             return Effect::NONE;
         };
+        // Whatever the page said about the place under the pointer was said about the old page.
+        self.forget_tooltip(view);
         if let Some(entry) = self.views.borrow_mut().get_mut(tab) {
             if entry.expected_address.as_deref() == Some(url.as_str()) {
                 entry.expected_address = None;
