@@ -1,6 +1,7 @@
 use std::cell::{Cell, RefCell};
 use std::sync::Arc;
 use std::sync::atomic::AtomicU32;
+use std::time::{Duration, Instant};
 
 use cef::{Browser, BrowserHost, ImplBrowser};
 
@@ -50,6 +51,16 @@ pub(crate) struct ViewState {
     /// redirect, as every site does that sends http to https, continues the navigation the user
     /// asked for, so the hops after the first one are theirs as well.
     pub(crate) asked_for_underway: Cell<bool>,
+    /// When the user last did something in this page themselves. A page sending them elsewhere
+    /// right after a click is finishing what they started; one doing it out of nowhere is not,
+    /// and this is what tells the two apart.
+    pub(crate) acted: Cell<Option<Instant>>,
+    /// When Atoll last sent this page somewhere on the user's behalf. That means they wanted
+    /// this page, which is less than wanting to be sent on from it, so it counts for less.
+    pub(crate) asked_at: Cell<Option<Instant>>,
+    /// How many times in a row the page has sent itself somewhere without being asked since
+    /// then. A chain that will not end is one of the signs of advertising.
+    pub(crate) hops: Cell<u32>,
     /// Requests blocked by the content filter since the page started loading. Counted on the
     /// network thread.
     pub(crate) blocked_requests: Arc<AtomicU32>,
@@ -80,6 +91,9 @@ impl ViewState {
             dev_tools_frontend: Cell::new(false),
             asked_for: Cell::new(false),
             asked_for_underway: Cell::new(false),
+            acted: Cell::new(None),
+            asked_at: Cell::new(None),
+            hops: Cell::new(0),
             blocked_requests: Arc::default(),
             activity: RefCell::default(),
             bridge: RefCell::default(),
@@ -93,5 +107,28 @@ impl ViewState {
 
     pub(crate) fn host(&self) -> Option<BrowserHost> {
         self.browser().and_then(|browser| browser.host())
+    }
+
+    /// Notes that the user just did something here. Whatever the page does next, it does it on
+    /// their heels.
+    pub(crate) fn acted_now(&self) {
+        self.acted.set(Some(Instant::now()));
+        self.hops.set(0);
+    }
+
+    /// Notes that Atoll just sent this page somewhere because the user asked for that address.
+    pub(crate) fn asked_now(&self) {
+        self.asked_at.set(Some(Instant::now()));
+        self.hops.set(0);
+    }
+
+    /// How long ago the user last did something here.
+    pub(crate) fn since_acted(&self) -> Option<Duration> {
+        self.acted.get().map(|at| at.elapsed())
+    }
+
+    /// How long ago Atoll last sent this page somewhere.
+    pub(crate) fn since_asked(&self) -> Option<Duration> {
+        self.asked_at.get().map(|at| at.elapsed())
     }
 }

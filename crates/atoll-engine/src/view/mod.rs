@@ -227,6 +227,9 @@ impl BrowserView {
         let Some(host) = self.state.host() else {
             return;
         };
+        if pressed {
+            self.state.acted_now();
+        }
         let buttons = self.state.pressed_buttons.get();
         self.state.pressed_buttons.set(if pressed {
             buttons | button.event_flag()
@@ -269,6 +272,7 @@ impl BrowserView {
     }
 
     pub fn key(&self, input: KeyInput) {
+        self.state.acted_now();
         if let Some(host) = self.state.host() {
             host.send_key_event(Some(&input.to_cef()));
         }
@@ -276,6 +280,7 @@ impl BrowserView {
 
     /// Inserts text at the caret as if it had been typed, used for input methods.
     pub fn commit_text(&self, text: &str) {
+        self.state.acted_now();
         if let Some(host) = self.state.host() {
             host.ime_commit_text(Some(&text.into()), Some(&NO_RANGE), 0);
         }

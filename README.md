@@ -23,8 +23,13 @@ saved tabs therefore cost nothing at startup.
 - **Titles before the first look**: a tab opened with the middle mouse button stays a record,
   nothing is loaded for it, and the sidebar would only have its address to show. Atoll therefore
   asks the site for the beginning of the page, reads the title out of its head and shows that
-  instead. It is one request of at most 128 KB, three at a time at the most, the way everything
-  else Atoll fetches goes, and private tabs are left out of it entirely.
+  instead. Links often do not lead to the page itself but to something that sends you on - a
+  search result, a short address, a click counter - and that is followed, both the redirects of
+  the server and the ones written into a head. Where it ends on another site the tab points
+  there afterwards, and the icon the page names is fetched for sites that have none yet, so the
+  name and the icon of a tab belong to the same place. It is one request of at most 128 KB,
+  three at a time at the most, the way everything else Atoll fetches goes, and private tabs are
+  left out of it entirely.
 - **Moving tabs**: a tab is dragged to another place in the sidebar, inside its island or into
   another one, with a line showing where it lands. Dropped on the header of an island it goes to
   the top of it, which is the only way into one that is collapsed, and dropped outside the window
@@ -89,6 +94,17 @@ saved tabs therefore cost nothing at startup.
   reload, which the shield does itself; the rest counts for the next thing the page tries.
   Redirects and new tabs are stopped only where the page acts on its own: a link the user clicks
   is always followed, so signing in through another site keeps working.
+- **Judging a redirect**: half the web gets you where you want to go through another address, and
+  those hops carry no click of their own because the click was two hops ago. Stopping them all
+  would break signing in, paying and every search result. So a page sending the user to another
+  site unasked is weighed up instead: what the filter lists know about the address, how long ago
+  the user did something, how many times in a row the page has sent itself on, whether the page
+  says in its own address where it leads, whether it leads to signing in or paying, and what the
+  address itself looks like - a cheap ending, a name nobody chose to be read, a counted click.
+  Every mark for and against is added up and read as a chance, and only an address more likely
+  advertising than not is stopped. It happens on this computer, nothing is asked of anyone else,
+  nothing is learned about the user, and the same address always gets the same answer. Every host
+  of a site counts as that site, so a page handing over to its own sign-in stays at home.
 - **Cookie banners**: two switches, both on from the start. Hiding takes the banners away that the
   EasyList Cookie List knows, with a list and an engine of its own, so it works whether or not
   advertising is blocked. Refusing presses the button that declines everything at the consent

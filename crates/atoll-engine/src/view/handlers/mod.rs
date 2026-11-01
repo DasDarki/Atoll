@@ -46,11 +46,20 @@ fn allowed(
     if page_url.is_empty() || target_url.is_empty() {
         return true;
     }
-    let allowed = registry::with_view(view, |runtime, _| {
+    let allowed = registry::with_view(view, |runtime, state| {
+        let attempt = crate::filter::Attempt {
+            opening,
+            page_url,
+            target_url,
+            user_gesture: user_gesture != 0,
+            since_acted: state.since_acted(),
+            since_asked: state.since_asked(),
+            hops: state.hops.get(),
+        };
         runtime
             .content_filter
             .as_ref()
-            .is_none_or(|filter| filter.allows(opening, page_url, target_url, user_gesture != 0))
+            .is_none_or(|filter| filter.allows(&attempt))
     });
     if allowed == Some(false) {
         tracing::debug!(

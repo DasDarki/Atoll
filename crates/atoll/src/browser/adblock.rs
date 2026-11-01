@@ -6,9 +6,11 @@ use std::time::{Duration, SystemTime};
 
 use atoll_adblock::{
     Blocker, COOKIE_LISTS, FILTER_LISTS, ListState, ListStatus, Policy, Protection, Protections,
-    Scope, Updater, site_of,
+    Scope, Updater, domain_of, judge, site_of,
 };
-use atoll_engine::{ContentFilter, DocumentRules, Opening, ResourceKind, ResourceRequest, Verdict};
+use atoll_engine::{
+    Attempt, ContentFilter, DocumentRules, Opening, ResourceKind, ResourceRequest, Verdict,
+};
 use atoll_storage::AdblockRule;
 use atoll_storage::prelude::*;
 use slint::ComponentHandle;
@@ -187,34 +189,65 @@ impl ContentFilter for AdblockFilter {
         self.blocker.element_css(url, classes, ids) + &self.cookies.element_css(url, classes, ids)
     }
 
-    fn allows(
-        &self,
-        opening: Opening,
-        page_url: &str,
-        target_url: &str,
-        user_gesture: bool,
-    ) -> bool {
-        let protection = match opening {
+    fn allows(&self, attempt: &Attempt<'_>) -> bool {
+        let protection = match attempt.opening {
             Opening::Popup => Protection::Popups,
             Opening::NewTab => Protection::NewTabs,
             Opening::Navigation => Protection::Redirects,
         };
-        if !self.policy.effective(page_url).does(protection) {
+        if !self.policy.effective(attempt.page_url).does(protection) {
             return true;
         }
         // A window a page opens is stopped whether or not a click set it off: the click usually
         // meant something else, and the engine stops the ones without a click by itself anyway.
-        if opening == Opening::Popup {
+        if attempt.opening == Opening::Popup {
             return false;
         }
-        user_gesture || !leads_elsewhere(page_url, target_url)
+        if attempt.user_gesture || !leads_elsewhere(attempt.page_url, attempt.target_url) {
+            return true;
+        }
+        if attempt.opening == Opening::NewTab {
+            return false;
+        }
+        // Nobody clicked, and it leads to another site. That is where most of the web's own
+        // plumbing lives too, so the address is judged instead of simply stopped.
+        self.judge_redirect(attempt)
+    }
+}
+
+impl AdblockFilter {
+    /// Whether a page sending the user to another site unasked is doing what they wanted. The
+    /// filter lists are asked first, because they know more than any judgement here.
+    fn judge_redirect(&self, attempt: &Attempt<'_>) -> bool {
+        let judgement = judge::judge(&judge::Attempt {
+            page_url: attempt.page_url,
+            target_url: attempt.target_url,
+            since_acted: attempt.since_acted,
+            since_asked: attempt.since_asked,
+            hops: attempt.hops,
+            on_a_list: self.blocker.blocks(
+                attempt.target_url,
+                attempt.page_url,
+                attempt.page_url,
+                "document",
+            ),
+        });
+        tracing::debug!(
+            target_url = attempt.target_url,
+            chance = judgement.chance,
+            why = judgement.reasons(),
+            "a page wants to send the user to another site"
+        );
+        !judgement.stops_it()
     }
 }
 
 /// Whether the two addresses belong to different sites. A page that opens something of its own
-/// is never in the way, the protections are about being sent somewhere else.
+/// is never in the way, the protections are about being sent somewhere else. Every host of a
+/// site counts as that site, so a page handing over to the sign-in of its own house stays at
+/// home.
 fn leads_elsewhere(page_url: &str, target_url: &str) -> bool {
-    match (site_of(page_url), site_of(target_url)) {
+    match (domain_of(page_url), domain_of(target_url)) {
         (Some(page), Some(target)) => page != target,
         (_, None) => false,
         (None, Some(_)) => false,
@@ -702,15 +735,15 @@ mod tests {
         let page = "https://example.org/artikel";
         let elsewhere = "https://werbung.example/ziel";
         assert!(
-            !filter.allows(Opening::Popup, page, elsewhere, false),
+            !filter.allows(&attempt(Opening::Popup, page, elsewhere, false)),
             "a window a page opens by itself is stopped from the start"
         );
         assert!(
-            !filter.allows(Opening::Popup, page, elsewhere, true),
+            !filter.allows(&attempt(Opening::Popup, page, elsewhere, true)),
             "a click usually meant something else than a window"
         );
         assert!(
-            filter.allows(Opening::Navigation, page, elsewhere, false),
+            filter.allows(&attempt(Opening::Navigation, page, elsewhere, false)),
             "being sent away is only stopped where that is switched on"
         );
         policy.set(
@@ -720,15 +753,36 @@ mod tests {
                 .with(Protection::Popups, Some(false))
                 .with(Protection::Redirects, Some(true)),
         );
-        assert!(filter.allows(Opening::Popup, page, elsewhere, false));
-        assert!(!filter.allows(Opening::Navigation, page, elsewhere, false));
+        assert!(filter.allows(&attempt(Opening::Popup, page, elsewhere, false)));
+        assert!(!filter.allows(&attempt(Opening::Navigation, page, elsewhere, false)));
         assert!(
-            filter.allows(Opening::Navigation, page, elsewhere, true),
+            filter.allows(&attempt(Opening::Navigation, page, elsewhere, true)),
             "where the user clicked, they are taken along"
         );
         assert!(
-            filter.allows(Opening::Navigation, page, "https://example.org/mehr", false),
+            filter.allows(&attempt(
+                Opening::Navigation,
+                page,
+                "https://example.org/mehr",
+                false
+            )),
             "a page may move within itself"
+        );
+        assert!(
+            filter.allows(&attempt(
+                Opening::Navigation,
+                page,
+                "https://anmeldung.example.org/los",
+                false
+            )),
+            "another host of the same site is still the page's own house"
+        );
+        assert!(
+            filter.allows(&Attempt {
+                since_acted: Some(Duration::from_millis(300)),
+                ..attempt(Opening::Navigation, page, elsewhere, false)
+            }),
+            "what the user set off a moment ago is carried on"
         );
         policy.set(
             Scope::Site,
@@ -736,8 +790,26 @@ mod tests {
             Protections::default().with(Protection::Active, Some(false)),
         );
         assert!(
-            filter.allows(Opening::Navigation, page, elsewhere, false),
+            filter.allows(&attempt(Opening::Navigation, page, elsewhere, false)),
             "a page without protection is left alone"
         );
+    }
+
+    /// A page trying to open something with nobody having done anything beforehand.
+    fn attempt<'a>(
+        opening: Opening,
+        page_url: &'a str,
+        target_url: &'a str,
+        user_gesture: bool,
+    ) -> Attempt<'a> {
+        Attempt {
+            opening,
+            page_url,
+            target_url,
+            user_gesture,
+            since_acted: None,
+            since_asked: None,
+            hops: 1,
+        }
     }
 }

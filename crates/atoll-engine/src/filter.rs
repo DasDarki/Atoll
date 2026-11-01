@@ -87,6 +87,26 @@ pub enum Verdict {
     Redirect(String),
 }
 
+/// What a page is trying to open, and everything the engine knows about how it came to that.
+#[derive(Debug, Clone, Copy)]
+pub struct Attempt<'a> {
+    pub opening: Opening,
+    /// The page that is trying.
+    pub page_url: &'a str,
+    /// What it wants to open.
+    pub target_url: &'a str,
+    /// Whether the engine sees the user's hand in it, which it only does while a click or a key
+    /// is still fresh.
+    pub user_gesture: bool,
+    /// How long ago the user last did something in that page themselves, if they did.
+    pub since_acted: Option<std::time::Duration>,
+    /// How long ago Atoll last sent that page somewhere because the user asked for the address.
+    pub since_asked: Option<std::time::Duration>,
+    /// How many times in a row the page has sent itself somewhere without being asked since
+    /// then.
+    pub hops: u32,
+}
+
 /// What a page wants to open, which the user may have forbidden it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Opening {
@@ -110,17 +130,11 @@ pub trait ContentFilter: Send + Sync {
     /// the main thread as elements appear.
     fn element_rules(&self, url: &str, classes: &[String], ids: &[String]) -> String;
 
-    /// Whether the page at `page_url` may open `target_url` that way, called on the browser's
-    /// main thread. What the user asked for themselves is never stopped, so `user_gesture` is
-    /// part of the question.
-    fn allows(
-        &self,
-        opening: Opening,
-        page_url: &str,
-        target_url: &str,
-        user_gesture: bool,
-    ) -> bool {
-        let _ = (opening, page_url, target_url, user_gesture);
+    /// Whether a page may open what it is trying to open, called on the browser's main thread.
+    /// What the user asked for themselves is never stopped, so what they were doing is part of
+    /// the question, see [`Attempt`].
+    fn allows(&self, attempt: &Attempt<'_>) -> bool {
+        let _ = attempt;
         true
     }
 }

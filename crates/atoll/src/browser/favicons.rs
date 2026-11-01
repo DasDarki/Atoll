@@ -49,6 +49,11 @@ impl FaviconCache {
         }
     }
 
+    /// Whether an icon is known for the host of `url`, asked before one is fetched.
+    pub fn knows_host(&self, host: &str) -> bool {
+        self.hosts.contains_key(host)
+    }
+
     pub fn image(&self, tab: &Tab) -> Option<Image> {
         self.favicon_id(tab)
             .and_then(|id| self.images.get(&id).cloned())

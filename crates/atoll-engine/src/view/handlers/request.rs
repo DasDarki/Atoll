@@ -47,11 +47,17 @@ wrap_request_handler! {
             }
             let asked_for = registry::with_view(self.view, |_, view| {
                 if is_redirect != 0 {
-                    // Where the first hop was asked for, so is where it leads.
+                    // Where the first hop was asked for, so is where it leads, and the hops of
+                    // one navigation are not the page sending itself on again and again.
                     return view.asked_for_underway.get();
                 }
                 let asked_for = view.asked_for.replace(false);
                 view.asked_for_underway.set(asked_for);
+                if asked_for {
+                    view.asked_now();
+                } else {
+                    view.hops.set(view.hops.get().saturating_add(1));
+                }
                 asked_for
             });
             if asked_for != Some(false) {

@@ -163,6 +163,16 @@ impl Blocker {
     }
 }
 
+/// The site `url` belongs to, with every host of it counting as the same one: `example.co.uk`
+/// for `shop.example.co.uk`. This is what tells one site from another where it matters whether
+/// the user is being sent somewhere else; [`site_of`] stays what the user's own rules are kept
+/// under, where one host is not the next.
+pub fn domain_of(url: &str) -> Option<String> {
+    let parsed = url::Url::parse(url).ok()?;
+    let host = parsed.host_str()?.to_ascii_lowercase();
+    Some(psl::domain_str(&host).unwrap_or(&host).to_owned())
+}
+
 /// The site `url` belongs to, as used for switching filtering off: its host without `www.`.
 pub fn site_of(url: &str) -> Option<String> {
     let parsed = url::Url::parse(url).ok()?;
