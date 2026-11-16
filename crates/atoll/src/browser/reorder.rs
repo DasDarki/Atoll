@@ -141,6 +141,7 @@ impl Browser {
     }
 
     /// The tab was let go inside the sidebar. It moves if the place is another one than it had.
+    /// Tabs picked together stay picked, so they can be moved on in one go.
     pub(super) fn tab_drag_dropped(&self) {
         let drag = std::mem::take(&mut *self.tab_drag.borrow_mut());
         if let Some(window) = self.window() {
@@ -151,7 +152,6 @@ impl Browser {
         if let Some((island, index)) = drag.target.filter(|_| !drag.tabs.is_empty()) {
             self.move_tabs_to(&drag.tabs, island, index);
         }
-        self.forget_picks();
     }
 
     /// What the running drag carries.
