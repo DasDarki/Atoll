@@ -117,7 +117,10 @@ export component AppWindow inherits Window {
     }
 
     HorizontalLayout {
-        if !BrowserState.fullscreen && SidebarState.visible : Sidebar { }
+        if SidebarState.visible : Sidebar {
+            visible: !BrowserState.fullscreen;
+            width: BrowserState.fullscreen ? 0px : Theme.sidebar-width;
+        }
 
         VerticalLayout {
             toolbar := Toolbar {

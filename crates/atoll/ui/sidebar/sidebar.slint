@@ -1,6 +1,6 @@
 import { ListView } from "std-widgets.slint";
 import { Theme } from "../theme.slint";
-import { SidebarState } from "../state.slint";
+import { BrowserState, SidebarState } from "../state.slint";
 import { RowKind } from "../structs.slint";
 import { IconButton } from "../widgets/icon-button.slint";
 import { WorkspaceBar } from "workspace-bar.slint";
@@ -58,6 +58,26 @@ component FooterButton inherits Rectangle {
 export component Sidebar inherits Rectangle {
     property <length> island-drag-y;
     property <length> tab-drag-y;
+    property <bool> hidden: BrowserState.fullscreen;
+    property <length> scroll-before-hiding;
+    property <length> height-before-hiding;
+    property <bool> scroll-to-restore;
+    changed hidden => {
+        if (self.hidden) {
+            self.scroll-before-hiding = tab-list.content-y;
+            self.height-before-hiding = self.height;
+        } else if (self.height == self.height-before-hiding) {
+            tab-list.content-y = self.scroll-before-hiding;
+        } else {
+            self.scroll-to-restore = true;
+        }
+    }
+    changed height => {
+        if (self.scroll-to-restore && !self.hidden) {
+            self.scroll-to-restore = false;
+            tab-list.content-y = self.scroll-before-hiding;
+        }
+    }
 
     width: Theme.sidebar-width;
     background: Theme.chrome;
@@ -79,7 +99,7 @@ export component Sidebar inherits Rectangle {
             height: 100%;
             WorkspaceBar { }
 
-            ListView {
+            tab-list := ListView {
                 vertical-stretch: 1;
                 for row[index] in SidebarState.rows : Rectangle {
                     height: row.kind == RowKind.island ? 34px : 32px;
