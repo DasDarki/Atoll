@@ -39,17 +39,33 @@ saved tabs therefore cost nothing at startup.
   together.
 - **Own window frame**: the toolbar doubles as the title bar with the window buttons, a double
   click maximizes the window, and the edges resize it.
-- **Four tab states**: *Live* (visible), *Frozen* (recently used, paused in the background),
-  *Sleeping* (plain record, the normal state) and *Archived* (part of an archived island).
-  Frozen tabs beyond the limit and tabs put to sleep release their engine instance.
+- **Three tab states**: *Live* (visible), *Frozen* (recently used, paused in the background) and
+  *Sleeping* (plain record, the normal state). Frozen tabs beyond the limit and tabs put to sleep
+  release their engine instance. Archived tabs are no tabs any more, see the archive.
 - **Memory limit**: while the pages use more memory than the budget (4 GB by default), the least
   recently used background tabs go to sleep. Pinned tabs, tabs playing audible media and pages
   with input that was not sent yet stay loaded, also when the frozen limit is reached.
-- **Archive**: islands can be archived and restored with one click. Islands unused for four
-  weeks, configurable in the settings, are marked in the sidebar and suggested in the archive.
-  Nothing is archived without confirmation.
-- **Quick search and command palette**: `Ctrl+K` searches the tabs of all workspaces (archived
-  ones included), bookmarks and history. `Ctrl+Shift+P` or a leading `>` lists commands instead,
+- **Archive**: one archive for all workspaces, laid out like the sidebar: workspaces, their
+  islands and their tabs, searchable. Every archived tab keeps a copy of its island (id, name,
+  colour, place) and of its workspace (id, name, place). Brought back, it goes into its island
+  while that exists and otherwise into an identical one, which the other tabs of that island then
+  follow; workspaces are treated the same way. The database cuts the link as soon as an island or
+  a workspace is deleted, so a reused id never draws a tab into a stranger's island. Tabs keep
+  their back history in the archive, and since each one remembers the place it had when it left,
+  bringing them back in reverse restores the exact order.
+- **Archiving tabs by hand**: the tab menu archives a tab, or every selected tab when it is one
+  of a selection. A shown tab hands over to the nearest one that stays, and an island left empty
+  goes along.
+- **Archiving tabs on their own**: tabs not visited for a number of days set in the settings
+  (off by default) go to the archive by themselves, checked a minute after the start and every
+  ten minutes after that. Pinned and private tabs, tabs with a loaded page, the tab a window shows
+  and the last shown tab of every workspace stay. An island left empty goes along with its tabs.
+- **Archiving islands**: islands can be archived with one click, which moves all their tabs into
+  the archive. Islands unused for four weeks, configurable in the settings, are marked in the
+  sidebar and suggested in the archive; nothing is archived from there without confirmation. The
+  island archive of earlier versions moves into the new archive on the first start.
+- **Quick search and command palette**: `Ctrl+K` searches the tabs of all workspaces and of the
+  archive, bookmarks and history; an archived tab comes back when it is picked. `Ctrl+Shift+P` or a leading `>` lists commands instead,
   with a new tab first and the rest in the order they were last used.
 - **Already open**: when the page in front of you is open in another tab, the address bar says
   so with a pill, and a click goes there. It counts the tabs of every workspace, names the

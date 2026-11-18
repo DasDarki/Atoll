@@ -1,10 +1,108 @@
 import { ListView } from "std-widgets.slint";
 import { Theme } from "../theme.slint";
 import { OverlayState } from "../state.slint";
+import { ArchiveRow, ArchiveRowKind } from "../structs.slint";
 import { Modal } from "modal.slint";
 import { ActionButton, ButtonKind } from "../widgets/button.slint";
 import { IconButton } from "../widgets/icon-button.slint";
 import { FieldLabel } from "../widgets/field-label.slint";
+import { TextField } from "../widgets/text-field.slint";
+
+component ArchiveLine inherits Rectangle {
+    in property <ArchiveRow> line;
+
+    height: root.line.kind == ArchiveRowKind.tab ? 44px : 36px;
+    border-radius: Theme.radius-small;
+    background: touch.has-hover ? Theme.hover : transparent;
+
+    touch := TouchArea { }
+
+    HorizontalLayout {
+        padding-left: root.line.kind == ArchiveRowKind.workspace ? 12px
+            : root.line.kind == ArchiveRowKind.island ? 20px : 34px;
+        padding-right: 6px;
+        spacing: 10px;
+
+        if root.line.kind == ArchiveRowKind.island : Rectangle {
+            width: 10px;
+            height: 10px;
+            y: (parent.height - self.height) / 2;
+            border-radius: 5px;
+            background: root.line.color;
+        }
+        if root.line.kind == ArchiveRowKind.tab && root.line.has-icon : Image {
+            width: 16px;
+            height: 16px;
+            y: (parent.height - self.height) / 2;
+            source: root.line.icon;
+            image-fit: contain;
+        }
+        if root.line.kind == ArchiveRowKind.tab && !root.line.has-icon : Image {
+            width: 16px;
+            height: 16px;
+            y: (parent.height - self.height) / 2;
+            source: @image-url("../icons/globe.svg");
+            colorize: Theme.text-faint;
+        }
+
+        if root.line.kind != ArchiveRowKind.tab : HorizontalLayout {
+            horizontal-stretch: 1;
+            spacing: 8px;
+            Text {
+                text: root.line.name;
+                color: root.line.kind == ArchiveRowKind.workspace ? Theme.text-muted : Theme.text;
+                font-size: root.line.kind == ArchiveRowKind.workspace ? Theme.font-small + 1px : Theme.font-normal;
+                font-weight: 600;
+                vertical-alignment: center;
+                overflow: elide;
+            }
+            Text {
+                horizontal-stretch: 1;
+                text: root.line.detail;
+                color: Theme.text-faint;
+                font-size: Theme.font-small + 1px;
+                vertical-alignment: center;
+                overflow: elide;
+            }
+        }
+
+        if root.line.kind == ArchiveRowKind.tab : VerticalLayout {
+            alignment: center;
+            spacing: 2px;
+            horizontal-stretch: 1;
+            Text {
+                text: root.line.name;
+                color: Theme.text;
+                font-size: Theme.font-normal;
+                overflow: elide;
+            }
+            Text {
+                text: root.line.detail;
+                color: Theme.text-faint;
+                font-size: Theme.font-small;
+                overflow: elide;
+            }
+        }
+
+        IconButton {
+            width: 28px;
+            height: 28px;
+            y: (parent.height - self.height) / 2;
+            icon-size: 14px;
+            icon: @image-url("../icons/restore.svg");
+            clicked => { OverlayState.archive-restore(root.line.kind, root.line.id); }
+        }
+        IconButton {
+            width: 28px;
+            height: 28px;
+            y: (parent.height - self.height) / 2;
+            icon-size: 13px;
+            icon: @image-url("../icons/trash.svg");
+            tint: Theme.danger;
+            clicked => { OverlayState.archive-delete(root.line.kind, root.line.id); }
+        }
+    }
+}
 
 export component ArchivePanel inherits Modal {
     title: @tr("Archiv");
@@ -12,7 +110,7 @@ export component ArchivePanel inherits Modal {
     dismissed => { OverlayState.archive-close(); }
 
     Text {
-        text: @tr("Archivierte Inseln verschwinden aus der Sidebar, bleiben aber vollständig erhalten.");
+        text: @tr("Archivierte Tabs verschwinden aus der Sidebar, bleiben aber vollständig erhalten. Zurückgeholt kommen sie in ihre Insel und ihren Workspace, gibt es die nicht mehr, in gleiche.");
         color: Theme.text-muted;
         font-size: Theme.font-normal;
         wrap: word-wrap;
@@ -105,7 +203,7 @@ export component ArchivePanel inherits Modal {
         FieldLabel { text: @tr("ARCHIVIERT"); }
     }
 
-    if OverlayState.archive-items.length == 0 : Rectangle {
+    if OverlayState.archive-tab-count == 0 : Rectangle {
         height: 120px;
         border-radius: Theme.radius;
         background: Theme.background;
@@ -116,61 +214,30 @@ export component ArchivePanel inherits Modal {
         }
     }
 
-    if OverlayState.archive-items.length > 0 : Rectangle {
-        height: min(360px, OverlayState.archive-items.length * 56px + 8px);
+    if OverlayState.archive-tab-count > 0 : TextField {
+        placeholder: OverlayState.archive-tab-count == 1
+            ? @tr("Im Archiv suchen, 1 Tab")
+            : @tr("Im Archiv suchen, {} Tabs", OverlayState.archive-tab-count);
+        text <=> OverlayState.archive-query;
+        edited(text) => { OverlayState.archive-query-edited(text); }
+        escape => { OverlayState.archive-close(); }
+    }
+
+    if OverlayState.archive-tab-count > 0 && OverlayState.archive-rows.length == 0 : Text {
+        text: @tr("Nichts gefunden.");
+        color: Theme.text-faint;
+        font-size: Theme.font-normal;
+    }
+
+    if OverlayState.archive-rows.length > 0 : Rectangle {
+        height: min(400px, OverlayState.archive-rows.length * 42px + 8px);
         border-radius: Theme.radius;
         background: Theme.background;
         border-width: 1px;
         border-color: Theme.border;
         ListView {
-            for item in OverlayState.archive-items : Rectangle {
-                height: 56px;
-                HorizontalLayout {
-                    padding-left: 14px;
-                    padding-right: 8px;
-                    spacing: 10px;
-                    Rectangle {
-                        width: 10px;
-                        height: 10px;
-                        y: (parent.height - self.height) / 2;
-                        border-radius: 5px;
-                        background: item.color;
-                    }
-                    VerticalLayout {
-                        alignment: center;
-                        spacing: 2px;
-                        horizontal-stretch: 1;
-                        Text {
-                            text: item.name;
-                            color: Theme.text;
-                            font-size: Theme.font-normal;
-                            font-weight: 600;
-                            overflow: elide;
-                        }
-                        Text {
-                            text: @tr("{} · {} · archiviert {}", item.workspace, @tr("{n} Tab" | "{n} Tabs" % item.tab-count), item.archived);
-                            color: Theme.text-faint;
-                            font-size: Theme.font-small + 1px;
-                            overflow: elide;
-                        }
-                    }
-                    ActionButton {
-                        y: (parent.height - self.height) / 2;
-                        text: @tr("Wiederherstellen");
-                        clicked => { OverlayState.archive-restore(item.id); }
-                    }
-                    IconButton {
-                        y: (parent.height - self.height) / 2;
-                        icon: @image-url("../icons/trash.svg");
-                        tint: Theme.danger;
-                        clicked => { OverlayState.archive-delete(item.id); }
-                    }
-                }
-                Rectangle {
-                    y: parent.height - 1px;
-                    height: 1px;
-                    background: Theme.border;
-                }
+            for row in OverlayState.archive-rows : ArchiveLine {
+                line: row;
             }
         }
     }

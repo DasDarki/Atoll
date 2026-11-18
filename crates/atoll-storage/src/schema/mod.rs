@@ -15,6 +15,7 @@ const MIGRATIONS: &[&str] = &[
     include_str!("v10_adblock_rules.sql"),
     include_str!("v11_vpn_rules.sql"),
     include_str!("v12_page_text.sql"),
+    include_str!("v13_tab_archive.sql"),
 ];
 
 pub(crate) fn migrate(connection: &Connection) -> StorageResult<()> {

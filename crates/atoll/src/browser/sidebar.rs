@@ -89,7 +89,7 @@ impl Browser {
                 continue;
             }
             for tab in &entry.tabs {
-                let state = lifecycle.state_of(tab.id, false);
+                let state = lifecycle.state_of(tab.id);
                 let icon = favicons.image(tab);
                 let loading = views
                     .get(tab.id)
@@ -158,7 +158,6 @@ impl Browser {
 
 fn load_state(state: TabState) -> TabLoadState {
     match state {
-        TabState::Archived => TabLoadState::Archived,
         TabState::Sleeping => TabLoadState::Sleeping,
         TabState::Frozen => TabLoadState::Frozen,
         TabState::Live => TabLoadState::Live,

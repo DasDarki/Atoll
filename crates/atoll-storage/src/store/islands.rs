@@ -18,20 +18,12 @@ pub struct NewIsland<'a> {
     pub created_at: Timestamp,
 }
 
-/// An archived island together with context for the archive view.
-#[derive(Debug, Clone)]
-pub struct ArchivedIsland {
-    pub island: Island,
-    pub workspace_name: String,
-    pub tab_count: usize,
-}
-
 pub trait IslandStore: Connected {
-    /// The active (not archived) islands of a workspace in display order.
+    /// The islands of a workspace in display order.
     fn islands(&self, workspace: WorkspaceId) -> StorageResult<Vec<Island>> {
         let mut statement = self.connection().prepare_cached(&format!(
             "SELECT {ISLAND_COLUMNS} FROM island
-             WHERE workspace_id = ?1 AND archived_at IS NULL
+             WHERE workspace_id = ?1
              ORDER BY position, id"
         ))?;
         let islands = statement
@@ -40,7 +32,7 @@ pub trait IslandStore: Connected {
         Ok(islands)
     }
 
-    /// The names of every island of a workspace, the archived ones included.
+    /// The names of every island of a workspace.
     fn island_names(&self, workspace: WorkspaceId) -> StorageResult<Vec<String>> {
         let mut statement = self
             .connection()
@@ -64,32 +56,11 @@ pub trait IslandStore: Connected {
             })
     }
 
-    /// Every archived island across all workspaces, most recently archived first.
-    fn archived_islands(&self) -> StorageResult<Vec<ArchivedIsland>> {
-        let mut statement = self.connection().prepare_cached(&format!(
-            "SELECT {ISLAND_COLUMNS}, workspace.name,
-                    (SELECT COUNT(*) FROM tab WHERE tab.island_id = island.id)
-             FROM island JOIN workspace ON workspace.id = island.workspace_id
-             WHERE island.archived_at IS NOT NULL
-             ORDER BY island.archived_at DESC, island.id DESC"
-        ))?;
-        let islands = statement
-            .query_map([], |row| {
-                Ok(ArchivedIsland {
-                    island: rows::island(row)?,
-                    workspace_name: row.get(8)?,
-                    tab_count: row.get::<_, i64>(9)? as usize,
-                })
-            })?
-            .collect::<Result<_, _>>()?;
-        Ok(islands)
-    }
-
-    /// Active islands whose last use lies before `before`, candidates for the archive suggestion.
+    /// Islands whose last use lies before `before`, candidates for the archive suggestion.
     fn islands_unused_since(&self, before: Timestamp) -> StorageResult<Vec<Island>> {
         let mut statement = self.connection().prepare_cached(&format!(
             "SELECT {ISLAND_COLUMNS} FROM island
-             WHERE archived_at IS NULL AND COALESCE(last_used_at, 0) < ?1
+             WHERE COALESCE(last_used_at, 0) < ?1
              ORDER BY last_used_at"
         ))?;
         let islands = statement
@@ -143,30 +114,12 @@ pub trait IslandStore: Connected {
         Ok(())
     }
 
-    fn archive_island(&self, id: IslandId, at: Timestamp) -> StorageResult<()> {
-        let island = self.island(id)?;
-        self.connection()
-            .prepare_cached("UPDATE island SET archived_at = ?1 WHERE id = ?2")?
-            .execute(params![at.0, id.0])?;
-        let ids = active_island_ids(self, island.workspace_id)?;
-        renumber(self.connection(), OrderedTable::Island, &ids)
-    }
-
-    /// Brings an archived island back to the end of its workspace.
-    fn restore_island(&self, id: IslandId) -> StorageResult<()> {
-        let island = self.island(id)?;
-        self.connection()
-            .prepare_cached("UPDATE island SET archived_at = NULL WHERE id = ?1")?
-            .execute([id.0])?;
-        place_island(self, id, island.workspace_id, None)
-    }
-
     fn delete_island(&self, id: IslandId) -> StorageResult<()> {
         let island = self.island(id)?;
         self.connection()
             .prepare_cached("DELETE FROM island WHERE id = ?1")?
             .execute([id.0])?;
-        let ids = active_island_ids(self, island.workspace_id)?;
+        let ids = island_ids(self, island.workspace_id)?;
         renumber(self.connection(), OrderedTable::Island, &ids)
     }
 
@@ -177,7 +130,7 @@ pub trait IslandStore: Connected {
             .prepare_cached("UPDATE island SET workspace_id = ?1 WHERE id = ?2")?
             .execute(params![workspace.0, id.0])?;
         if island.workspace_id != workspace {
-            let ids = active_island_ids(self, island.workspace_id)?;
+            let ids = island_ids(self, island.workspace_id)?;
             renumber(self.connection(), OrderedTable::Island, &ids)?;
         }
         place_island(self, id, workspace, Some(index))
@@ -186,26 +139,26 @@ pub trait IslandStore: Connected {
 
 impl<T: Connected + ?Sized> IslandStore for T {}
 
-fn active_island_ids<S: Connected + ?Sized>(
+pub(crate) fn island_ids<S: Connected + ?Sized>(
     store: &S,
     workspace: WorkspaceId,
 ) -> StorageResult<Vec<i64>> {
-    let mut statement = store.connection().prepare_cached(
-        "SELECT id FROM island WHERE workspace_id = ?1 AND archived_at IS NULL ORDER BY position, id",
-    )?;
+    let mut statement = store
+        .connection()
+        .prepare_cached("SELECT id FROM island WHERE workspace_id = ?1 ORDER BY position, id")?;
     let ids = statement
         .query_map([workspace.0], |row| row.get(0))?
         .collect::<Result<_, _>>()?;
     Ok(ids)
 }
 
-fn place_island<S: Connected + ?Sized>(
+pub(crate) fn place_island<S: Connected + ?Sized>(
     store: &S,
     id: IslandId,
     workspace: WorkspaceId,
     index: Option<usize>,
 ) -> StorageResult<()> {
-    let mut ids = active_island_ids(store, workspace)?;
+    let mut ids = island_ids(store, workspace)?;
     insert_at(&mut ids, id.0, index);
     renumber(store.connection(), OrderedTable::Island, &ids)
 }

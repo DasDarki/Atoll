@@ -94,6 +94,7 @@ fn connect_sidebar(window: &AppWindow, browser: &Rc<Browser>) {
             "new-island" => target.move_tab_to_new_island(tab(id)),
             "bookmark" => target.bookmark_tab(tab(id)),
             "new-window" => target.move_tab_to_new_window(tab(id), None),
+            "archive" => target.archive_tab_from_sidebar(tab(id)),
             other => tracing::warn!(action = other, "unknown tab action"),
         }
     );
@@ -356,10 +357,14 @@ fn connect_overlays(window: &AppWindow, browser: &Rc<Browser>) {
     );
     on!(state, on_toast_dismissed, browser, |target| target
         .hide_toast());
-    on!(state, on_archive_restore, browser, |target, id| target
-        .restore_island(island(id)));
-    on!(state, on_archive_delete, browser, |target, id| target
-        .delete_archived_island(island(id)));
+    on!(state, on_archive_restore, browser, |target, kind, id| {
+        target.restore_from_archive(kind, i64::from(id))
+    });
+    on!(state, on_archive_delete, browser, |target, kind, id| target
+        .delete_from_archive(kind, i64::from(id)));
+    on!(state, on_archive_query_edited, browser, |target, query| {
+        target.archive_query_edited(&query)
+    });
     on!(state, on_archive_keep, browser, |target, id| target
         .keep_island(island(id)));
     on!(state, on_archive_suggested, browser, |target, id| target

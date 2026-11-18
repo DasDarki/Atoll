@@ -9,6 +9,7 @@ const DEFAULT_DEV_TOOLS_SIZE: u32 = 320;
 const DEFAULT_ARCHIVE_SUGGESTION_WEEKS: u32 = 4;
 pub const MAX_FROZEN_LIMIT: usize = 20;
 pub const MAX_ARCHIVE_SUGGESTION_WEEKS: u32 = 52;
+pub const MAX_ARCHIVE_TABS_AFTER_DAYS: u32 = 365;
 const DEFAULT_MEMORY_LIMIT_GB: u32 = 4;
 pub const MAX_MEMORY_LIMIT_GB: u32 = 64;
 
@@ -140,6 +141,8 @@ pub struct Preferences {
     pub cookie_banners_answer: bool,
     /// Islands unused for this many weeks are suggested for the archive, `0` suggests none.
     pub archive_suggestion_weeks: u32,
+    /// Tabs not visited for this many days go to the archive on their own, `0` keeps them all.
+    pub archive_tabs_after_days: u32,
     /// Puts background tabs to sleep while the pages use more memory than the budget.
     pub memory_limit_enabled: bool,
     /// The memory budget of all pages in binary gigabytes.
@@ -169,6 +172,7 @@ pub enum PreferenceKey {
     DevToolsDockedRight,
     DevToolsSize,
     ArchiveSuggestionWeeks,
+    ArchiveTabsAfterDays,
     MemoryLimitEnabled,
     MemoryLimitGb,
     Language,
@@ -212,6 +216,7 @@ impl PreferenceKey {
             PreferenceKey::DevToolsDockedRight => "dev_tools_docked_right",
             PreferenceKey::DevToolsSize => "dev_tools_size",
             PreferenceKey::ArchiveSuggestionWeeks => "archive_suggestion_weeks",
+            PreferenceKey::ArchiveTabsAfterDays => "archive_tabs_after_days",
             PreferenceKey::MemoryLimitEnabled => "memory_limit_enabled",
             PreferenceKey::MemoryLimitGb => "memory_limit_gb",
             PreferenceKey::Language => "language",
@@ -276,6 +281,7 @@ impl Default for Preferences {
             page_text_fields: true,
             page_text_drafts: true,
             archive_suggestion_weeks: DEFAULT_ARCHIVE_SUGGESTION_WEEKS,
+            archive_tabs_after_days: 0,
             memory_limit_enabled: true,
             memory_limit_gb: DEFAULT_MEMORY_LIMIT_GB,
             language: None,
@@ -357,6 +363,11 @@ impl Preferences {
                 .map_or(defaults.archive_suggestion_weeks, |weeks| {
                     weeks.min(MAX_ARCHIVE_SUGGESTION_WEEKS)
                 }),
+            archive_tabs_after_days: text(PreferenceKey::ArchiveTabsAfterDays)
+                .and_then(|days| days.parse::<u32>().ok())
+                .map_or(defaults.archive_tabs_after_days, |days| {
+                    days.min(MAX_ARCHIVE_TABS_AFTER_DAYS)
+                }),
             memory_limit_enabled: flag(
                 PreferenceKey::MemoryLimitEnabled,
                 defaults.memory_limit_enabled,
@@ -419,6 +430,7 @@ impl Preferences {
             PreferenceKey::PageTextFields => flag(self.page_text_fields),
             PreferenceKey::PageTextDrafts => flag(self.page_text_drafts),
             PreferenceKey::ArchiveSuggestionWeeks => self.archive_suggestion_weeks.to_string(),
+            PreferenceKey::ArchiveTabsAfterDays => self.archive_tabs_after_days.to_string(),
             PreferenceKey::MemoryLimitEnabled => flag(self.memory_limit_enabled),
             PreferenceKey::MemoryLimitGb => self.memory_limit_gb.to_string(),
             PreferenceKey::Language => self
@@ -493,6 +505,7 @@ mod tests {
             page_text_fields: false,
             page_text_drafts: false,
             archive_suggestion_weeks: 9,
+            archive_tabs_after_days: 30,
             memory_limit_enabled: false,
             memory_limit_gb: 12,
             language: Some(Language::English),
@@ -533,6 +546,7 @@ mod tests {
             PreferenceKey::PageTextFields,
             PreferenceKey::PageTextDrafts,
             PreferenceKey::ArchiveSuggestionWeeks,
+            PreferenceKey::ArchiveTabsAfterDays,
             PreferenceKey::MemoryLimitEnabled,
             PreferenceKey::MemoryLimitGb,
             PreferenceKey::Language,

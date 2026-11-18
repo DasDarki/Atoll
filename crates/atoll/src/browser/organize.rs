@@ -126,7 +126,7 @@ impl Browser {
                 .unwrap_or_default();
             let count = self
                 .storage
-                .all_tabs_in_workspace(workspace)
+                .tabs_in_workspace(workspace)
                 .map(|tabs| tabs.len())
                 .unwrap_or(0);
             (name, count)
@@ -146,7 +146,7 @@ impl Browser {
                 };
                 let tabs = browser
                     .storage
-                    .all_tabs_in_workspace(workspace)
+                    .tabs_in_workspace(workspace)
                     .map(|tabs| tabs.into_iter().map(|tab| tab.id).collect::<Vec<_>>())
                     .unwrap_or_default();
                 let manager = browser.manager();
@@ -371,7 +371,9 @@ impl Browser {
     pub(super) fn archive_island_quietly(&self, island: IslandId) {
         self.leave_island_if_active(island);
         self.forget_tabs(self.tabs_of_island(island));
-        let result = self.storage.archive_island(island, Self::now());
+        let result = self
+            .storage
+            .transaction(|transaction| transaction.archive_island(island, Self::now()));
         self.report(t!("Archivieren"), result);
         self.reload_session();
         self.refresh_after_structure_change();

@@ -5,7 +5,7 @@ use rusqlite::Row;
 
 pub(crate) const WORKSPACE_COLUMNS: &str = "id, name, position";
 
-pub(crate) const ISLAND_COLUMNS: &str = "island.id, island.workspace_id, island.name, island.position, island.collapsed, island.color, island.archived_at, island.last_used_at";
+pub(crate) const ISLAND_COLUMNS: &str = "island.id, island.workspace_id, island.name, island.position, island.collapsed, island.color, island.last_used_at";
 
 pub(crate) const TAB_COLUMNS: &str = "tab.id, tab.island_id, tab.url, tab.title, tab.favicon_id, tab.position, tab.pinned, tab.scroll_y, tab.last_used_at, tab.private";
 
@@ -30,8 +30,7 @@ pub(crate) fn island_at(row: &Row<'_>, offset: usize) -> rusqlite::Result<Island
         position: row.get(offset + 3)?,
         collapsed: row.get(offset + 4)?,
         color: IslandColor::from_index(row.get(offset + 5)?),
-        archived_at: row.get::<_, Option<i64>>(offset + 6)?.map(Timestamp),
-        last_used_at: row.get::<_, Option<i64>>(offset + 7)?.map(Timestamp),
+        last_used_at: row.get::<_, Option<i64>>(offset + 6)?.map(Timestamp),
     })
 }
 

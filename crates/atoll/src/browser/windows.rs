@@ -9,7 +9,9 @@ use atoll_engine::{Engine, EngineConfig, EngineEvent, GpuContext, ViewId};
 use atoll_storage::Storage;
 use atoll_storage::prelude::*;
 use slint::winit_030::WinitWindowAccessor;
-use slint::{CloseRequestResponse, ComponentHandle, LogicalPosition, LogicalSize};
+use slint::{
+    CloseRequestResponse, ComponentHandle, LogicalPosition, LogicalSize, Timer, TimerMode,
+};
 
 use super::filter::FilterChain;
 use super::memory::exceeds_budget;
@@ -33,6 +35,12 @@ const DROP_TOLERANCE: Duration = Duration::from_millis(60);
 /// The share of a maximized window a window opened from it gets.
 const DETACHED_SHARE: f32 = 0.7;
 
+/// How long after the start tabs are first looked at for the archive, so starting stays quick.
+const FIRST_ARCHIVE_CHECK: Duration = Duration::from_secs(60);
+
+/// How often tabs are looked at for the archive afterwards.
+const ARCHIVE_CHECK: Duration = Duration::from_secs(10 * 60);
+
 struct OpenWindow {
     id: WindowId,
     window: AppWindow,
@@ -47,6 +55,7 @@ pub struct WindowManager {
     focused: Cell<Option<WindowId>>,
     pointer_seen: Cell<Option<(WindowId, Instant)>>,
     pump: RefCell<Option<Rc<MessagePump>>>,
+    archive_check: Timer,
     this: Weak<WindowManager>,
 }
 
@@ -58,6 +67,7 @@ impl WindowManager {
             focused: Cell::new(None),
             pointer_seen: Cell::new(None),
             pump: RefCell::default(),
+            archive_check: Timer::default(),
             this: this.clone(),
         })
     }
@@ -197,7 +207,7 @@ impl WindowManager {
     ) {
         let dropped = Instant::now();
         let manager = self.this.clone();
-        slint::Timer::single_shot(DROP_SETTLE, move || {
+        Timer::single_shot(DROP_SETTLE, move || {
             let Some(manager) = manager.upgrade() else {
                 return;
             };
@@ -227,7 +237,7 @@ impl WindowManager {
     /// for the next start.
     pub fn close_window(&self, id: WindowId) {
         let manager = self.this.clone();
-        slint::Timer::single_shot(Duration::ZERO, move || {
+        Timer::single_shot(Duration::ZERO, move || {
             if let Some(manager) = manager.upgrade() {
                 manager.close_window_now(id);
             }
@@ -450,6 +460,44 @@ impl WindowManager {
                 manager.memory_measured(usage);
             }
         });
+        self.start_archive_check();
+    }
+
+    /// Looks for tabs to archive a minute after the start and every few minutes after that.
+    fn start_archive_check(&self) {
+        let manager = self.this.clone();
+        Timer::single_shot(FIRST_ARCHIVE_CHECK, move || {
+            if let Some(manager) = manager.upgrade() {
+                manager.archive_unused_tabs();
+            }
+        });
+        let manager = self.this.clone();
+        self.archive_check
+            .start(TimerMode::Repeated, ARCHIVE_CHECK, move || {
+                if let Some(manager) = manager.upgrade() {
+                    manager.archive_unused_tabs();
+                }
+            });
+    }
+
+    /// The setting changed: the next look waits a whole period, so a value passed on the way to
+    /// the one meant archives nothing.
+    pub(super) fn archive_unused_tabs_later(&self) {
+        if self.archive_check.running() {
+            self.archive_check.restart();
+        }
+    }
+
+    fn archive_unused_tabs(&self) {
+        let browsers = self.browsers();
+        let Some(first) = browsers.first() else {
+            return;
+        };
+        let shown: Vec<TabId> = browsers
+            .iter()
+            .filter_map(|browser| browser.session.borrow().active_tab)
+            .collect();
+        first.archive_unused_tabs(&shown);
     }
 
     /// Puts the least recently used background tab to sleep while the pages use more memory than

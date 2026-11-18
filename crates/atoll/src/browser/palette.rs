@@ -5,8 +5,8 @@ use atoll_core::address::{display_url, normalize};
 use atoll_core::search::Matcher;
 use atoll_core::{Bookmark, TabId, TabState, Timestamp, VisitedPage, WorkspaceId};
 use atoll_engine::ZoomCommand;
-use atoll_storage::TabEntry;
 use atoll_storage::prelude::*;
+use atoll_storage::{ArchivedTab, TabEntry};
 use slint::{ComponentHandle, ModelRc, VecModel};
 
 use super::Browser;
@@ -17,6 +17,7 @@ use atoll_i18n::t;
 
 const COMMAND_PREFIX: char = '>';
 const MAX_TABS: usize = 30;
+const MAX_ARCHIVED_TABS: usize = 10;
 const MAX_BOOKMARKS: usize = 10;
 const MAX_PAGES: usize = 10;
 const HISTORY_SOURCE: usize = 2000;
@@ -90,6 +91,7 @@ enum Command {
 #[derive(Debug, Clone)]
 enum Entry {
     Tab(TabId),
+    ArchivedTab(i64),
     Url(String),
     Command(Command),
 }
@@ -100,6 +102,13 @@ fn key_of(command: &Command) -> String {
     format!("{command:?}")
 }
 
+/// A tab in the archive together with where it came from.
+struct ArchivedEntry {
+    tab: ArchivedTab,
+    island_name: String,
+    workspace_name: String,
+}
+
 /// The command palette: a quick search over every tab, bookmark and visited page, and a list of
 /// commands after a leading `>`.
 #[derive(Default)]
@@ -107,6 +116,7 @@ pub struct PaletteState {
     entries: Vec<Entry>,
     selected: usize,
     tabs: Vec<TabEntry>,
+    archived: Vec<ArchivedEntry>,
     bookmarks: Vec<Bookmark>,
     pages: Vec<VisitedPage>,
 }
@@ -118,6 +128,22 @@ impl Browser {
         {
             let mut state = self.palette.borrow_mut();
             state.tabs = self.storage.all_tab_entries().unwrap_or_default();
+            state.archived = self
+                .storage
+                .archive()
+                .unwrap_or_default()
+                .into_iter()
+                .flat_map(|workspace| {
+                    workspace.islands.into_iter().flat_map(move |island| {
+                        let workspace_name = workspace.name.clone();
+                        island.tabs.into_iter().map(move |tab| ArchivedEntry {
+                            tab,
+                            island_name: island.name.clone(),
+                            workspace_name: workspace_name.clone(),
+                        })
+                    })
+                })
+                .collect();
             state.bookmarks = self.storage.bookmarks().unwrap_or_default();
             state.pages = self
                 .storage
@@ -189,6 +215,7 @@ impl Browser {
         self.close_palette();
         match entry {
             Entry::Tab(tab) => self.reveal_tab(tab),
+            Entry::ArchivedTab(tab) => self.restore_archived_tab_and_show(tab),
             Entry::Url(url) => self.open_address(&url),
             Entry::Command(command) => self.run_command(command),
         }
@@ -256,14 +283,13 @@ impl Browser {
                         } else {
                             0
                         }
-                        - if entry.island.is_archived() { 6 } else { 0 }
                 };
                 Some((score, entry))
             })
             .collect();
         tabs.sort_by_key(|entry| std::cmp::Reverse(entry.0));
         for (_, entry) in tabs.into_iter().take(MAX_TABS) {
-            let state = lifecycle.state_of(entry.tab.id, entry.island.is_archived());
+            let state = lifecycle.state_of(entry.tab.id);
             let badge = if session.active_tab == Some(entry.tab.id) {
                 t!("Aktiv")
             } else {
@@ -271,7 +297,6 @@ impl Browser {
                     TabState::Live => t!("Aktiv"),
                     TabState::Frozen => t!("Eingefroren"),
                     TabState::Sleeping => "",
-                    TabState::Archived => t!("Archiviert"),
                 }
             };
             let icon = favicons.image_for_tab(&self.storage, &entry.tab);
@@ -297,6 +322,44 @@ impl Browser {
         }
 
         if !matcher.is_empty() {
+            let mut archived: Vec<(i64, &ArchivedEntry)> = state
+                .archived
+                .iter()
+                .filter(|entry| !seen.contains(&normalize(&entry.tab.url)))
+                .filter_map(|entry| {
+                    let location = format!("{} {}", entry.workspace_name, entry.island_name);
+                    let score = matcher.score(&[
+                        entry.tab.display_title(),
+                        &display_url(&entry.tab.url),
+                        &location,
+                    ])?;
+                    Some((score, entry))
+                })
+                .collect();
+            archived.sort_by_key(|entry| std::cmp::Reverse(entry.0));
+            for (_, entry) in archived.into_iter().take(MAX_ARCHIVED_TABS) {
+                let icon = favicons.image_for_url(&self.storage, &entry.tab.url);
+                seen.insert(normalize(&entry.tab.url));
+                results.push((
+                    PaletteItem {
+                        kind: PaletteKind::Tab,
+                        title: entry.tab.display_title().into(),
+                        detail: format!(
+                            "{} › {} · {}",
+                            entry.workspace_name,
+                            entry.island_name,
+                            display_url(&entry.tab.url)
+                        )
+                        .into(),
+                        badge: t!("Archiviert").into(),
+                        has_icon: icon.is_some(),
+                        icon: icon.unwrap_or_default(),
+                        ..PaletteItem::default()
+                    },
+                    Entry::ArchivedTab(entry.tab.id),
+                ));
+            }
+
             let mut bookmarks: Vec<(i64, &Bookmark, &str)> = state
                 .bookmarks
                 .iter()

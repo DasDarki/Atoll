@@ -67,7 +67,7 @@ impl Browser {
         }
         let empty = self
             .storage
-            .all_tabs_in_workspace(workspace)
+            .tabs_in_workspace(workspace)
             .is_ok_and(|tabs| tabs.iter().all(|tab| tab.is_blank()));
         if empty && let Err(error) = self.storage.delete_workspace(workspace) {
             tracing::warn!(%error, "empty workspace could not be deleted");

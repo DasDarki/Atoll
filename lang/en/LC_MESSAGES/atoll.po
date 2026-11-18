@@ -52,6 +52,12 @@ msgstr "1 request blocked"
 msgid "1 Insel archiviert"
 msgstr "1 island archived"
 
+msgid "1 Tab"
+msgstr "1 tab"
+
+msgid "1 Tab ins Archiv gelegt, lange nicht besucht"
+msgstr "1 tab moved to the archive, not visited for a long time"
+
 msgid "1Password füllt nur Anmeldungen auf Webseiten aus"
 msgstr "1Password only fills logins on websites"
 
@@ -211,8 +217,8 @@ msgstr "Archived"
 msgid "Archivierte Inseln einschließen"
 msgstr "Include archived islands"
 
-msgid "Archivierte Inseln verschwinden aus der Sidebar, bleiben aber vollständig erhalten."
-msgstr "Archived islands disappear from the sidebar but are kept in full."
+msgid "Archivierte Tabs verschwinden aus der Sidebar, bleiben aber vollständig erhalten. Zurückgeholt kommen sie in ihre Insel und ihren Workspace, gibt es die nicht mehr, in gleiche."
+msgstr "Archived tabs leave the sidebar but are kept in full. Brought back, they return to their island and workspace, or to identical ones if those are gone."
 
 msgid "Archivierung vorschlagen nach Wochen"
 msgstr "Suggest archiving after weeks"
@@ -292,6 +298,9 @@ msgstr "Taken over from Opera: {}"
 msgid "Aus Zwischenablage einfügen"
 msgstr "Paste from clipboard"
 
+msgid "Aus dem Archiv löschen?"
+msgstr "Delete from the archive?"
+
 msgid "Aus dem Erweiterungsordner"
 msgstr "From the extension folder"
 
@@ -324,6 +333,9 @@ msgstr "Issued to"
 
 msgid "Ausgestellt von"
 msgstr "Issued by"
+
+msgid "Ausgewählte Tabs archivieren"
+msgstr "Archive selected tabs"
 
 msgid "Ausnahmen entfernen"
 msgstr "Remove the exceptions"
@@ -1042,6 +1054,12 @@ msgstr "ISLAND FOR ADDRESSES WITHOUT A MARKER"
 msgid "INSELNAMEN"
 msgstr "ISLAND NAMES"
 
+msgid "Im Archiv suchen, 1 Tab"
+msgstr "Search the archive, 1 tab"
+
+msgid "Im Archiv suchen, {} Tabs"
+msgstr "Search the archive, {} tabs"
+
 msgid "Im Verlauf suchen"
 msgstr "Search the history"
 
@@ -1108,9 +1126,6 @@ msgstr "Expand island"
 msgid "Insel einklappen"
 msgstr "Collapse island"
 
-msgid "Insel endgültig löschen?"
-msgstr "Delete island for good?"
-
 msgid "Insel löschen"
 msgstr "Delete island"
 
@@ -1122,12 +1137,6 @@ msgstr "Rename island"
 
 msgid "Insel verschieben"
 msgstr "Move island"
-
-msgid "Insel wiederhergestellt"
-msgstr "Island restored"
-
-msgid "Insel „{}“ aus dem Archiv geholt"
-msgstr "Island \"{}\" taken out of the archive"
 
 msgid "Insel-Markierungen schreiben"
 msgstr "Write island markers"
@@ -1507,6 +1516,9 @@ msgstr "Block popups"
 msgid "Privat"
 msgstr "Private"
 
+msgid "Private Tabs kommen nicht ins Archiv"
+msgstr "Private tabs are never archived"
+
 msgid "Privater Tab: nichts davon wird gespeichert, und er weiß nichts von deinen Anmeldungen"
 msgstr "Private tab: nothing of it is kept, and it knows nothing of your sign-ins"
 
@@ -1789,8 +1801,20 @@ msgstr "tab"
 msgid "Tab anlegen"
 msgstr "Create tab"
 
+msgid "Tab archivieren"
+msgstr "Archive tab"
+
+msgid "Tab archiviert"
+msgstr "Tab archived"
+
+msgid "Tab aus dem Archiv geholt"
+msgstr "Tab brought back from the archive"
+
 msgid "Tab in neues Fenster verschieben"
 msgstr "Move tab to a new window"
+
+msgid "Tab nach „{}“ zurückgeholt"
+msgstr "Tab brought back to “{}”"
 
 msgid "Tab schließen"
 msgstr "Close tab"
@@ -1801,6 +1825,9 @@ msgstr "Move tab"
 msgid "Tabs"
 msgstr "tabs"
 
+msgid "Tabs archivieren nach Tagen"
+msgstr "Archive tabs after days"
+
 msgid "Tabs der aktuellen Insel schlafen legen"
 msgstr "Put the tabs of the current island to sleep"
 
@@ -1809,6 +1836,9 @@ msgstr "Search tabs, bookmarks and history · > for commands"
 
 msgid "Tabs, die die Seite ungefragt auf einer fremden Seite aufmacht."
 msgstr "Tabs the page opens on another site unasked."
+
+msgid "Tabs, die so lange nicht besucht wurden, kommen von selbst ins Archiv, mit ihrer Insel und ihrem Workspace. Angepinnte, private und gerade geladene Tabs bleiben. Aus dem Archiv kommt ein Tab in seine Insel zurück, gibt es sie nicht mehr, in eine gleiche. 0 schaltet das aus."
+msgstr "Tabs not visited for this long move to the archive on their own, along with their island and workspace. Pinned, private and currently loaded tabs stay. A tab brought back returns to its island, or to an identical one if it is gone. 0 turns this off."
 
 msgid "Textdatei (.txt)"
 msgstr "Text file (.txt)"
@@ -2185,8 +2215,14 @@ msgstr "exit close all windows"
 msgid "gerade ist keine Seite offen"
 msgstr "no page is open right now"
 
+msgid "gestern"
+msgstr "yesterday"
+
 msgid "herunterladen dateien"
 msgstr "download files"
+
+msgid "heute"
+msgstr "today"
 
 msgid "history verlauf besuchte seiten"
 msgstr "history visited pages"
@@ -2325,8 +2361,17 @@ msgstr "{} pages, {}"
 msgid "{} Tabs"
 msgstr "{} tabs"
 
+msgid "{} Tabs archiviert"
+msgstr "{} tabs archived"
+
 msgid "{} Tabs in {} Inseln"
 msgstr "{} tabs in {} islands"
+
+msgid "{} Tabs ins Archiv gelegt, lange nicht besucht"
+msgstr "{} tabs moved to the archive, not visited for a long time"
+
+msgid "{} Tabs zurückgeholt"
+msgstr "{} tabs brought back"
 
 msgid "{} Verlaufseinträge"
 msgstr "{} history entries"
@@ -2403,11 +2448,11 @@ msgstr "{} {} in {} {}"
 msgid "{} · archiviert"
 msgstr "{} · archived"
 
+msgid "{} · archiviert {}"
+msgstr "{} · archived {}"
+
 msgid "{} · {}"
 msgstr "{} · {}"
-
-msgid "{} · {} · archiviert {}"
-msgstr "{} · {} · archived {}"
 
 msgid "{} · {} · zuletzt benutzt {}"
 msgstr "{} · {} · last used {}"
@@ -2484,8 +2529,8 @@ msgstr "“{}” reloaded"
 msgid "„{}“ suchen"
 msgstr "Search for \"{}\""
 
-msgid "„{}“ und alle enthaltenen Tabs werden gelöscht."
-msgstr "\"{}\" and all the tabs it holds will be deleted."
+msgid "„{}“ und {} archivierte Tabs werden endgültig gelöscht."
+msgstr "“{}” and {} archived tabs will be deleted permanently."
 
 msgid "„{}“ wird aktualisiert …"
 msgstr "\"{}\" is being updated …"

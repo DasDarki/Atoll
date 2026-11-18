@@ -343,6 +343,17 @@ export component SettingsPage inherits Modal {
                             edited => { SettingsState.changed("archive-suggestion-weeks"); }
                         }
                     }
+                    SettingRow {
+                        title: @tr("Tabs archivieren nach Tagen");
+                        description: @tr("Tabs, die so lange nicht besucht wurden, kommen von selbst ins Archiv, mit ihrer Insel und ihrem Workspace. Angepinnte, private und gerade geladene Tabs bleiben. Aus dem Archiv kommt ein Tab in seine Insel zurück, gibt es sie nicht mehr, in eine gleiche. 0 schaltet das aus.");
+                        SpinBox {
+                            width: 110px;
+                            minimum: 0;
+                            maximum: SettingsState.max-archive-tabs-after-days;
+                            value <=> SettingsState.archive-tabs-after-days;
+                            edited => { SettingsState.changed("archive-tabs-after-days"); }
+                        }
+                    }
                 }
 
                 if SettingsState.section == 3 : VerticalLayout {

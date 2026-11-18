@@ -36,7 +36,7 @@ import { ResizeFrame } from "window/resize-frame.slint";
 
 export { SidebarState, BrowserState, OverlayState, SettingsState, DevToolsState, PanelState }
 export { PluginItem } from "structs.slint";
-export { WorkspaceItem, SidebarRow, IslandTarget, MenuItemData, ArchiveItem, ExportIslandItem, DialogData, DialogKind, RowKind, TabLoadState, PointerAction, PointerButton, WebCursor, WebPointer, WebScroll, SuggestionKind, SuggestionItem, Completion, PaletteKind, PaletteItem, BookmarkItem, PageSecurity, SiteInfoDetail, DownloadItem, DownloadItemStatus } from "structs.slint";
+export { WorkspaceItem, SidebarRow, IslandTarget, MenuItemData, ArchiveItem, ArchiveRow, ArchiveRowKind, ExportIslandItem, DialogData, DialogKind, RowKind, TabLoadState, PointerAction, PointerButton, WebCursor, WebPointer, WebScroll, SuggestionKind, SuggestionItem, Completion, PaletteKind, PaletteItem, BookmarkItem, PageSecurity, SiteInfoDetail, DownloadItem, DownloadItemStatus } from "structs.slint";
 
 export component AppWindow inherits Window {
     title: BrowserState.title == "" ? "Atoll" : BrowserState.title + " - Atoll";

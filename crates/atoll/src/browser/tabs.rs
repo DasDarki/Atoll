@@ -489,8 +489,8 @@ impl Browser {
         Some((island, index + 1))
     }
 
-    /// Shows `tab` wherever it lives: its island comes back from the archive and is expanded, and
-    /// the workspace is switched if necessary. A tab of a workspace that another window shows is
+    /// Shows `tab` wherever it lives: its island is expanded, and the workspace is switched if
+    /// necessary. A tab of a workspace that another window shows is
     /// revealed there.
     pub(super) fn reveal_tab(&self, tab: TabId) {
         let Ok(record) = self.storage.tab(tab) else {
@@ -506,11 +506,6 @@ impl Browser {
             manager.focus_window(other.id);
             other.reveal_tab(tab);
             return;
-        }
-        if island.is_archived() {
-            let result = self.storage.restore_island(island.id);
-            self.report(t!("Wiederherstellen"), result);
-            self.show_toast(&t!("Insel „{}“ aus dem Archiv geholt", island.name));
         }
         if island.collapsed {
             let result = self.storage.set_island_collapsed(island.id, false);

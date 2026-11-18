@@ -7,8 +7,8 @@ use slint::{ComponentHandle, ModelRc, SharedString, VecModel};
 use super::Browser;
 use super::navigation::resolve_input;
 use super::preferences::{
-    ArchiveFallback, MAX_ARCHIVE_SUGGESTION_WEEKS, MAX_FROZEN_LIMIT, PreferenceKey, Preferences,
-    SEARCH_ENGINES,
+    ArchiveFallback, MAX_ARCHIVE_SUGGESTION_WEEKS, MAX_ARCHIVE_TABS_AFTER_DAYS, MAX_FROZEN_LIMIT,
+    PreferenceKey, Preferences, SEARCH_ENGINES,
 };
 use crate::platform::dialogs::{self, FileDialogKind, FileDialogOptions};
 use crate::ui::{BrowserState, SettingsState};
@@ -53,6 +53,8 @@ impl Browser {
         state.set_max_frozen_limit(MAX_FROZEN_LIMIT as i32);
         state.set_archive_suggestion_weeks(preferences.archive_suggestion_weeks as i32);
         state.set_max_archive_suggestion_weeks(MAX_ARCHIVE_SUGGESTION_WEEKS as i32);
+        state.set_archive_tabs_after_days(preferences.archive_tabs_after_days as i32);
+        state.set_max_archive_tabs_after_days(MAX_ARCHIVE_TABS_AFTER_DAYS as i32);
         state.set_archive_fallback(match preferences.archive_fallback {
             ArchiveFallback::Off => 0,
             ArchiveFallback::Ask => 1,
@@ -230,6 +232,17 @@ impl Browser {
                     preferences.archive_suggestion_weeks = weeks;
                 });
                 self.for_all_windows(Browser::refresh_sidebar);
+            }
+            "archive-tabs-after-days" => {
+                let days = u32::try_from(state.get_archive_tabs_after_days())
+                    .unwrap_or_default()
+                    .min(MAX_ARCHIVE_TABS_AFTER_DAYS);
+                self.update_preference(PreferenceKey::ArchiveTabsAfterDays, |preferences| {
+                    preferences.archive_tabs_after_days = days;
+                });
+                if let Some(manager) = self.manager() {
+                    manager.archive_unused_tabs_later();
+                }
             }
             "frozen-limit" => {
                 let limit = usize::try_from(state.get_frozen_limit()).unwrap_or_default();

@@ -29,7 +29,7 @@ pub struct TabEntry {
 }
 
 pub trait TabStore: Connected {
-    /// Every tab of every workspace including archived islands, most recently used first.
+    /// Every tab of every workspace, most recently used first.
     fn all_tab_entries(&self) -> StorageResult<Vec<TabEntry>> {
         let mut statement = self.connection().prepare_cached(&format!(
             "SELECT {TAB_COLUMNS}, {ISLAND_COLUMNS}, workspace.name
@@ -43,7 +43,7 @@ pub trait TabStore: Connected {
                 Ok(TabEntry {
                     tab: rows::tab(row)?,
                     island: rows::island_at(row, 10)?,
-                    workspace_name: row.get(18)?,
+                    workspace_name: row.get(17)?,
                 })
             })?
             .collect::<Result<_, _>>()?;
@@ -52,15 +52,15 @@ pub trait TabStore: Connected {
 
     /// The tabs of every workspace that show the page at `url`, `except` the one asking, in the
     /// order they were opened. `url` is an address without the part after `#`, which is why an
-    /// address that only adds such a part counts as the same page. Archived islands stay out,
-    /// they are not open, and private tabs keep no address here at all.
+    /// address that only adds such a part counts as the same page. Private tabs keep no address
+    /// here at all.
     fn tabs_showing(&self, url: &str, except: TabId) -> StorageResult<Vec<TabEntry>> {
         let mut statement = self.connection().prepare_cached(&format!(
             "SELECT {TAB_COLUMNS}, {ISLAND_COLUMNS}, workspace.name
              FROM tab
              JOIN island ON island.id = tab.island_id
              JOIN workspace ON workspace.id = island.workspace_id
-             WHERE tab.private = 0 AND tab.id <> ?1 AND island.archived_at IS NULL
+             WHERE tab.private = 0 AND tab.id <> ?1
                AND (tab.url = ?2 OR substr(tab.url, 1, length(?2) + 1) = ?2 || '#')
              ORDER BY tab.id"
         ))?;
@@ -69,18 +69,18 @@ pub trait TabStore: Connected {
                 Ok(TabEntry {
                     tab: rows::tab(row)?,
                     island: rows::island_at(row, 10)?,
-                    workspace_name: row.get(18)?,
+                    workspace_name: row.get(17)?,
                 })
             })?
             .collect::<Result<_, _>>()?;
         Ok(entries)
     }
 
-    /// Tabs of all active islands in a workspace, ordered by island and then by tab position.
+    /// Tabs of all islands in a workspace, ordered by island and then by tab position.
     fn tabs_in_workspace(&self, workspace: WorkspaceId) -> StorageResult<Vec<Tab>> {
         let mut statement = self.connection().prepare_cached(&format!(
             "SELECT {TAB_COLUMNS} FROM tab JOIN island ON island.id = tab.island_id
-             WHERE island.workspace_id = ?1 AND island.archived_at IS NULL
+             WHERE island.workspace_id = ?1
              ORDER BY island.position, island.id, tab.position, tab.id"
         ))?;
         let tabs = statement
@@ -95,19 +95,6 @@ pub trait TabStore: Connected {
         ))?;
         let tabs = statement
             .query_map([island.0], rows::tab)?
-            .collect::<Result<_, _>>()?;
-        Ok(tabs)
-    }
-
-    /// Every tab of a workspace including archived islands, used for duplicate detection.
-    fn all_tabs_in_workspace(&self, workspace: WorkspaceId) -> StorageResult<Vec<Tab>> {
-        let mut statement = self.connection().prepare_cached(&format!(
-            "SELECT {TAB_COLUMNS} FROM tab JOIN island ON island.id = tab.island_id
-             WHERE island.workspace_id = ?1
-             ORDER BY island.position, island.id, tab.position, tab.id"
-        ))?;
-        let tabs = statement
-            .query_map([workspace.0], rows::tab)?
             .collect::<Result<_, _>>()?;
         Ok(tabs)
     }
@@ -236,7 +223,10 @@ pub trait TabStore: Connected {
 
 impl<T: Connected + ?Sized> TabStore for T {}
 
-fn tab_ids<S: Connected + ?Sized>(store: &S, island: IslandId) -> StorageResult<Vec<i64>> {
+pub(crate) fn tab_ids<S: Connected + ?Sized>(
+    store: &S,
+    island: IslandId,
+) -> StorageResult<Vec<i64>> {
     let mut statement = store
         .connection()
         .prepare_cached("SELECT id FROM tab WHERE island_id = ?1 ORDER BY position, id")?;
@@ -246,7 +236,7 @@ fn tab_ids<S: Connected + ?Sized>(store: &S, island: IslandId) -> StorageResult<
     Ok(ids)
 }
 
-fn place_tab<S: Connected + ?Sized>(
+pub(crate) fn place_tab<S: Connected + ?Sized>(
     store: &S,
     id: TabId,
     island: IslandId,

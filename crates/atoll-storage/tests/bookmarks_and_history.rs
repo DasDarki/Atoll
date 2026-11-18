@@ -172,7 +172,7 @@ fn visits_feed_the_global_history() {
 }
 
 #[test]
-fn tab_entries_span_all_workspaces_including_archived_islands() {
+fn tab_entries_span_all_workspaces_and_leave_the_archive_out() {
     let storage = storage();
     for (name, archived) in [("Arbeit", false), ("Privat", true)] {
         let workspace = storage.create_workspace(name).unwrap();
@@ -200,13 +200,9 @@ fn tab_entries_span_all_workspaces_including_archived_islands() {
         }
     }
     let entries = storage.all_tab_entries().unwrap();
-    assert_eq!(entries.len(), 2);
-    let archived = entries
-        .iter()
-        .find(|entry| entry.workspace_name == "Privat")
-        .unwrap();
-    assert!(archived.island.is_archived());
-    assert_eq!(archived.tab.title.as_deref(), Some("Privat"));
+    assert_eq!(entries.len(), 1);
+    assert_eq!(entries[0].workspace_name, "Arbeit");
+    assert_eq!(storage.archived_tab_count().unwrap(), 1);
 }
 
 #[test]

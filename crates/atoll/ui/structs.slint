@@ -1,6 +1,6 @@
 export enum RowKind { island, tab }
 
-export enum TabLoadState { sleeping, frozen, live, archived }
+export enum TabLoadState { sleeping, frozen, live }
 
 export struct WorkspaceItem {
     id: int,
@@ -70,6 +70,21 @@ export struct ArchiveItem {
     tab-count: int,
     archived: string,
     color: color,
+}
+
+/// What a line of the archive stands for.
+export enum ArchiveRowKind { workspace, island, tab }
+
+/// A line of the archive, which is laid out like the sidebar: workspaces, their islands and their
+/// tabs.
+export struct ArchiveRow {
+    kind: ArchiveRowKind,
+    id: int,
+    name: string,
+    detail: string,
+    color: color,
+    has-icon: bool,
+    icon: image,
 }
 
 export struct ExportIslandItem {

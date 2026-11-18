@@ -103,43 +103,6 @@ fn tabs_keep_their_order_when_inserted_and_moved() {
 }
 
 #[test]
-fn archived_islands_leave_the_workspace_and_come_back_at_the_end() {
-    let storage = storage();
-    let workspace = storage.create_workspace("Arbeit").unwrap();
-    let a = storage
-        .create_island(new_island(workspace.id, "A"))
-        .unwrap();
-    let b = storage
-        .create_island(new_island(workspace.id, "B"))
-        .unwrap();
-    storage
-        .create_tab(new_tab(a.id, "https://a.example/"))
-        .unwrap();
-
-    storage.archive_island(a.id, Timestamp(10)).unwrap();
-    assert_eq!(storage.islands(workspace.id).unwrap().len(), 1);
-    assert!(storage.tabs_in_workspace(workspace.id).unwrap().is_empty());
-    assert_eq!(
-        storage.all_tabs_in_workspace(workspace.id).unwrap().len(),
-        1
-    );
-
-    let archived = storage.archived_islands().unwrap();
-    assert_eq!(archived.len(), 1);
-    assert_eq!(archived[0].tab_count, 1);
-    assert_eq!(archived[0].workspace_name, "Arbeit");
-
-    storage.restore_island(a.id).unwrap();
-    let order: Vec<_> = storage
-        .islands(workspace.id)
-        .unwrap()
-        .into_iter()
-        .map(|i| i.id)
-        .collect();
-    assert_eq!(order, [b.id, a.id]);
-}
-
-#[test]
 fn deleting_a_workspace_removes_its_islands_and_tabs() {
     let storage = storage();
     let workspace = storage.create_workspace("Arbeit").unwrap();

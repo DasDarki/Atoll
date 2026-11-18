@@ -4,11 +4,10 @@ use crate::ids::{TabId, WindowId};
 
 /// The runtime state of a tab.
 ///
-/// Only `Archived` and `Sleeping` survive a restart. `Frozen` and `Live` exist while an engine
-/// instance is attached to the tab.
+/// Only `Sleeping` survives a restart. `Frozen` and `Live` exist while an engine instance is
+/// attached to the tab.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TabState {
-    Archived,
     Sleeping,
     Frozen,
     Live,
@@ -73,13 +72,11 @@ impl TabLifecycle {
         self.frozen_limit
     }
 
-    pub fn state_of(&self, tab: TabId, archived: bool) -> TabState {
+    pub fn state_of(&self, tab: TabId) -> TabState {
         if self.is_live(tab) {
             TabState::Live
         } else if self.frozen.contains(&tab) {
             TabState::Frozen
-        } else if archived {
-            TabState::Archived
         } else {
             TabState::Sleeping
         }
@@ -145,7 +142,7 @@ impl TabLifecycle {
         Vec::new()
     }
 
-    /// Removes every trace of `tab`, used when the tab is closed or archived.
+    /// Removes every trace of `tab`, used when the tab is closed or goes to the archive.
     pub fn forget(&mut self, tab: TabId) -> Vec<LifecycleCommand> {
         self.protected.remove(&tab);
         self.busy.remove(&tab);

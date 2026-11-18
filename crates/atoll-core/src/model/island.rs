@@ -10,14 +10,7 @@ pub struct Island {
     pub position: i64,
     pub collapsed: bool,
     pub color: IslandColor,
-    pub archived_at: Option<Timestamp>,
     pub last_used_at: Option<Timestamp>,
-}
-
-impl Island {
-    pub fn is_archived(&self) -> bool {
-        self.archived_at.is_some()
-    }
 }
 
 /// The accent colour of an island, persisted as its index.

@@ -9,17 +9,16 @@ const W: WindowId = WindowId(1);
 const V: WindowId = WindowId(2);
 
 #[test]
-fn every_tab_starts_sleeping_or_archived() {
+fn every_tab_starts_sleeping() {
     let lifecycle = TabLifecycle::new(4);
-    assert_eq!(lifecycle.state_of(A, false), TabState::Sleeping);
-    assert_eq!(lifecycle.state_of(A, true), TabState::Archived);
+    assert_eq!(lifecycle.state_of(A), TabState::Sleeping);
 }
 
 #[test]
 fn activating_a_sleeping_tab_wakes_and_shows_it() {
     let mut lifecycle = TabLifecycle::new(4);
     assert_eq!(lifecycle.activate(W, A), vec![Wake(A), Show(A)]);
-    assert_eq!(lifecycle.state_of(A, false), TabState::Live);
+    assert_eq!(lifecycle.state_of(A), TabState::Live);
 }
 
 #[test]
@@ -27,8 +26,8 @@ fn switching_tabs_freezes_the_previous_one() {
     let mut lifecycle = TabLifecycle::new(4);
     lifecycle.activate(W, A);
     assert_eq!(lifecycle.activate(W, B), vec![Hide(A), Wake(B), Show(B)]);
-    assert_eq!(lifecycle.state_of(A, false), TabState::Frozen);
-    assert_eq!(lifecycle.state_of(B, false), TabState::Live);
+    assert_eq!(lifecycle.state_of(A), TabState::Frozen);
+    assert_eq!(lifecycle.state_of(B), TabState::Live);
 }
 
 #[test]
@@ -58,7 +57,7 @@ fn frozen_limit_unloads_the_least_recently_used_tab() {
         vec![Hide(C), Wake(D), Show(D), Unload(A)]
     );
     assert_eq!(lifecycle.frozen(), &[C, B]);
-    assert_eq!(lifecycle.state_of(A, false), TabState::Sleeping);
+    assert_eq!(lifecycle.state_of(A), TabState::Sleeping);
 }
 
 #[test]
@@ -101,7 +100,7 @@ fn deactivate_freezes_without_new_live_tab() {
     lifecycle.activate(W, A);
     assert_eq!(lifecycle.deactivate(W), vec![Hide(A)]);
     assert_eq!(lifecycle.live_in(W), None);
-    assert_eq!(lifecycle.state_of(A, false), TabState::Frozen);
+    assert_eq!(lifecycle.state_of(A), TabState::Frozen);
 }
 
 #[test]
@@ -130,8 +129,8 @@ fn every_window_has_its_own_live_tab() {
     let mut lifecycle = TabLifecycle::new(4);
     lifecycle.activate(W, A);
     assert_eq!(lifecycle.activate(V, B), vec![Wake(B), Show(B)]);
-    assert_eq!(lifecycle.state_of(A, false), TabState::Live);
-    assert_eq!(lifecycle.state_of(B, false), TabState::Live);
+    assert_eq!(lifecycle.state_of(A), TabState::Live);
+    assert_eq!(lifecycle.state_of(B), TabState::Live);
     assert_eq!(lifecycle.activate(V, C), vec![Hide(B), Wake(C), Show(C)]);
     assert_eq!(lifecycle.live_in(W), Some(A));
     assert_eq!(lifecycle.live_in(V), Some(C));

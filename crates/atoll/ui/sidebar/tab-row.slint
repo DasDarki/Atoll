@@ -93,6 +93,10 @@ export component TabRow inherits Rectangle {
             }
             MenuSeparator { }
             MenuItem {
+                title: root.entry.picked ? @tr("Ausgewählte Tabs archivieren") : @tr("Tab archivieren");
+                activated => { SidebarState.tab-action(root.entry.tab-id, "archive"); }
+            }
+            MenuItem {
                 title: @tr("Tab schließen");
                 activated => { SidebarState.close-tab(root.entry.tab-id); }
             }

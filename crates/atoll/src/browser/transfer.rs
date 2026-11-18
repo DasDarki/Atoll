@@ -231,7 +231,7 @@ impl Browser {
             .collect();
         let tabs = self
             .storage
-            .all_tabs_in_workspace(workspace)
+            .tabs_in_workspace(workspace)
             .unwrap_or_default()
             .into_iter()
             .filter(|tab| !tab.is_blank())
@@ -381,14 +381,16 @@ impl Browser {
                 });
             }
         }
-        for archived in self.storage.archived_islands().unwrap_or_default() {
-            items.push(ExportIslandItem {
-                id: archived.island.id.0 as i32,
-                name: archived.island.name.into(),
-                workspace: archived.workspace_name.into(),
-                archived: true,
-                selected: false,
-            });
+        for workspace in self.storage.archive().unwrap_or_default() {
+            for island in workspace.islands {
+                items.push(ExportIslandItem {
+                    id: island.id as i32,
+                    name: island.name.into(),
+                    workspace: workspace.name.as_str().into(),
+                    archived: true,
+                    selected: false,
+                });
+            }
         }
 
         let state = window.global::<OverlayState>();
@@ -515,68 +517,112 @@ impl Browser {
         };
         let state = window.global::<OverlayState>();
         let include_archived = state.get_export_archived();
-        let islands: Vec<IslandId> = match state.get_export_scope() {
-            SCOPE_ISLAND => self.transfer.borrow().export_island.into_iter().collect(),
-            SCOPE_WORKSPACE => {
-                self.workspace_islands(self.session.borrow().workspace, include_archived)
-            }
-            SCOPE_ALL => self
-                .storage
-                .workspaces()
-                .unwrap_or_default()
+        let sources: Vec<Source> = match state.get_export_scope() {
+            SCOPE_ISLAND => self
+                .transfer
+                .borrow()
+                .export_island
+                .map(Source::Island)
                 .into_iter()
-                .flat_map(|workspace| self.workspace_islands(workspace.id, include_archived))
                 .collect(),
+            SCOPE_WORKSPACE => {
+                self.workspace_sources(Some(self.session.borrow().workspace), include_archived)
+            }
+            SCOPE_ALL => self.workspace_sources(None, include_archived),
             SCOPE_SELECTION => {
                 let model = state.get_export_islands();
                 (0..model.row_count())
                     .filter_map(|row| model.row_data(row))
                     .filter(|item| item.selected && (include_archived || !item.archived))
-                    .map(|item| IslandId(i64::from(item.id)))
+                    .map(|item| {
+                        if item.archived {
+                            Source::Archived(i64::from(item.id))
+                        } else {
+                            Source::Island(IslandId(i64::from(item.id)))
+                        }
+                    })
                     .collect()
             }
             _ => Vec::new(),
         };
-        islands
+        let archive = if include_archived {
+            self.storage.archive().unwrap_or_default()
+        } else {
+            Vec::new()
+        };
+        sources
             .into_iter()
-            .filter_map(|island| {
-                let record = self.storage.island(island).ok()?;
-                let urls = self
-                    .storage
-                    .tabs_in_island(island)
-                    .ok()?
-                    .into_iter()
-                    .map(|tab| tab.url)
-                    .filter(|url| !url.is_empty())
-                    .collect();
-                Some(ExportGroup {
-                    name: record.name,
-                    urls,
-                })
+            .filter_map(|source| match source {
+                Source::Island(island) => {
+                    let record = self.storage.island(island).ok()?;
+                    let urls = self
+                        .storage
+                        .tabs_in_island(island)
+                        .ok()?
+                        .into_iter()
+                        .map(|tab| tab.url)
+                        .filter(|url| !url.is_empty())
+                        .collect();
+                    Some(ExportGroup {
+                        name: record.name,
+                        urls,
+                    })
+                }
+                Source::Archived(id) => {
+                    let island = archive
+                        .iter()
+                        .flat_map(|workspace| &workspace.islands)
+                        .find(|island| island.id == id)?;
+                    Some(ExportGroup {
+                        name: island.name.clone(),
+                        urls: island.tabs.iter().map(|tab| tab.url.clone()).collect(),
+                    })
+                }
             })
             .collect()
     }
 
-    fn workspace_islands(&self, workspace: WorkspaceId, include_archived: bool) -> Vec<IslandId> {
-        let mut islands: Vec<IslandId> = self
-            .storage
-            .islands(workspace)
-            .unwrap_or_default()
-            .into_iter()
-            .map(|island| island.id)
+    /// The islands of `workspace`, or of every workspace, followed by those of the archive when
+    /// they are wanted too.
+    fn workspace_sources(
+        &self,
+        workspace: Option<WorkspaceId>,
+        include_archived: bool,
+    ) -> Vec<Source> {
+        let workspaces: Vec<WorkspaceId> = match workspace {
+            Some(workspace) => vec![workspace],
+            None => self
+                .storage
+                .workspaces()
+                .unwrap_or_default()
+                .into_iter()
+                .map(|workspace| workspace.id)
+                .collect(),
+        };
+        let mut sources: Vec<Source> = workspaces
+            .iter()
+            .flat_map(|workspace| self.storage.islands(*workspace).unwrap_or_default())
+            .map(|island| Source::Island(island.id))
             .collect();
         if include_archived {
-            islands.extend(
+            sources.extend(
                 self.storage
-                    .archived_islands()
+                    .archive()
                     .unwrap_or_default()
                     .into_iter()
-                    .filter(|archived| archived.island.workspace_id == workspace)
-                    .map(|archived| archived.island.id),
+                    .filter(|archived| workspace.is_none() || archived.workspace_id == workspace)
+                    .flat_map(|archived| archived.islands)
+                    .map(|island| Source::Archived(island.id)),
             );
         }
-        islands
+        sources
     }
+}
+
+/// Where the addresses of an exported group come from.
+enum Source {
+    Island(IslandId),
+    Archived(i64),
 }
 
 fn plural<'a>(count: usize, one: &'a str, many: &'a str) -> &'a str {
