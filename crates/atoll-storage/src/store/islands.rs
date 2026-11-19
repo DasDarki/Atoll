@@ -123,6 +123,12 @@ pub trait IslandStore: Connected {
         renumber(self.connection(), OrderedTable::Island, &ids)
     }
 
+    /// Puts the islands of a workspace in the order of `ids`, which names all of them.
+    fn order_islands(&self, ids: &[IslandId]) -> StorageResult<()> {
+        let ids: Vec<i64> = ids.iter().map(|id| id.0).collect();
+        renumber(self.connection(), OrderedTable::Island, &ids)
+    }
+
     /// Moves an island to `index` within `workspace`, which may differ from its current one.
     fn move_island(&self, id: IslandId, workspace: WorkspaceId, index: usize) -> StorageResult<()> {
         let island = self.island(id)?;

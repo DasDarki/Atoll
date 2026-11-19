@@ -58,6 +58,9 @@ msgstr "1 tab"
 msgid "1 Tab ins Archiv gelegt, lange nicht besucht"
 msgstr "1 tab moved to the archive, not visited for a long time"
 
+msgid "1 Zahleninsel umbenannt"
+msgstr "1 numbered island renamed"
+
 msgid "1Password füllt nur Anmeldungen auf Webseiten aus"
 msgstr "1Password only fills logins on websites"
 
@@ -733,6 +736,12 @@ msgstr "The connection took too long"
 msgid "Die Verbindung zum VPN-Server ist abgerissen"
 msgstr "The connection to the VPN server broke off"
 
+msgid "Die Zahleninseln sind schon durchnummeriert"
+msgstr "The numbered islands are already numbered in sequence"
+
+msgid "Die Zahleninseln stehen schon in der richtigen Reihenfolge"
+msgstr "The numbered islands are already in order"
+
 msgid "Die Zwischenablage enthält keinen Text"
 msgstr "The clipboard holds no text"
 
@@ -1149,6 +1158,12 @@ msgstr "Write island markers"
 
 msgid "Inseln"
 msgstr "Islands"
+
+msgid "Inseln sortieren"
+msgstr "Sorting islands"
+
+msgid "Inseln umbenennen"
+msgstr "Renaming islands"
 
 msgid "Inseln, die so lange nicht benutzt wurden, werden in der Sidebar markiert und im Archiv vorgeschlagen. Archiviert wird nur nach deiner Bestätigung. 0 schaltet die Vorschläge aus."
 msgstr "Islands unused for this long are marked in the sidebar and suggested in the archive. Nothing is archived without your confirmation. 0 switches the suggestions off."
@@ -2116,6 +2131,15 @@ msgstr "TARGET"
 msgid "ZULETZT HERUNTERGELADEN"
 msgstr "DOWNLOADED LAST"
 
+msgid "Zahleninseln neu nummerieren"
+msgstr "Renumber numbered islands"
+
+msgid "Zahleninseln sortieren"
+msgstr "Sort numbered islands"
+
+msgid "Zahleninseln sortiert"
+msgstr "Numbered islands sorted"
+
 msgid "Zeigt einen Speichern-Dialog, statt direkt im Download-Ordner zu speichern."
 msgstr "Shows a save dialog instead of saving straight into the download folder."
 
@@ -2238,6 +2262,12 @@ msgstr "history visited pages"
 
 msgid "inseln"
 msgstr "islands"
+
+msgid "inseln nummern zahlen durchnummerieren umbenennen"
+msgstr "islands numbers renumber rename sequence"
+
+msgid "inseln nummern zahlen ordnen reihenfolge"
+msgstr "islands numbers sort order"
 
 msgid "kein Fenster offen"
 msgstr "no window open"
@@ -2384,6 +2414,9 @@ msgstr "{} tabs brought back"
 
 msgid "{} Verlaufseinträge"
 msgstr "{} history entries"
+
+msgid "{} Zahleninseln umbenannt"
+msgstr "{} numbered islands renamed"
 
 msgid "{} aus dem Archiv zurückgeholt"
 msgstr "{} brought back from the archive"

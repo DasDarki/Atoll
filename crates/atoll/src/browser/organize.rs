@@ -439,6 +439,60 @@ impl Browser {
         }
     }
 
+    /// The islands of this window's workspace with their names, in the order they stand.
+    fn islands_with_names(&self) -> Vec<(IslandId, String)> {
+        self.session
+            .borrow()
+            .islands
+            .iter()
+            .map(|entry| (entry.island.id, entry.island.name.clone()))
+            .collect()
+    }
+
+    /// Sorts the islands named with a number from small to large, among the places they hold.
+    pub(super) fn sort_number_islands(&self) {
+        let islands = self.islands_with_names();
+        let order = sorted_by_number(&islands);
+        let moved = islands
+            .iter()
+            .zip(&order)
+            .filter(|((before, _), after)| before != *after)
+            .count();
+        if moved == 0 {
+            self.show_toast(t!(
+                "Die Zahleninseln stehen schon in der richtigen Reihenfolge"
+            ));
+            return;
+        }
+        let result = self.storage.order_islands(&order);
+        self.report(t!("Inseln sortieren"), result);
+        self.reload_session();
+        self.refresh_sidebar();
+        self.show_toast(t!("Zahleninseln sortiert"));
+    }
+
+    /// Names the islands named with a number 1, 2, 3 and so on, in the order they stand.
+    pub(super) fn renumber_number_islands(&self) {
+        let names = renumbered(&self.islands_with_names());
+        if names.is_empty() {
+            self.show_toast(t!("Die Zahleninseln sind schon durchnummeriert"));
+            return;
+        }
+        let result = self.storage.transaction(|transaction| {
+            for (island, name) in &names {
+                transaction.rename_island(*island, name)?;
+            }
+            Ok(())
+        });
+        self.report(t!("Inseln umbenennen"), result);
+        self.reload_session();
+        self.refresh_sidebar();
+        self.show_toast(&match names.len() {
+            1 => t!("1 Zahleninsel umbenannt").to_owned(),
+            count => t!("{} Zahleninseln umbenannt", count),
+        });
+    }
+
     pub(super) fn tabs_of_island(&self, island: IslandId) -> Vec<TabId> {
         self.session
             .borrow()
@@ -448,23 +502,106 @@ impl Browser {
     }
 }
 
+/// The number an island is named, if its name is nothing but a number. Spaces around it do not
+/// hide it, anything written next to it does.
+fn number_of(name: &str) -> Option<u64> {
+    name.trim().parse().ok()
+}
+
 /// The name a new island gets when the user says none: the largest number any island of the
 /// workspace carries, one higher. Names that are no number are passed over, and where there is
 /// no number at all the first island is the first number.
 fn next_number(names: &[String]) -> String {
-    let highest = names
-        .iter()
-        .filter_map(|name| name.trim().parse::<u64>().ok())
-        .max();
+    let highest = names.iter().filter_map(|name| number_of(name)).max();
     match highest {
         Some(number) => (number.saturating_add(1)).to_string(),
         None => "1".to_owned(),
     }
 }
 
+/// The order of `islands` with the numbered ones sorted from small to large among the places
+/// they hold. Islands named otherwise keep their places, equal numbers their order.
+fn sorted_by_number(islands: &[(IslandId, String)]) -> Vec<IslandId> {
+    let mut numbered: Vec<(u64, IslandId)> = islands
+        .iter()
+        .filter_map(|(id, name)| number_of(name).map(|number| (number, *id)))
+        .collect();
+    numbered.sort_by_key(|(number, _)| *number);
+    let mut numbered = numbered.into_iter().map(|(_, id)| id);
+    islands
+        .iter()
+        .map(|(id, name)| match number_of(name) {
+            Some(_) => numbered.next().unwrap_or(*id),
+            None => *id,
+        })
+        .collect()
+}
+
+/// The new names of the numbered islands among `islands`, counted from one in the order they
+/// stand. Only the islands whose name changes are named.
+fn renumbered(islands: &[(IslandId, String)]) -> Vec<(IslandId, String)> {
+    islands
+        .iter()
+        .filter(|(_, name)| number_of(name).is_some())
+        .zip(1u64..)
+        .filter(|((_, name), number)| number_of(name) != Some(*number))
+        .map(|((id, _), number)| (*id, number.to_string()))
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn islands(names: &[&str]) -> Vec<(IslandId, String)> {
+        names
+            .iter()
+            .enumerate()
+            .map(|(index, name)| (IslandId(index as i64 + 1), (*name).to_owned()))
+            .collect()
+    }
+
+    #[test]
+    fn numbered_islands_are_sorted_among_their_own_places() {
+        let order = sorted_by_number(&islands(&["17", "Arbeit", "5", "1", "Lesen", "6"]));
+        assert_eq!(
+            order,
+            [
+                IslandId(4),
+                IslandId(2),
+                IslandId(3),
+                IslandId(6),
+                IslandId(5),
+                IslandId(1)
+            ],
+            "1, Arbeit, 5, 6, Lesen, 17"
+        );
+    }
+
+    #[test]
+    fn islands_named_otherwise_and_equal_numbers_keep_their_order() {
+        let order = sorted_by_number(&islands(&["Insel 7", "3", " 2 ", "3"]));
+        assert_eq!(order, [IslandId(1), IslandId(3), IslandId(2), IslandId(4)]);
+        assert_eq!(
+            sorted_by_number(&islands(&["Arbeit", "Lesen"])),
+            [IslandId(1), IslandId(2)]
+        );
+    }
+
+    #[test]
+    fn numbered_islands_are_counted_from_one_in_the_order_they_stand() {
+        let names = renumbered(&islands(&["1", "6", "Arbeit", "5", "17"]));
+        assert_eq!(
+            names,
+            [
+                (IslandId(2), "2".to_owned()),
+                (IslandId(4), "3".to_owned()),
+                (IslandId(5), "4".to_owned())
+            ],
+            "1 stays 1, the island named otherwise is not counted"
+        );
+        assert!(renumbered(&islands(&["1", "2", "Lesen", "3"])).is_empty());
+    }
 
     #[test]
     fn the_next_island_carries_the_next_number() {

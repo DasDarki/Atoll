@@ -12,6 +12,9 @@ saved tabs therefore cost nothing at startup.
 - **Workspaces, islands, tabs**: a workspace is a complete context, islands are named, colored,
   collapsible tab groups inside it. A new island whose name is left empty takes the next free
   number: the largest number any island of the workspace carries, one higher.
+  Two palette commands tidy such islands up, touching only islands whose name is nothing but a
+  number: "Zahleninseln sortieren" sorts them from small to large among the places they hold, and
+  "Zahleninseln neu nummerieren" names them 1, 2, 3 and so on in the order they stand.
 - **Windows**: every window shows one workspace, and a workspace is shown in at most one window.
   Dragging a tab out of the sidebar and releasing it outside the window moves it into a new window
   with a workspace of its own, dropping it on another Atoll window moves it there. The page keeps

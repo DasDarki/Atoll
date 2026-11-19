@@ -61,6 +61,8 @@ enum Command {
     SyncArchive,
     ArchiveIsland,
     SleepIsland,
+    SortNumberIslands,
+    RenumberNumberIslands,
     Find,
     Reload,
     HardReload,
@@ -713,6 +715,18 @@ impl Browser {
                 "speicher entladen",
             ),
             (
+                Command::SortNumberIslands,
+                t!("Zahleninseln sortieren").to_owned(),
+                "",
+                t!("inseln nummern zahlen ordnen reihenfolge"),
+            ),
+            (
+                Command::RenumberNumberIslands,
+                t!("Zahleninseln neu nummerieren").to_owned(),
+                "",
+                t!("inseln nummern zahlen durchnummerieren umbenennen"),
+            ),
+            (
                 Command::Find,
                 t!("Auf Seite suchen").to_owned(),
                 t!("Strg+F"),
@@ -977,6 +991,8 @@ impl Browser {
                     self.island_action(island, "sleep");
                 }
             }
+            Command::SortNumberIslands => self.sort_number_islands(),
+            Command::RenumberNumberIslands => self.renumber_number_islands(),
             Command::Find => self.open_find(),
             Command::Reload => self.reload(false),
             Command::HardReload => self.reload(true),
