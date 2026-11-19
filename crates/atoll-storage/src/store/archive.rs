@@ -70,6 +70,15 @@ impl ArchivedTab {
     }
 }
 
+/// Why a tab went to the archive.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ArchiveReason {
+    /// Someone archived it: the tab itself, its island or a selection.
+    Asked,
+    /// It went on its own, not visited for longer than the settings allow.
+    Unused,
+}
+
 pub trait ArchiveStore: Connected {
     /// The whole archive, laid out like the sidebar: workspaces, their islands and their tabs,
     /// each in the order they had.
@@ -169,12 +178,17 @@ pub trait ArchiveStore: Connected {
     }
 
     /// Moves `tabs` into the archive one after the other, each together with what is known about
-    /// its island and workspace.
-    fn archive_tabs(&self, tabs: &[TabId], at: Timestamp) -> StorageResult<()> {
+    /// its island and workspace and why it goes.
+    fn archive_tabs(
+        &self,
+        tabs: &[TabId],
+        at: Timestamp,
+        reason: ArchiveReason,
+    ) -> StorageResult<()> {
         for tab in tabs {
             let record = self.tab(*tab)?;
             if !record.private {
-                archive_one(self, &record, at)?;
+                archive_one(self, &record, at, reason)?;
             }
         }
         Ok(())
@@ -188,62 +202,37 @@ pub trait ArchiveStore: Connected {
             .iter()
             .map(|tab| tab.id)
             .collect();
-        self.archive_tabs(&tabs, at)?;
+        self.archive_tabs(&tabs, at, ArchiveReason::Asked)?;
         self.delete_island(island)
     }
 
     /// Brings an archived tab back where it came from and answers with the tab it is again.
     /// It counts as used at `at`, or it would be on its way back into the archive at once.
     fn restore_archived_tab(&self, id: i64, at: Timestamp) -> StorageResult<TabId> {
-        let row = self
+        restore_one(self, id, at, LastUse::Now)
+    }
+
+    /// Brings back the tabs that went to the archive on their own and were last visited at or
+    /// after `since`, all of them when it is `None`, the last to leave first. They keep the
+    /// visit they had, so they leave again exactly when that is long enough ago.
+    fn restore_unused_tabs_visited_since(
+        &self,
+        since: Option<Timestamp>,
+        at: Timestamp,
+    ) -> StorageResult<Vec<TabId>> {
+        let tabs: Vec<i64> = self
             .connection()
             .prepare_cached(
-                "SELECT archived_island_id, url, title, favicon_id, position, pinned, scroll_y,
-                        created_at
-                 FROM archived_tab WHERE id = ?1",
+                "SELECT id FROM archived_tab
+                 WHERE unused = 1
+                   AND (?1 IS NULL OR COALESCE(last_used_at, created_at) >= ?1)
+                 ORDER BY id DESC",
             )?
-            .query_row([id], |row| {
-                Ok((
-                    row.get::<_, i64>(0)?,
-                    row.get::<_, String>(1)?,
-                    row.get::<_, Option<String>>(2)?,
-                    row.get::<_, Option<i64>>(3)?,
-                    row.get::<_, i64>(4)?,
-                    row.get::<_, bool>(5)?,
-                    row.get::<_, Option<i32>>(6)?,
-                    row.get::<_, i64>(7)?,
-                ))
-            })
-            .optional()?
-            .ok_or(StorageError::NotFound {
-                entity: "archived tab",
-                id,
-            })?;
-        let (archived_island, url, title, favicon, position, pinned, scroll_y, created_at) = row;
-        let island = island_for(self, archived_island, at)?;
-        self.connection()
-            .prepare_cached(
-                "INSERT INTO tab (island_id, url, title, favicon_id, position, pinned, scroll_y,
-                                  last_used_at, created_at)
-                 VALUES (?1, ?2, ?3, ?4, 0, ?5, ?6, ?7, ?8)",
-            )?
-            .execute(params![
-                island.0, url, title, favicon, pinned, scroll_y, at.0, created_at
-            ])?;
-        let tab = TabId(self.connection().last_insert_rowid());
-        let mut ids = tab_ids(self, island)?;
-        insert_at(&mut ids, tab.0, usize::try_from(position).ok());
-        renumber(self.connection(), OrderedTable::Tab, &ids)?;
-        self.connection()
-            .prepare_cached(
-                "INSERT INTO tab_history (tab_id, url, title, visited_at)
-                 SELECT ?1, url, title, visited_at FROM archived_tab_history
-                 WHERE archived_tab_id = ?2 ORDER BY id",
-            )?
-            .execute(params![tab.0, id])?;
-        self.touch_tab(tab, at)?;
-        self.delete_archived_tab(id)?;
-        Ok(tab)
+            .query_map([since.map(|since| since.0)], |row| row.get(0))?
+            .collect::<Result<_, _>>()?;
+        tabs.into_iter()
+            .map(|tab| restore_one(self, tab, at, LastUse::AsBefore))
+            .collect()
     }
 
     /// Brings every tab of an archived island back, the last to leave first.
@@ -313,8 +302,89 @@ pub trait ArchiveStore: Connected {
 
 impl<T: Connected + ?Sized> ArchiveStore for T {}
 
+/// What a tab brought back counts as its last visit.
+#[derive(Clone, Copy)]
+enum LastUse {
+    /// Now: it was asked for.
+    Now,
+    /// The visit it had before it left.
+    AsBefore,
+}
+
+/// Brings one archived tab back where it came from, see [`ArchiveStore::restore_archived_tab`].
+fn restore_one<S: Connected + ?Sized>(
+    store: &S,
+    id: i64,
+    at: Timestamp,
+    last_use: LastUse,
+) -> StorageResult<TabId> {
+    let row = store
+        .connection()
+        .prepare_cached(
+            "SELECT archived_island_id, url, title, favicon_id, position, pinned, scroll_y,
+                    created_at, last_used_at
+             FROM archived_tab WHERE id = ?1",
+        )?
+        .query_row([id], |row| {
+            Ok((
+                row.get::<_, i64>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, Option<String>>(2)?,
+                row.get::<_, Option<i64>>(3)?,
+                row.get::<_, i64>(4)?,
+                row.get::<_, bool>(5)?,
+                row.get::<_, Option<i32>>(6)?,
+                row.get::<_, i64>(7)?,
+                row.get::<_, Option<i64>>(8)?,
+            ))
+        })
+        .optional()?
+        .ok_or(StorageError::NotFound {
+            entity: "archived tab",
+            id,
+        })?;
+    let (archived_island, url, title, favicon, position, pinned, scroll_y, created_at, used) = row;
+    let used = match last_use {
+        LastUse::Now => Some(at.0),
+        LastUse::AsBefore => used,
+    };
+    let island = island_for(store, archived_island, at)?;
+    store
+        .connection()
+        .prepare_cached(
+            "INSERT INTO tab (island_id, url, title, favicon_id, position, pinned, scroll_y,
+                              last_used_at, created_at)
+             VALUES (?1, ?2, ?3, ?4, 0, ?5, ?6, ?7, ?8)",
+        )?
+        .execute(params![
+            island.0, url, title, favicon, pinned, scroll_y, used, created_at
+        ])?;
+    let tab = TabId(store.connection().last_insert_rowid());
+    let mut ids = tab_ids(store, island)?;
+    insert_at(&mut ids, tab.0, usize::try_from(position).ok());
+    renumber(store.connection(), OrderedTable::Tab, &ids)?;
+    store
+        .connection()
+        .prepare_cached(
+            "INSERT INTO tab_history (tab_id, url, title, visited_at)
+             SELECT ?1, url, title, visited_at FROM archived_tab_history
+             WHERE archived_tab_id = ?2 ORDER BY id",
+        )?
+        .execute(params![tab.0, id])?;
+    if let LastUse::Now = last_use {
+        store.touch_tab(tab, at)?;
+    }
+    store.delete_archived_tab(id)?;
+    Ok(tab)
+}
+
 /// Moves one tab into the archive, keeping the place it had in `record`.
-fn archive_one<S: Connected + ?Sized>(store: &S, record: &Tab, at: Timestamp) -> StorageResult<()> {
+fn archive_one<S: Connected + ?Sized>(
+    store: &S,
+    record: &Tab,
+    at: Timestamp,
+    reason: ArchiveReason,
+) -> StorageResult<()> {
     let island = store.island(record.island_id)?;
     let workspace = store.workspace(island.workspace_id)?;
     let archived_workspace = remember_workspace(store, &workspace)?;
@@ -328,8 +398,8 @@ fn archive_one<S: Connected + ?Sized>(store: &S, record: &Tab, at: Timestamp) ->
         .prepare_cached(
             "INSERT INTO archived_tab (
                 archived_island_id, url, title, favicon_id, position, pinned, scroll_y,
-                last_used_at, created_at, archived_at
-             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+                last_used_at, created_at, archived_at, unused
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
         )?
         .execute(params![
             archived_island,
@@ -341,7 +411,8 @@ fn archive_one<S: Connected + ?Sized>(store: &S, record: &Tab, at: Timestamp) ->
             record.scroll_y,
             record.last_used_at.map(|used| used.0),
             created_at,
-            at.0
+            at.0,
+            reason == ArchiveReason::Unused
         ])?;
     let archived_tab = store.connection().last_insert_rowid();
     store

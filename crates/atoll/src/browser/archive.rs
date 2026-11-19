@@ -13,7 +13,7 @@ use atoll_core::address::display_url;
 use atoll_core::search::Matcher;
 use atoll_core::{Island, IslandId, TabId, Timestamp};
 use atoll_storage::prelude::*;
-use atoll_storage::{ArchivedIsland, ArchivedTab, ArchivedWorkspace};
+use atoll_storage::{ArchiveReason, ArchivedIsland, ArchivedTab, ArchivedWorkspace};
 use slint::{Color, ComponentHandle, ModelRc, VecModel};
 
 use super::Browser;
@@ -304,7 +304,7 @@ impl Browser {
         }
         self.forget_tabs(tabs.iter().copied());
         self.forget_picks_quietly();
-        let result = self.take_into_archive(&tabs, &islands, Self::now());
+        let result = self.take_into_archive(&tabs, &islands, Self::now(), ArchiveReason::Asked);
         if let Err(error) = result {
             self.report(t!("Archivieren"), Err(error));
             self.reload_session();
@@ -333,9 +333,10 @@ impl Browser {
         tabs: &[TabId],
         islands: &BTreeSet<IslandId>,
         now: Timestamp,
+        reason: ArchiveReason,
     ) -> atoll_storage::StorageResult<()> {
         self.storage.transaction(|transaction| {
-            transaction.archive_tabs(tabs, now)?;
+            transaction.archive_tabs(tabs, now, reason)?;
             for island in islands {
                 if transaction.tabs_in_island(*island)?.is_empty() {
                     transaction.delete_island(*island)?;
@@ -348,12 +349,12 @@ impl Browser {
     /// Moves the tabs not visited for longer than the settings allow into the archive. Tabs
     /// that are shown, the last shown tab of every workspace, tabs with a loaded page and those
     /// the archive never takes on its own stay. An island left empty goes along with its tabs,
-    /// the first of them to come back brings it back.
-    pub(super) fn archive_unused_tabs(&self, shown: &[TabId]) {
+    /// the first of them to come back brings it back. Answers with how many went.
+    fn archive_unused_tabs(&self, shown: &[TabId]) -> usize {
         let days = self.preferences.borrow().archive_tabs_after_days;
         let now = Self::now();
         let Some(cutoff) = unused_cutoff(now, days) else {
-            return;
+            return 0;
         };
         let remembered: Vec<TabId> = self
             .storage
@@ -383,17 +384,27 @@ impl Browser {
                 .collect()
         };
         if due.is_empty() {
-            return;
+            return 0;
         }
         let tabs: Vec<TabId> = due.iter().map(|(tab, _)| *tab).collect();
         let islands: BTreeSet<IslandId> = due.iter().map(|(_, island)| *island).collect();
         self.forget_tabs(tabs.iter().copied());
-        let result = self.take_into_archive(&tabs, &islands, now);
+        let result = self.take_into_archive(&tabs, &islands, now, ArchiveReason::Unused);
         tracing::info!(count = tabs.len(), days, "unused tabs went to the archive");
+        let archived = if result.is_ok() { tabs.len() } else { 0 };
         self.report(t!("Archivieren"), result);
         self.reload_session();
         self.for_all_windows(Browser::refresh_sidebar);
-        let toast = match tabs.len() {
+        archived
+    }
+
+    /// The regular look: archives what is due and says so in the window in front.
+    pub(super) fn archive_unused_tabs_and_tell(&self, shown: &[TabId]) {
+        let count = self.archive_unused_tabs(shown);
+        if count == 0 {
+            return;
+        }
+        let toast = match count {
             1 => t!("1 Tab ins Archiv gelegt, lange nicht besucht").to_owned(),
             count => t!("{} Tabs ins Archiv gelegt, lange nicht besucht", count),
         };
@@ -401,6 +412,47 @@ impl Browser {
             Some(focused) => focused.show_toast(&toast),
             None => self.show_toast(&toast),
         }
+    }
+
+    /// Brings the archive in line with the settings: every tab that went on its own but would
+    /// not be due under the number of days set now comes back, all of them while archiving on
+    /// its own is off, and what is due now goes at once instead of at the next look. Tabs
+    /// archived by hand are left where they are.
+    pub fn sync_archive_with_settings(&self) {
+        let days = self.preferences.borrow().archive_tabs_after_days;
+        let now = Self::now();
+        let since = unused_cutoff(now, days);
+        let restored = self
+            .storage
+            .transaction(|transaction| transaction.restore_unused_tabs_visited_since(since, now));
+        let restored = match restored {
+            Ok(restored) => restored.len(),
+            Err(error) => {
+                self.report(t!("Wiederherstellen"), Err(error));
+                return;
+            }
+        };
+        if restored > 0 {
+            self.reload_session();
+            self.for_all_windows(Browser::refresh_sidebar);
+        }
+        let shown = self
+            .manager()
+            .map(|manager| manager.shown_tabs())
+            .unwrap_or_default();
+        let archived = self.archive_unused_tabs(&shown);
+        tracing::info!(restored, archived, days, "archive synced with the settings");
+        self.refresh_archive();
+        self.show_toast(&match (restored, archived) {
+            (0, 0) => t!("Das Archiv passt schon zu den Einstellungen").to_owned(),
+            (restored, 0) => t!("{} aus dem Archiv zurückgeholt", tab_count(restored)),
+            (0, archived) => t!("{} ins Archiv gelegt", tab_count(archived)),
+            (restored, archived) => t!(
+                "{} zurückgeholt, {} ins Archiv gelegt",
+                tab_count(restored),
+                tab_count(archived)
+            ),
+        });
     }
 }
 

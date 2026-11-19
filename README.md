@@ -60,6 +60,10 @@ saved tabs therefore cost nothing at startup.
   (off by default) go to the archive by themselves, checked a minute after the start and every
   ten minutes after that. Pinned and private tabs, tabs with a loaded page, the tab a window shows
   and the last shown tab of every workspace stay. An island left empty goes along with its tabs.
+  The archive remembers which tabs went on their own. The palette command "Archiv mit
+  Einstellungen synchronisieren" brings back every such tab that would not be due under the
+  number of days set now (all of them while it is off), keeping the visit it had, and archives
+  at once what is due; tabs archived by hand stay where they are.
 - **Archiving islands**: islands can be archived with one click, which moves all their tabs into
   the archive. Islands unused for four weeks, configurable in the settings, are marked in the
   sidebar and suggested in the archive; nothing is archived from there without confirmation. The

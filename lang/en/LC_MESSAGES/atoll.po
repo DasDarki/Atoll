@@ -196,6 +196,9 @@ msgstr "Limit memory"
 msgid "Archiv"
 msgstr "Archive"
 
+msgid "Archiv mit Einstellungen synchronisieren"
+msgstr "Sync archive with settings"
+
 msgid "Archiv öffnen"
 msgstr "Open archive"
 
@@ -474,6 +477,9 @@ msgstr "The archive has no copy of this page"
 
 msgid "Das Archiv ist leer."
 msgstr "The archive is empty."
+
+msgid "Das Archiv passt schon zu den Einstellungen"
+msgstr "The archive already matches the settings"
 
 msgid "Das Archiv wird gefragt …"
 msgstr "Asking the archive …"
@@ -2167,6 +2173,9 @@ msgstr "Clipboard not available"
 msgid "adblock werbung schutz seite ausnahme"
 msgstr "adblock advertising protection site exception"
 
+msgid "archiv tage zurückholen abgleichen"
+msgstr "archive days restore bring back sync"
+
 msgid "archiv wayback kopie alte fassung"
 msgstr "archive wayback copy old version"
 
@@ -2376,6 +2385,9 @@ msgstr "{} tabs brought back"
 msgid "{} Verlaufseinträge"
 msgstr "{} history entries"
 
+msgid "{} aus dem Archiv zurückgeholt"
+msgstr "{} brought back from the archive"
+
 msgid "{} eingefügt"
 msgstr "{} filled in"
 
@@ -2384,6 +2396,9 @@ msgstr "{} does not exist"
 
 msgid "{} hat keine IPv4-Adresse"
 msgstr "{} has no IPv4 address"
+
+msgid "{} ins Archiv gelegt"
+msgstr "{} moved to the archive"
 
 msgid "{} ist eine Torrent-Datei. Soll Atoll laden, was darin steht?"
 msgstr "{} is a torrent file. Shall Atoll load what it points at?"
@@ -2435,6 +2450,9 @@ msgstr "{} is being loaded"
 
 msgid "{} wird ohne Schutz geladen"
 msgstr "{} is being loaded without protection"
+
+msgid "{} zurückgeholt, {} ins Archiv gelegt"
+msgstr "{} brought back, {} moved to the archive"
 
 msgid "{} {} importiert, {} neue {}."
 msgstr "{} {} imported, {} new {}."

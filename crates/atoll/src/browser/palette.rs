@@ -58,6 +58,7 @@ enum Command {
     ImportList,
     ExportList,
     OpenArchive,
+    SyncArchive,
     ArchiveIsland,
     SleepIsland,
     Find,
@@ -694,6 +695,12 @@ impl Browser {
                 t!("inseln"),
             ),
             (
+                Command::SyncArchive,
+                t!("Archiv mit Einstellungen synchronisieren").to_owned(),
+                "",
+                t!("archiv tage zurückholen abgleichen"),
+            ),
+            (
                 Command::ArchiveIsland,
                 t!("Aktuelle Insel archivieren").to_owned(),
                 "",
@@ -959,6 +966,7 @@ impl Browser {
             Command::ImportList => self.open_import(),
             Command::ExportList => self.open_export(None),
             Command::OpenArchive => self.open_archive(),
+            Command::SyncArchive => self.sync_archive_with_settings(),
             Command::ArchiveIsland => {
                 if let Some(island) = self.active_island() {
                     self.island_action(island, "archive");

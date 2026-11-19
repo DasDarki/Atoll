@@ -6,7 +6,9 @@ mod store;
 pub use connection::{Connected, Storage, StorageTransaction};
 pub use error::{StorageError, StorageResult};
 pub use store::adblock::{AdblockRule, AdblockStore};
-pub use store::archive::{ArchiveStore, ArchivedIsland, ArchivedTab, ArchivedWorkspace};
+pub use store::archive::{
+    ArchiveReason, ArchiveStore, ArchivedIsland, ArchivedTab, ArchivedWorkspace,
+};
 pub use store::bookmarks::{BookmarkStore, NewBookmark};
 pub use store::downloads::{DownloadProgress, DownloadStore, NewDownload};
 pub use store::favicons::FaviconStore;

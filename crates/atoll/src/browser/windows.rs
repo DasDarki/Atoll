@@ -489,15 +489,17 @@ impl WindowManager {
     }
 
     fn archive_unused_tabs(&self) {
-        let browsers = self.browsers();
-        let Some(first) = browsers.first() else {
-            return;
-        };
-        let shown: Vec<TabId> = browsers
+        if let Some(first) = self.browsers().first() {
+            first.archive_unused_tabs_and_tell(&self.shown_tabs());
+        }
+    }
+
+    /// The tab every window shows right now.
+    pub(super) fn shown_tabs(&self) -> Vec<TabId> {
+        self.browsers()
             .iter()
             .filter_map(|browser| browser.session.borrow().active_tab)
-            .collect();
-        first.archive_unused_tabs(&shown);
+            .collect()
     }
 
     /// Puts the least recently used background tab to sleep while the pages use more memory than

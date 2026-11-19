@@ -1,6 +1,6 @@
 use atoll_core::{IslandColor, IslandId, TabId, Timestamp, WorkspaceId};
 use atoll_storage::prelude::*;
-use atoll_storage::{NewIsland, NewTab, Storage};
+use atoll_storage::{ArchiveReason, NewIsland, NewTab, Storage};
 
 fn storage() -> Storage {
     Storage::open_in_memory().expect("in-memory database")
@@ -51,7 +51,9 @@ fn an_archived_tab_keeps_its_island_and_workspace_and_comes_back_into_them() {
     let b = tab(&storage, docs, "https://b.example/");
     tab(&storage, docs, "https://c.example/");
 
-    storage.archive_tabs(&[b], Timestamp(50)).unwrap();
+    storage
+        .archive_tabs(&[b], Timestamp(50), ArchiveReason::Asked)
+        .unwrap();
     assert_eq!(
         urls(&storage, docs),
         ["https://a.example/", "https://c.example/"]
@@ -103,7 +105,7 @@ fn a_tab_whose_island_is_gone_comes_back_into_one_made_alike() {
     let second = tab(&storage, reading, "https://two.example/");
 
     storage
-        .archive_tabs(&[first, second], Timestamp(5))
+        .archive_tabs(&[first, second], Timestamp(5), ArchiveReason::Asked)
         .unwrap();
     storage.delete_island(reading).unwrap();
     let archived = storage.archive().unwrap()[0].islands[0].clone();
@@ -143,7 +145,9 @@ fn an_id_handed_out_again_draws_no_tab_into_a_stranger() {
     let work = storage.create_workspace("Arbeit").unwrap();
     let old = island(&storage, work.id, "Alt", IslandColor::Amber);
     let archived_tab = tab(&storage, old, "https://old.example/");
-    storage.archive_tabs(&[archived_tab], Timestamp(5)).unwrap();
+    storage
+        .archive_tabs(&[archived_tab], Timestamp(5), ArchiveReason::Asked)
+        .unwrap();
     storage.delete_island(old).unwrap();
 
     let stranger = island(&storage, work.id, "Fremd", IslandColor::Blue);
@@ -250,9 +254,13 @@ fn an_island_moved_elsewhere_takes_its_archived_tabs_along() {
     let first = tab(&storage, wander, "https://first.example/");
     let second = tab(&storage, wander, "https://second.example/");
 
-    storage.archive_tabs(&[first], Timestamp(5)).unwrap();
+    storage
+        .archive_tabs(&[first], Timestamp(5), ArchiveReason::Asked)
+        .unwrap();
     storage.move_island(wander, home.id, 0).unwrap();
-    storage.archive_tabs(&[second], Timestamp(6)).unwrap();
+    storage
+        .archive_tabs(&[second], Timestamp(6), ArchiveReason::Asked)
+        .unwrap();
 
     let archive = storage.archive().unwrap();
     assert_eq!(
@@ -277,7 +285,9 @@ fn history_goes_into_the_archive_and_comes_back() {
         .record_visit(page, "https://b.example/", Some("B"), Timestamp(3))
         .unwrap();
 
-    storage.archive_tabs(&[page], Timestamp(5)).unwrap();
+    storage
+        .archive_tabs(&[page], Timestamp(5), ArchiveReason::Asked)
+        .unwrap();
     let id = storage.archive().unwrap()[0].islands[0].tabs[0].id;
     let back = storage.restore_archived_tab(id, Timestamp(9)).unwrap();
     let history: Vec<String> = storage
@@ -300,7 +310,9 @@ fn tabs_that_left_one_after_another_behind_one_that_stayed_keep_their_order() {
     let b = tab(&storage, docs, "https://b.example/");
     tab(&storage, docs, "https://also-stays.example/");
 
-    storage.archive_tabs(&[a, b], Timestamp(5)).unwrap();
+    storage
+        .archive_tabs(&[a, b], Timestamp(5), ArchiveReason::Asked)
+        .unwrap();
     let shown: Vec<String> = storage.archive().unwrap()[0].islands[0]
         .tabs
         .iter()
@@ -321,6 +333,63 @@ fn tabs_that_left_one_after_another_behind_one_that_stayed_keep_their_order() {
             "https://also-stays.example/"
         ]
     );
+}
+
+#[test]
+fn syncing_brings_back_only_what_left_on_its_own_and_is_young_enough_now() {
+    let storage = storage();
+    let work = storage.create_workspace("Arbeit").unwrap();
+    let docs = island(&storage, work.id, "Doku", IslandColor::Blue);
+    let recent = tab(&storage, docs, "https://recent.example/");
+    let ancient = tab(&storage, docs, "https://ancient.example/");
+    let asked = tab(&storage, docs, "https://asked.example/");
+    let next = tab(&storage, docs, "https://next.example/");
+    storage.touch_tab(recent, Timestamp(800)).unwrap();
+    storage.touch_tab(ancient, Timestamp(100)).unwrap();
+    storage.touch_tab(asked, Timestamp(900)).unwrap();
+    storage.touch_tab(next, Timestamp(850)).unwrap();
+
+    storage
+        .archive_tabs(
+            &[recent, ancient, next],
+            Timestamp(1000),
+            ArchiveReason::Unused,
+        )
+        .unwrap();
+    storage
+        .archive_tabs(&[asked], Timestamp(1000), ArchiveReason::Asked)
+        .unwrap();
+
+    let back = storage
+        .restore_unused_tabs_visited_since(Some(Timestamp(500)), Timestamp(1200))
+        .unwrap();
+    assert_eq!(back.len(), 2);
+    assert_eq!(
+        urls(&storage, docs),
+        ["https://recent.example/", "https://next.example/"],
+        "the one archived by hand and the old one stay in the archive"
+    );
+    let visits: Vec<Option<Timestamp>> = storage
+        .tabs_in_island(docs)
+        .unwrap()
+        .into_iter()
+        .map(|tab| tab.last_used_at)
+        .collect();
+    assert_eq!(
+        visits,
+        [Some(Timestamp(800)), Some(Timestamp(850))],
+        "they keep the visit they had"
+    );
+
+    let rest = storage
+        .restore_unused_tabs_visited_since(None, Timestamp(1300))
+        .unwrap();
+    assert_eq!(
+        rest.len(),
+        1,
+        "switched off, everything that left on its own comes back"
+    );
+    assert_eq!(storage.archived_tab_count().unwrap(), 1);
 }
 
 #[test]
@@ -367,7 +436,9 @@ fn deleting_from_the_archive_takes_empty_copies_along() {
     let docs = island(&storage, work.id, "Doku", IslandColor::Blue);
     let a = tab(&storage, docs, "https://a.example/");
     let b = tab(&storage, docs, "https://b.example/");
-    storage.archive_tabs(&[a, b], Timestamp(5)).unwrap();
+    storage
+        .archive_tabs(&[a, b], Timestamp(5), ArchiveReason::Asked)
+        .unwrap();
     assert_eq!(storage.archived_tab_count().unwrap(), 2);
 
     let ids: Vec<i64> = storage.archive().unwrap()[0].islands[0]
@@ -460,6 +531,64 @@ fn the_island_archive_of_before_moves_into_the_new_one() {
     );
     let islands = storage.islands(WorkspaceId(1)).unwrap();
     assert_eq!(islands[1].name, "Alt");
+    drop(storage);
+    std::fs::remove_dir_all(directory).unwrap();
+}
+
+#[test]
+fn tabs_that_left_many_islands_at_once_before_the_reason_was_kept_count_as_unused() {
+    let directory =
+        std::env::temp_dir().join(format!("atoll-archive-reason-{}", std::process::id()));
+    std::fs::create_dir_all(&directory).unwrap();
+    let path = directory.join("atoll.db");
+    {
+        let connection = rusqlite::Connection::open(&path).unwrap();
+        for migration in [
+            include_str!("../src/schema/v1_initial.sql"),
+            include_str!("../src/schema/v2_bookmarks_and_history.sql"),
+            include_str!("../src/schema/v3_downloads.sql"),
+            include_str!("../src/schema/v4_windows.sql"),
+            include_str!("../src/schema/v5_adblock.sql"),
+            include_str!("../src/schema/v6_island_usage.sql"),
+            include_str!("../src/schema/v7_download_kind.sql"),
+            include_str!("../src/schema/v8_plugins.sql"),
+            include_str!("../src/schema/v9_private_tabs.sql"),
+            include_str!("../src/schema/v10_adblock_rules.sql"),
+            include_str!("../src/schema/v11_vpn_rules.sql"),
+            include_str!("../src/schema/v12_page_text.sql"),
+            include_str!("../src/schema/v13_tab_archive.sql"),
+        ] {
+            connection.execute_batch(migration).unwrap();
+        }
+        connection
+            .execute_batch(
+                "PRAGMA user_version = 13;
+                 INSERT INTO archived_workspace (id, workspace_id, name, position) VALUES (1, NULL, 'W', 0);
+                 INSERT INTO archived_island (id, archived_workspace_id, island_id, name, color, position)
+                 VALUES (1, 1, NULL, 'A', 0, 0), (2, 1, NULL, 'B', 0, 1), (3, 1, NULL, 'Hand', 0, 2);
+                 INSERT INTO archived_tab (archived_island_id, url, position, created_at, last_used_at, archived_at)
+                 VALUES (1, 'https://a.example/', 0, 0, 10, 500),
+                        (2, 'https://b.example/', 0, 0, 10, 500),
+                        (3, 'https://hand-1.example/', 0, 0, 10, 300),
+                        (3, 'https://hand-2.example/', 0, 0, 10, 300);",
+            )
+            .unwrap();
+    }
+
+    let storage = Storage::open(&path).unwrap();
+    let back = storage
+        .restore_unused_tabs_visited_since(None, Timestamp(900))
+        .unwrap();
+    assert_eq!(
+        back.len(),
+        2,
+        "the batch across two islands was the automatic one"
+    );
+    assert_eq!(
+        storage.archived_tab_count().unwrap(),
+        2,
+        "one island archived as a whole was asked for"
+    );
     drop(storage);
     std::fs::remove_dir_all(directory).unwrap();
 }
