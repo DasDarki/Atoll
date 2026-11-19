@@ -8,6 +8,7 @@ PKGNAME="atoll"
 APP_ID="dev.dasdarki.Atoll"
 INSTALL_DIR="/opt/Atoll"
 PACKAGE_DIR="$ROOT/target/package"
+SUDO_REFRESH_SECONDS=60
 ICON_SIZES=(16 22 24 32 48 64 96 128 256 512)
 CEF_RUNTIME=(
   libcef.so libEGL.so libGLESv2.so libvk_swiftshader.so libvulkan.so.1 vk_swiftshader_icd.json
@@ -38,6 +39,13 @@ die() { printf '\033[1;31m==>\033[0m %s\n' "$1" >&2; exit 1; }
 
 require() {
   command -v "$1" >/dev/null 2>&1 || die "'$1' wird gebraucht, ist aber nicht installiert${2:+ (Paket: $2)}."
+}
+
+keep_sudo_alive() {
+  while kill -0 "$$" 2>/dev/null; do
+    sudo -n -v 2>/dev/null || return
+    sleep "$SUDO_REFRESH_SECONDS"
+  done
 }
 
 stop_running() {
@@ -208,6 +216,15 @@ if [[ $DO_UNINSTALL -eq 1 ]]; then
   exit 0
 fi
 
+if [[ $PACKAGE_ONLY -eq 0 ]]; then
+  require sudo
+  log "Einmal das Passwort fuer die Installation, danach laeuft alles durch."
+  sudo -v
+  keep_sudo_alive &
+  SUDO_KEEPER=$!
+  trap 'kill "$SUDO_KEEPER" 2>/dev/null || true' EXIT
+fi
+
 if [[ $SKIP_BUILD -eq 0 ]]; then
   build_package
 else
@@ -222,7 +239,6 @@ if [[ $PACKAGE_ONLY -eq 1 ]]; then
   exit 0
 fi
 
-require sudo
 stop_running
 
 if pacman -Qi "$PKGNAME" >/dev/null 2>&1; then
