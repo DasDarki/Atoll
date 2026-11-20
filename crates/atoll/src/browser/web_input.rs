@@ -27,6 +27,21 @@ pub(super) enum InputTarget {
     Panel,
 }
 
+/// Whether `key` is one of the keys held together with others.
+fn is_modifier(key: &Key) -> bool {
+    matches!(
+        key,
+        Key::Named(
+            NamedKey::Control
+                | NamedKey::Shift
+                | NamedKey::Alt
+                | NamedKey::AltGraph
+                | NamedKey::Super
+                | NamedKey::Meta
+        )
+    )
+}
+
 pub(super) fn modifiers_of(shift: bool, control: bool, alt: bool, meta: bool) -> Modifiers {
     Modifiers {
         shift,
@@ -130,6 +145,9 @@ impl Browser {
     }
 
     /// Handles a key event before the user interface sees it: shortcuts first, then the page.
+    /// Ctrl, Shift and Alt reach the user interface as well, because Slint learns which of them
+    /// are held from the keys themselves: a Ctrl pressed in the page and still held when a field
+    /// of Atoll takes the keyboard, as after Ctrl+T, would otherwise turn Ctrl+V into a plain "v".
     pub fn handle_key(
         &self,
         event: &KeyEvent,
@@ -177,6 +195,9 @@ impl Browser {
         self.deliver_keys(translation.events);
         if let Some(text) = &translation.commit {
             self.with_input_view(|view| view.commit_text(text));
+        }
+        if is_modifier(&event.logical_key) {
+            return EventResult::Propagate;
         }
         EventResult::PreventDefault
     }
