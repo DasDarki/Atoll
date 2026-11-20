@@ -268,6 +268,9 @@ msgstr "What you type into fields as well"
 msgid "Auf Atolls Vorgaben zurücksetzen"
 msgstr "Back to what Atoll does anyway"
 
+msgid "Auf Google danach suchen"
+msgstr "Search Google for it"
+
 msgid "Auf Seite suchen"
 msgstr "Find on page"
 

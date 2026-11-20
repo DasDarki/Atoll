@@ -163,7 +163,8 @@ saved tabs therefore cost nothing at startup.
   mirrors a picture or a video from left to right. The same dialog is what the video download
   uses, so a video can be saved as sound or mirrored on the way. Pictures are converted by Atoll
   itself; everything else needs `ffmpeg` installed and is left out of the list without it. The
-  context menu of a picture offers "save" and "convert and save" with the same dialog.
+  context menu of a picture offers "save" and "convert and save" with the same dialog. With text
+  marked on a page, the context menu searches Google for it in a new tab.
 - **Video download**: on pages with a video a download button appears in the address bar. It and
   the command palette save the video that plays, else the largest one, and `Ctrl+Shift+S` asks
   for the format first. Plain

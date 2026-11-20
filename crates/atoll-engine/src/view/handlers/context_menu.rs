@@ -20,6 +20,7 @@ const COPY_IMAGE_ADDRESS: i32 = FIRST_COMMAND + 3;
 const SAVE_IMAGE: i32 = FIRST_COMMAND + 4;
 const CONVERT_IMAGE: i32 = FIRST_COMMAND + 5;
 const INSPECT: i32 = FIRST_COMMAND + 6;
+const SEARCH_SELECTION: i32 = FIRST_COMMAND + 7;
 
 wrap_context_menu_handler! {
     pub(crate) struct ViewContextMenuHandler {
@@ -40,6 +41,9 @@ wrap_context_menu_handler! {
                 model.insert_item_at(index, command, Some(&label.into()));
                 index += 1;
             };
+            if !selection_text(params).is_empty() {
+                insert(SEARCH_SELECTION, t!("Auf Google danach suchen"));
+            }
             if !link_url(params).is_empty() {
                 insert(OPEN_LINK_IN_TAB, t!("Link in neuem Tab öffnen"));
                 insert(COPY_LINK, t!("Linkadresse kopieren"));
@@ -109,6 +113,10 @@ wrap_context_menu_handler! {
                     url: source_url(params),
                     convert: true,
                 },
+                SEARCH_SELECTION => EngineEvent::SearchText {
+                    view: self.view,
+                    text: selection_text(params),
+                },
                 INSPECT => EngineEvent::InspectElement {
                     view: self.view,
                     x: params.xcoord(),
@@ -132,6 +140,14 @@ fn open_in_tab(view: ViewId, url: String) -> EngineEvent {
 
 fn link_url(params: &ContextMenuParams) -> String {
     CefString::from(&params.link_url()).to_string()
+}
+
+/// The text marked on the page, with the space around it trimmed.
+fn selection_text(params: &ContextMenuParams) -> String {
+    CefString::from(&params.selection_text())
+        .to_string()
+        .trim()
+        .to_owned()
 }
 
 fn source_url(params: &ContextMenuParams) -> String {

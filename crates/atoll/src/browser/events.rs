@@ -244,6 +244,11 @@ impl Browser {
                 self.copy_text(&text);
                 Effect::NONE
             }
+            EngineEvent::SearchText { view, text } => {
+                let source = self.tab_of(view);
+                let _ = self.open_in_new_tab(source, &google_search(&text), true);
+                Effect::NONE
+            }
             EngineEvent::ClipboardText(text) => {
                 self.clipboard_text_read(text);
                 Effect::NONE
@@ -648,4 +653,25 @@ impl Effect {
         sidebar: false,
         page: false,
     };
+}
+
+/// The Google search for text marked on a page. Line breaks and runs of spaces in the marked
+/// text become single spaces, the way they would be typed.
+fn google_search(text: &str) -> String {
+    let words = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    let query: String = url::form_urlencoded::byte_serialize(words.as_bytes()).collect();
+    format!("https://www.google.com/search?q={query}")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn marked_text_becomes_one_google_search() {
+        assert_eq!(
+            google_search("  Rust\n  ownership & borrowing  "),
+            "https://www.google.com/search?q=Rust+ownership+%26+borrowing"
+        );
+    }
 }

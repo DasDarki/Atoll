@@ -118,6 +118,11 @@ pub enum EngineEvent {
     },
     /// Text the user wants to copy through a context menu entry of Atoll.
     CopyText(String),
+    /// Text the user marked on the page and wants to search the web for.
+    SearchText {
+        view: ViewId,
+        text: String,
+    },
     /// A file the user wants to save through a context menu entry of Atoll. With `convert` set
     /// they asked to say first what should become of it.
     SaveUrl {
@@ -223,6 +228,7 @@ impl EngineEvent {
             | EngineEvent::VideosFound { view, .. }
             | EngineEvent::ScriptResult { view, .. }
             | EngineEvent::SaveUrl { view, .. }
+            | EngineEvent::SearchText { view, .. }
             | EngineEvent::PageMessage { view, .. } => Some(*view),
             EngineEvent::PopupOpened { opener, .. } => Some(*opener),
             EngineEvent::Download(_)
