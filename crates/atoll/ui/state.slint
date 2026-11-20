@@ -75,6 +75,8 @@ export global BrowserState {
     in property <string> status-text;
     in property <string> tooltip;
     in property <bool> fullscreen;
+    /// Atoll hides behind black: nothing of the pages shows and nothing can be heard.
+    in property <bool> hidden;
     in property <bool> crashed;
     in property <bool> find-visible;
     in property <string> find-result;
@@ -368,6 +370,9 @@ export global SettingsState {
     in-out property <int> section;
 
     in-out property <string> start-page;
+    /// What is typed into the field for the hiding keys, and the keys that hide right now.
+    in-out property <string> hide-shortcut;
+    in property <string> hide-shortcut-active;
     in-out property <bool> new-tab-start-page;
     in-out property <bool> home-button;
     in property <[string]> search-engines;

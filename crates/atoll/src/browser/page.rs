@@ -19,6 +19,7 @@ impl Browser {
     pub(super) fn sync_page(&self) {
         let Some(window) = self.window() else { return };
         let state = window.global::<BrowserState>();
+        state.set_hidden(self.is_hidden());
         let session = self.session.borrow();
         let active = session.active_tab.and_then(|id| session.tab(id));
 

@@ -344,7 +344,7 @@ impl Browser {
             self.muted.borrow_mut().remove(&tab);
         }
         if let Some(entry) = self.views.borrow().get(tab) {
-            entry.view.set_audio_muted(muted);
+            entry.view.set_audio_muted(muted || self.is_hidden());
         }
         self.refresh_sidebar();
         self.for_other_windows(Browser::refresh_sidebar);

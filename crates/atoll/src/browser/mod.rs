@@ -10,6 +10,7 @@ mod duplicates;
 mod events;
 mod favicons;
 mod filter;
+mod hide;
 mod history;
 mod layout;
 mod lifecycle;
@@ -123,6 +124,8 @@ struct Shared {
     vault: Rc<PasswordVault>,
     yt_dlp: YtDlp,
     plugins: Rc<Plugins>,
+    /// Whether Atoll hides behind black, the same for every window.
+    hidden: Rc<Cell<bool>>,
 }
 
 impl Shared {
@@ -160,6 +163,7 @@ impl Shared {
                 .map(YtDlp::new)
                 .unwrap_or_default(),
             plugins,
+            hidden: Rc::default(),
         }
     }
 }
@@ -230,6 +234,7 @@ pub struct Browser {
     /// The open save dialog and what downloads still owe a conversion.
     save: RefCell<SaveState>,
     plugins: Rc<Plugins>,
+    hidden: Rc<Cell<bool>>,
     /// The panel of an extension this window shows.
     panel: RefCell<Option<OpenPanel>>,
     panel_geometry: Cell<ViewGeometry>,
@@ -310,6 +315,7 @@ impl Browser {
             video_search: RefCell::default(),
             save: RefCell::default(),
             plugins: shared.plugins.clone(),
+            hidden: shared.hidden.clone(),
             panel: RefCell::default(),
             panel_geometry: Cell::new(ViewGeometry {
                 width: 360,

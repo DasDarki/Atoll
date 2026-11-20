@@ -11,6 +11,7 @@ pub const MAX_FROZEN_LIMIT: usize = 20;
 pub const MAX_ARCHIVE_SUGGESTION_WEEKS: u32 = 52;
 pub const MAX_ARCHIVE_TABS_AFTER_DAYS: u32 = 365;
 const DEFAULT_MEMORY_LIMIT_GB: u32 = 4;
+const DEFAULT_HIDE_SHORTCUT: &str = "Alt+L";
 pub const MAX_MEMORY_LIMIT_GB: u32 = 64;
 
 /// What Atoll does when a page is not there any more.
@@ -153,6 +154,8 @@ pub struct Preferences {
     pub archive_fallback: ArchiveFallback,
     /// Whether a page that answers "not there" counts as gone too.
     pub archive_on_missing: bool,
+    /// The keys that hide Atoll behind black and bring it back, written like `Alt+L`.
+    pub hide_shortcut: String,
 }
 
 /// A single preference, used to store exactly what changed.
@@ -178,6 +181,7 @@ pub enum PreferenceKey {
     Language,
     ArchiveFallback,
     ArchiveOnMissing,
+    HideShortcut,
     CookieBannersHide,
     CookieBannersAnswer,
     VpnEnabled,
@@ -222,6 +226,7 @@ impl PreferenceKey {
             PreferenceKey::Language => "language",
             PreferenceKey::ArchiveFallback => "archive_fallback",
             PreferenceKey::ArchiveOnMissing => "archive_on_missing",
+            PreferenceKey::HideShortcut => "hide_shortcut",
             PreferenceKey::CookieBannersHide => "cookie_banners_hide",
             PreferenceKey::CookieBannersAnswer => "cookie_banners_answer",
             PreferenceKey::VpnEnabled => "vpn_enabled",
@@ -287,6 +292,7 @@ impl Default for Preferences {
             language: None,
             archive_fallback: ArchiveFallback::default(),
             archive_on_missing: false,
+            hide_shortcut: DEFAULT_HIDE_SHORTCUT.to_owned(),
         }
     }
 }
@@ -382,6 +388,9 @@ impl Preferences {
                 .and_then(|name| ArchiveFallback::parse(&name))
                 .unwrap_or(defaults.archive_fallback),
             archive_on_missing: flag(PreferenceKey::ArchiveOnMissing, defaults.archive_on_missing),
+            hide_shortcut: text(PreferenceKey::HideShortcut)
+                .and_then(|keys| crate::input::shortcuts::normalize(&keys))
+                .unwrap_or(defaults.hide_shortcut),
         }
     }
 
@@ -439,6 +448,7 @@ impl Preferences {
                 .unwrap_or_default(),
             PreferenceKey::ArchiveFallback => self.archive_fallback.as_str().to_owned(),
             PreferenceKey::ArchiveOnMissing => flag(self.archive_on_missing),
+            PreferenceKey::HideShortcut => self.hide_shortcut.clone(),
         };
         if let Err(error) = storage.set_setting(key.storage_key(), &value) {
             tracing::warn!(%error, key = key.storage_key(), "preference could not be stored");
@@ -511,6 +521,7 @@ mod tests {
             language: Some(Language::English),
             archive_fallback: ArchiveFallback::Automatic,
             archive_on_missing: true,
+            hide_shortcut: "Ctrl+Shift+H".to_owned(),
         };
         for key in [
             PreferenceKey::SearchUrl,
@@ -552,6 +563,7 @@ mod tests {
             PreferenceKey::Language,
             PreferenceKey::ArchiveFallback,
             PreferenceKey::ArchiveOnMissing,
+            PreferenceKey::HideShortcut,
         ] {
             preferences.store(&storage, key);
         }

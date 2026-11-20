@@ -23,6 +23,10 @@ saved tabs therefore cost nothing at startup.
 - **Sound in the sidebar**: a tab that can be heard carries a speaker next to its name, and a
   click on it takes its sound away or gives it back. A tab kept silent that way stays silent when
   it goes to sleep and wakes up again.
+- **Hiding**: `Alt+L`, or other keys set in the settings, puts black over every window, silences
+  every page and leaves only "Atoll" in the window title, while everything keeps running
+  underneath. Keys and clicks go nowhere while hidden, and the same keys bring it all back with
+  the tabs kept silent by hand still silent. The palette offers it as well.
 - **Titles before the first look**: a tab opened with the middle mouse button stays a record,
   nothing is loaded for it, and the sidebar would only have its address to show. Atoll therefore
   asks the site for the beginning of the page, reads the title out of its head and shows that

@@ -244,6 +244,9 @@ msgstr "With the consent tools Atoll knows, it presses the button that refuses e
 msgid "Atoll konnte nicht gestartet werden: {}"
 msgstr "Atoll could not be started: {}"
 
+msgid "Atoll verbergen ({})"
+msgstr "Hide Atoll ({})"
+
 msgid "Atoll weist Passkeys ab. 1Password gibt seine Passkeys nur an die eigene Browser-Erweiterung heraus, weder die CLI noch die SDKs können sie lesen, und Chromiums eigenes Passkey-Fenster lässt sich hier nicht zeigen."
 msgstr "Atoll refuses passkeys. 1Password hands its passkeys to its own browser extension only, neither the CLI nor the SDKs can read them, and Chromium's own passkey window cannot be shown here."
 
@@ -768,6 +771,9 @@ msgstr "This page cannot be saved as a file"
 
 msgid "Diese Seite wurde nicht aus dem Internet geladen."
 msgstr "This page was not loaded from the internet."
+
+msgid "Diese Tasten legen Schwarz über alle Fenster und schalten jeden Ton ab, dieselben Tasten holen alles zurück. Darunter läuft alles weiter. Mit Strg oder Alt, zum Beispiel Alt+L. Gerade aktiv: {}"
+msgstr "These keys put black over every window and silence every sound, the same keys bring it all back. Everything keeps running underneath. With Ctrl or Alt, for example Alt+L. Active now: {}"
 
 msgid "Dieser Ebene nichts mehr vorschreiben"
 msgstr "Let this level decide nothing"
@@ -1948,6 +1954,9 @@ msgstr "SUGGESTIONS"
 msgid "VPN"
 msgstr "VPN"
 
+msgid "Verbergen"
+msgstr "Hide"
+
 msgid "Verbindung ist nicht sicher"
 msgstr "Connection is not secure"
 
@@ -2331,6 +2340,9 @@ msgstr "invalid lines"
 
 msgid "unverständliche Antwort"
 msgstr "an answer that makes no sense"
+
+msgid "verbergen verstecken schwarz stumm boss privat"
+msgstr "hide black mute boss private"
 
 msgid "video speichern download film clip"
 msgstr "video save download film clip"

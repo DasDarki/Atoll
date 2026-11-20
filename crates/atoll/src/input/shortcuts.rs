@@ -110,6 +110,50 @@ pub fn describe(event: &KeyEvent, modifiers: ModifiersState) -> Option<String> {
     Some(keys.join("+"))
 }
 
+/// A key combination typed by the user, written the way [`describe`] writes it: `ctrl + l`,
+/// `Strg+L` and `Ctrl+L` all become `Ctrl+L`. Answers with nothing for what [`describe`] never
+/// names, a combination without Control or Alt or one without a key.
+pub fn normalize(text: &str) -> Option<String> {
+    let mut control = false;
+    let mut shift = false;
+    let mut alt = false;
+    let mut key = None;
+    for part in text.split('+').map(str::trim) {
+        match part.to_lowercase().as_str() {
+            "ctrl" | "strg" | "control" => control = true,
+            "shift" | "umschalt" => shift = true,
+            "alt" => alt = true,
+            "" => return None,
+            _ if key.is_none() => key = Some(part),
+            _ => return None,
+        }
+    }
+    let key = key?;
+    if !control && !alt {
+        return None;
+    }
+    let key = if key.chars().count() == 1 {
+        key.to_uppercase()
+    } else {
+        let mut letters = key.chars();
+        letters
+            .next()
+            .map(|first| first.to_uppercase().chain(letters).collect())?
+    };
+    let mut keys = Vec::new();
+    if control {
+        keys.push("Ctrl");
+    }
+    if shift {
+        keys.push("Shift");
+    }
+    if alt {
+        keys.push("Alt");
+    }
+    keys.push(&key);
+    Some(keys.join("+"))
+}
+
 pub fn detect(event: &KeyEvent, modifiers: ModifiersState) -> Option<Shortcut> {
     if event.state != ElementState::Pressed {
         return None;
@@ -204,4 +248,29 @@ fn named_shortcut(key: NamedKey, control: bool, shift: bool, alt: bool) -> Optio
         _ => return None,
     };
     Some(shortcut)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::normalize;
+
+    #[test]
+    fn typed_combinations_are_written_the_way_atoll_names_them() {
+        assert_eq!(normalize("Alt+L").as_deref(), Some("Alt+L"));
+        assert_eq!(normalize(" alt + l ").as_deref(), Some("Alt+L"));
+        assert_eq!(
+            normalize("Strg+Umschalt+h").as_deref(),
+            Some("Ctrl+Shift+H")
+        );
+        assert_eq!(normalize("shift+ctrl+F5").as_deref(), Some("Ctrl+Shift+F5"));
+    }
+
+    #[test]
+    fn what_atoll_never_names_is_no_combination() {
+        assert_eq!(normalize("L"), None, "plain typing");
+        assert_eq!(normalize("Shift+L"), None, "neither Control nor Alt");
+        assert_eq!(normalize("Alt+"), None, "no key");
+        assert_eq!(normalize("Alt+L+K"), None, "two keys");
+        assert_eq!(normalize(""), None);
+    }
 }

@@ -39,7 +39,7 @@ export { PluginItem } from "structs.slint";
 export { WorkspaceItem, SidebarRow, IslandTarget, MenuItemData, ArchiveItem, ArchiveRow, ArchiveRowKind, ExportIslandItem, DialogData, DialogKind, RowKind, TabLoadState, PointerAction, PointerButton, WebCursor, WebPointer, WebScroll, SuggestionKind, SuggestionItem, Completion, PaletteKind, PaletteItem, BookmarkItem, PageSecurity, SiteInfoDetail, DownloadItem, DownloadItemStatus } from "structs.slint";
 
 export component AppWindow inherits Window {
-    title: BrowserState.title == "" ? "Atoll" : BrowserState.title + " - Atoll";
+    title: BrowserState.hidden || BrowserState.title == "" ? "Atoll" : BrowserState.title + " - Atoll";
     icon: @image-url("images/logo-64.png");
     preferred-width: 1440px;
     preferred-height: 900px;
@@ -322,5 +322,16 @@ export component AppWindow inherits Window {
     if !BrowserState.maximized && !BrowserState.fullscreen : ResizeFrame {
         width: root.width;
         height: root.height;
+    }
+
+    if BrowserState.hidden : Rectangle {
+        width: root.width;
+        height: root.height;
+        background: black;
+
+        TouchArea {
+            mouse-cursor: default;
+            scroll-event(event) => { return accept; }
+        }
     }
 }

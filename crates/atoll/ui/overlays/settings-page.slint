@@ -202,6 +202,18 @@ export component SettingsPage inherits Modal {
                         }
                     }
                     Divider { }
+                    SettingRow {
+                        title: @tr("Verbergen");
+                        description: @tr("Diese Tasten legen Schwarz über alle Fenster und schalten jeden Ton ab, dieselben Tasten holen alles zurück. Darunter läuft alles weiter. Mit Strg oder Alt, zum Beispiel Alt+L. Gerade aktiv: {}", SettingsState.hide-shortcut-active);
+                        TextField {
+                            width: 140px;
+                            text <=> SettingsState.hide-shortcut;
+                            placeholder: "Alt+L";
+                            edited => { SettingsState.changed("hide-shortcut"); }
+                            accepted => { SettingsState.changed("hide-shortcut"); }
+                        }
+                    }
+                    Divider { }
                     SectionTitle { text: @tr("SUCHMASCHINE"); }
                     VerticalLayout {
                         spacing: 8px;

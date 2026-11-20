@@ -44,6 +44,8 @@ impl Browser {
         state.set_search_url(preferences.search_url.as_str().into());
         state.set_search_url_valid(true);
         state.set_start_page(preferences.start_page.as_str().into());
+        state.set_hide_shortcut(preferences.hide_shortcut.as_str().into());
+        state.set_hide_shortcut_active(preferences.hide_shortcut.as_str().into());
         state.set_new_tab_start_page(preferences.new_tab_start_page);
         state.set_home_button(preferences.home_button);
         state.set_sidebar_visible(preferences.sidebar_visible);
@@ -99,6 +101,7 @@ impl Browser {
                 });
             }
             "home-button" => self.set_home_button(state.get_home_button()),
+            "hide-shortcut" => self.hide_shortcut_edited(state.get_hide_shortcut().as_str()),
             "archive-fallback" => {
                 let mode = match state.get_archive_fallback() {
                     0 => ArchiveFallback::Off,

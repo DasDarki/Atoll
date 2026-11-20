@@ -154,6 +154,17 @@ impl Browser {
         modifiers: ModifiersState,
         focus: KeyboardFocus,
     ) -> EventResult {
+        if self.is_hide_shortcut(event, modifiers) {
+            self.toggle_hidden();
+            return EventResult::PreventDefault;
+        }
+        if self.is_hidden() {
+            return if is_modifier(&event.logical_key) {
+                EventResult::Propagate
+            } else {
+                EventResult::PreventDefault
+            };
+        }
         if focus.modal {
             return EventResult::Propagate;
         }
@@ -203,6 +214,9 @@ impl Browser {
     }
 
     pub fn handle_ime(&self, ime: &Ime, focus: KeyboardFocus) -> EventResult {
+        if self.is_hidden() {
+            return EventResult::PreventDefault;
+        }
         if (!focus.page && !focus.dev_tools) || focus.modal {
             return EventResult::Propagate;
         }

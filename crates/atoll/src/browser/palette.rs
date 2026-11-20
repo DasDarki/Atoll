@@ -74,6 +74,7 @@ enum Command {
     ClearHistory,
     ClearCookies,
     OpenSettings,
+    Hide,
     GoHome,
     UseCurrentPageAsStartPage,
     ToggleHomeButton,
@@ -806,6 +807,12 @@ impl Browser {
                 "optionen preferences",
             ),
             (
+                Command::Hide,
+                self.hide_command_title(),
+                "",
+                t!("verbergen verstecken schwarz stumm boss privat"),
+            ),
+            (
                 Command::GoHome,
                 t!("Startseite öffnen").to_owned(),
                 t!("Alt+Pos1"),
@@ -1017,6 +1024,7 @@ impl Browser {
             Command::ClearHistory => self.clear_history(),
             Command::ClearCookies => self.clear_cookies(),
             Command::OpenSettings => self.open_settings(),
+            Command::Hide => self.toggle_hidden(),
             Command::GoHome => self.go_home(),
             Command::UseCurrentPageAsStartPage => self.use_current_page_as_start_page(),
             Command::ToggleHomeButton => {
