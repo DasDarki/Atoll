@@ -73,7 +73,8 @@ saved tabs therefore cost nothing at startup.
   island archive of earlier versions moves into the new archive on the first start.
 - **Quick search and command palette**: `Ctrl+K` searches the tabs of all workspaces and of the
   archive, bookmarks and history; an archived tab comes back when it is picked. `Ctrl+Shift+P` or a leading `>` lists commands instead,
-  with a new tab first and the rest in the order they were last used.
+  with a new tab first and the rest in the order they were last used; the new tab keeps its place
+  at the top without counting as used.
 - **Already open**: when the page in front of you is open in another tab, the address bar says
   so with a pill, and a click goes there. It counts the tabs of every workspace, names the
   workspace when the other tab lives in one of its own, and counts them when there are several;

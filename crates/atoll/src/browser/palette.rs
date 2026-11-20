@@ -434,8 +434,13 @@ impl Browser {
         results.into_iter().unzip()
     }
 
-    /// Writes down that a command was used, so the empty palette offers it again first.
+    /// Writes down that a command was used, so the empty palette offers it again first. A new
+    /// tab has its own place at the top and is not written down, or it would push the others
+    /// down every time.
     fn remember_command(&self, command: &Command) {
+        if *command == Command::NewTab {
+            return;
+        }
         let key = key_of(command);
         let mut order = self.recent_commands();
         order.retain(|known| *known != key);
@@ -446,13 +451,21 @@ impl Browser {
         }
     }
 
-    /// The commands last used, the newest first.
+    /// The commands last used, the newest first. A new tab written down by an earlier Atoll is
+    /// passed over.
     fn recent_commands(&self) -> Vec<String> {
+        let new_tab = key_of(&Command::NewTab);
         self.storage
             .setting(RECENT_KEY)
             .ok()
             .flatten()
-            .map(|order| order.lines().map(str::to_owned).collect())
+            .map(|order| {
+                order
+                    .lines()
+                    .filter(|key| *key != new_tab)
+                    .map(str::to_owned)
+                    .collect()
+            })
             .unwrap_or_default()
     }
 
