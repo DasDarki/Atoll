@@ -82,6 +82,12 @@ msgstr "Cancel"
 msgid "Abgebrochen"
 msgstr "Cancelled"
 
+msgid "Abgeglichen {}"
+msgstr "Synced {}"
+
+msgid "Abgleich"
+msgstr "Sync"
+
 msgid "Abmelden"
 msgstr "Sign out"
 
@@ -163,6 +169,9 @@ msgstr "Open all in new tabs"
 msgid "Alles durch das VPN schicken"
 msgstr "Send everything through the VPN"
 
+msgid "Alles, was der Server für dein Konto speichert, wird gelöscht, der Schlüssel eingeschlossen. Was auf deinen Geräten liegt, bleibt. Die anderen Geräte halten an, bis sie mit der neuen Passphrase entsperrt werden."
+msgstr "Everything the server keeps for your account is deleted, the key included. What is on your devices stays. The other devices pause until they are unlocked with the new passphrase."
+
 msgid "Allgemein"
 msgstr "General"
 
@@ -217,6 +226,9 @@ msgstr "Fill logins with 1Password"
 msgid "Anpinnen"
 msgstr "Pin"
 
+msgid "Anzeigen"
+msgstr "Show"
+
 msgid "Arbeitsspeicher begrenzen"
 msgstr "Limit memory"
 
@@ -253,6 +265,24 @@ msgstr "Archived tabs leave the sidebar but are kept in full. Brought back, they
 msgid "Archivierung vorschlagen nach Wochen"
 msgstr "Suggest archiving after weeks"
 
+msgid "Atoll Sync ist eingerichtet"
+msgstr "Atoll Sync is set up"
+
+msgid "Atoll Sync ist nicht eingeschaltet"
+msgstr "Atoll Sync is not turned on"
+
+msgid "Atoll Sync verbinden"
+msgstr "Connect Atoll Sync"
+
+msgid "Atoll Sync wurde auf einem anderen Gerät neu eingerichtet. Entsperre es in den Einstellungen mit der neuen Passphrase."
+msgstr "Atoll Sync was set up anew on another device. Unlock it in the settings with the new passphrase."
+
+msgid "Atoll Sync wurde zurückgesetzt"
+msgstr "Atoll Sync was reset"
+
+msgid "Atoll Sync zurücksetzen?"
+msgstr "Reset Atoll Sync?"
+
 msgid "Atoll Sync: Die Anmeldung wurde beendet. Melde dich in den Einstellungen neu an."
 msgstr "Atoll Sync: the sign-in was ended. Sign in again in the settings."
 
@@ -267,6 +297,9 @@ msgstr "Atoll brings no VPN of its own. Write down the proxy of your service; wh
 
 msgid "Atoll drückt bei den bekannten Einwilligungsdiensten den Knopf, der alles ablehnt. So weiß die Seite, dass du nein gesagt hast, statt nur nicht zu fragen."
 msgstr "With the consent tools Atoll knows, it presses the button that refuses everything. The site then knows that you said no, instead of simply not asking."
+
+msgid "Atoll fragt den Server, ob Sync für dein Konto eingerichtet ist."
+msgstr "Atoll is asking the server whether sync is set up for your account."
 
 msgid "Atoll ist angemeldet. Dieser Tab schließt sich gleich."
 msgstr "Atoll is signed in. This tab closes in a moment."
@@ -300,6 +333,9 @@ msgstr "Also when the page says “not found”"
 
 msgid "Auch, was du in Felder tippst"
 msgstr "What you type into fields as well"
+
+msgid "Auf Abruf"
+msgstr "On demand"
 
 msgid "Auf Atolls Vorgaben zurücksetzen"
 msgstr "Back to what Atoll does anyway"
@@ -352,6 +388,9 @@ msgstr "From the extension folder"
 msgid "Aus der Liste"
 msgstr "From the list"
 
+msgid "Aus der Passphrase wird der Schlüssel gewonnen. Das dauert absichtlich etwas."
+msgstr "The key is being derived from the passphrase. This takes a moment on purpose."
+
 msgid "Aus einem Archiv installiert"
 msgstr "Installed from an archive"
 
@@ -367,11 +406,17 @@ msgstr "From {}"
 msgid "Aus. Atoll geht direkt ins Netz."
 msgstr "Off. Atoll goes out directly."
 
+msgid "Ausblenden"
+msgstr "Hide"
+
 msgid "Ausgefüllt wird nur auf Knopfdruck, über den Schlüssel in der Adressleiste oder Strg+Umschalt+L. Dann fragt 1Password auch nur dann."
 msgstr "Filling happens on request only, through the key in the address bar or Ctrl+Shift+L. 1Password then asks only then as well."
 
 msgid "Ausgeschaltet"
 msgstr "Switched off"
+
+msgid "Ausgeschaltet. Dieses Gerät gleicht nichts ab."
+msgstr "Off. This device syncs nothing."
 
 msgid "Ausgestellt für"
 msgstr "Issued to"
@@ -604,6 +649,9 @@ msgstr "Database {} cannot be opened"
 msgid "Datenschutz"
 msgstr "Privacy"
 
+msgid "Dein Wiederherstellungsschlüssel. Schreib ihn auf und bewahre ihn sicher auf: Mit ihm kommst du an deine Daten, wenn du die Passphrase vergisst. Niemand sonst kann sie wiederherstellen."
+msgstr "Your recovery key. Write it down and keep it safe: it gets you to your data if you forget the passphrase. Nobody else can recover it."
+
 msgid "Der Browser konnte nicht aufs VPN umgestellt werden: {}"
 msgstr "The browser could not be sent through the VPN: {}"
 
@@ -664,6 +712,9 @@ msgstr "The proxy wants a way of logging in Atoll cannot"
 msgid "Der Proxy will einen Benutzernamen und ein Passwort"
 msgstr "The proxy wants a user name and a password"
 
+msgid "Der Schlüssel konnte nicht gespeichert werden: {}"
+msgstr "The key could not be saved: {}"
+
 msgid "Der Server speichert nur, was er nicht lesen kann. Angemeldet wird über das Onyx, das er nennt. Ändern lässt sich die Adresse nur abgemeldet."
 msgstr "The server only stores what it cannot read. Signing in goes through the Onyx it names. The address can only be changed while signed out."
 
@@ -715,6 +766,9 @@ msgstr "The first greeting to the VPN server did not arrive"
 msgid "Der gesamte Verlauf wird gelöscht. Tabs, Inseln und Lesezeichen bleiben erhalten."
 msgstr "The whole history will be deleted. Tabs, islands and bookmarks are kept."
 
+msgid "Der letzte Abgleich ist fehlgeschlagen: {}"
+msgstr "The last sync failed: {}"
+
 msgid "Die .conf-Datei, die dein Dienst für WireGuard ausgibt. Atoll baut den Tunnel selbst im Browser auf, ohne root und ohne am System etwas zu ändern. Namen werden im Tunnel nachgeschlagen, dafür braucht die Datei eine DNS-Zeile."
 msgstr "The .conf file your service hands out for WireGuard. Atoll builds the tunnel inside the browser itself, without root and without changing anything on the system. Names are looked up inside the tunnel, which is why the file needs a DNS line."
 
@@ -757,6 +811,9 @@ msgstr "The list is loaded as soon as hiding is switched on"
 msgid "Die Liste wird geladen…"
 msgstr "The list is being loaded…"
 
+msgid "Die Passphrase braucht mindestens {} Zeichen."
+msgstr "The passphrase needs at least {} characters."
+
 msgid "Die Seite folgt wieder den allgemeinen Einstellungen"
 msgstr "The site follows the general settings again"
 
@@ -796,6 +853,12 @@ msgstr "The numbered islands are already in order"
 msgid "Die Zwischenablage enthält keinen Text"
 msgstr "The clipboard holds no text"
 
+msgid "Die anderen Geräte bleiben entsperrt; neue fragen nach der neuen Passphrase."
+msgstr "The other devices stay unlocked; new ones ask for the new passphrase."
+
+msgid "Die beiden Passphrasen stimmen nicht überein."
+msgstr "The two passphrases do not match."
+
 msgid "Dienstag"
 msgstr "Tuesday"
 
@@ -828,6 +891,15 @@ msgstr "This folder is empty."
 
 msgid "Dieser Torrent lässt sich nicht noch einmal starten"
 msgstr "This torrent cannot be started again"
+
+msgid "Dieses Gerät"
+msgstr "This device"
+
+msgid "Dieses Gerät bleibt angemeldet, gleicht aber nichts ab."
+msgstr "This device stays signed in but syncs nothing."
+
+msgid "Dieses Gerät zeigt immer den Stand des Servers. Was du hier änderst, wird beim nächsten Abgleich verworfen."
+msgstr "This device always shows what the server holds. Whatever you change here is discarded at the next sync."
 
 msgid "Dieses Video ist kopiergeschützt und lässt sich nicht speichern"
 msgstr "This video is copy-protected and cannot be saved"
@@ -895,17 +967,29 @@ msgstr "Own address"
 msgid "Eigene Einstellungen für"
 msgstr "Own settings for"
 
+msgid "Eigene hochladen"
+msgstr "Upload mine"
+
 msgid "Ein Schlüssel in der Konfiguration ist kein Base64"
 msgstr "A key in the configuration is not base64"
 
 msgid "Ein Schlüssel in der Konfiguration ist nicht 32 Byte lang"
 msgstr "A key in the configuration is not 32 bytes long"
 
+msgid "Ein anderes Gerät hat Sync gerade eingerichtet. Entsperre mit dessen Passphrase."
+msgstr "Another device has just set up sync. Unlock with its passphrase."
+
+msgid "Ein anderes Gerät hat die Passphrase gerade geändert. Versuche es noch einmal."
+msgstr "Another device has just changed the passphrase. Try again."
+
 msgid "Ein halb geschriebener Brief in einem Webmailer gehört dann zum Text der Seite."
 msgstr "A half written letter in a webmailer then belongs to the text of the page."
 
 msgid "Eine Seite, {}"
 msgstr "One page, {}"
+
+msgid "Einen Moment …"
+msgstr "One moment …"
 
 msgid "Eingefroren"
 msgstr "Frozen"
@@ -925,6 +1009,12 @@ msgstr "Once a day Atoll asks GitHub for the newest version. Nothing is download
 msgid "Einmalcode"
 msgstr "One-time code"
 
+msgid "Einrichten"
+msgstr "Set up"
+
+msgid "Einrichten fehlgeschlagen: {}"
+msgstr "Setting up failed: {}"
+
 msgid "Einstellungen"
 msgstr "Settings"
 
@@ -940,8 +1030,17 @@ msgstr "Remove"
 msgid "Entfernt alle besuchten Seiten. Tabs, Inseln und Lesezeichen bleiben erhalten."
 msgstr "Removes every visited page. Tabs, islands and bookmarks are kept."
 
+msgid "Entscheiden"
+msgstr "Decide"
+
+msgid "Entsperren"
+msgstr "Unlock"
+
 msgid "Entsperren abgebrochen"
 msgstr "Unlocking cancelled"
+
+msgid "Entsperren fehlgeschlagen: {}"
+msgstr "Unlocking failed: {}"
 
 msgid "Entwicklertools"
 msgstr "Developer tools"
@@ -951,6 +1050,15 @@ msgstr "Open developer tools"
 
 msgid "Erlaubte Dateien"
 msgstr "Allowed files"
+
+msgid "Erneut versuchen"
+msgstr "Try again"
+
+msgid "Ersetzen"
+msgstr "Replace"
+
+msgid "Ersetzt Workspaces, Inseln, Tabs und Archiv hier durch den Stand des Servers."
+msgstr "Replaces the workspaces, islands, tabs and archive here with what the server holds."
 
 msgid "Erweiterung aus Archiv installieren"
 msgstr "Install extension from archive"
@@ -1054,11 +1162,20 @@ msgstr "Switched off for {}"
 msgid "Für {} ist kein Login gespeichert. Suche in allen Logins:"
 msgstr "No login is stored for {}. Search in all logins:"
 
+msgid "GERÄTE"
+msgstr "DEVICES"
+
 msgid "GLEICHNAMIGE INSELN"
 msgstr "ISLANDS OF THE SAME NAME"
 
 msgid "Gemerkte Seiteninhalte"
 msgstr "Remembered page contents"
+
+msgid "Gerät entfernen fehlgeschlagen: {}"
+msgstr "Removing the device failed: {}"
+
+msgid "Gerät entfernen?"
+msgstr "Remove device?"
 
 msgid "Gerät wählen"
 msgstr "Choose a device"
@@ -1080,6 +1197,9 @@ msgstr "Open pages are using {} right now."
 
 msgid "Gib auf dieser Seite keine Passwörter oder Zahlungsdaten ein, sie werden unverschlüsselt übertragen."
 msgstr "Do not enter passwords or payment details on this page, they are sent unencrypted."
+
+msgid "Gib die Passphrase oder den Wiederherstellungsschlüssel ein."
+msgstr "Enter the passphrase or the recovery key."
 
 msgid "Gilt ab sofort"
 msgstr "Counts from now on"
@@ -1116,6 +1236,12 @@ msgstr "Today"
 
 msgid "Hier lässt sich kein Bild einfügen"
 msgstr "No picture can be pasted here"
+
+msgid "Holen"
+msgstr "Fetch"
+
+msgid "Holt den Stand des Servers nur, wenn du es sagst."
+msgstr "Fetches what the server holds only when you say so."
 
 msgid "INSEL FÜR ADRESSEN OHNE MARKIERUNG"
 msgstr "ISLAND FOR ADDRESSES WITHOUT A MARKER"
@@ -1237,11 +1363,17 @@ msgstr "When a page cannot be reached, Atoll asks the Internet Archive for a cop
 msgid "Ist er aus, lässt Atoll diese Seite in Ruhe."
 msgstr "With this off, Atoll leaves this page alone."
 
+msgid "Jetzt abgleichen"
+msgstr "Sync now"
+
 msgid "Jetzt aktualisieren"
 msgstr "Update now"
 
 msgid "Jetzt sehen"
 msgstr "Look now"
+
+msgid "Jetzt synchronisieren"
+msgstr "Sync now"
 
 msgid "KONTO"
 msgstr "ACCOUNT"
@@ -1288,8 +1420,17 @@ msgstr "Choose a configuration…"
 msgid "Konto & Sync"
 msgstr "Account & Sync"
 
+msgid "Kopieren"
+msgstr "Copy"
+
 msgid "Leer lassen für die Atoll-Startseite"
 msgstr "Leave empty for the Atoll start page"
+
+msgid "Lege eine Passphrase fest. Mit ihr wird alles verschlüsselt, bevor es dieses Gerät verlässt; der Server kann es nicht lesen. Du brauchst sie auf jedem weiteren Gerät. Vergessen lässt sie sich nur mit dem Wiederherstellungsschlüssel ausgleichen."
+msgstr "Choose a passphrase. Everything is encrypted with it before it leaves this device; the server cannot read it. You need it on every further device. A forgotten passphrase can only be made up for with the recovery key."
+
+msgid "Lesen & Schreiben"
+msgstr "Read & write"
 
 msgid "Lesezeichen"
 msgstr "Bookmarks"
@@ -1366,6 +1507,9 @@ msgstr "Running, {} commands"
 msgid "Löschen"
 msgstr "Delete"
 
+msgid "Löscht alles, was der Server für dein Konto speichert. Was auf deinen Geräten liegt, bleibt."
+msgstr "Deletes everything the server keeps for your account. What is on your devices stays."
+
 msgid "Mehr laden"
 msgstr "Load more"
 
@@ -1426,6 +1570,9 @@ msgstr "Name of the new island"
 msgid "Name des neuen Workspaces"
 msgstr "Name of the new workspace"
 
+msgid "Name dieses Geräts"
+msgstr "Name of this device"
+
 msgid "Navigation"
 msgstr "Navigation"
 
@@ -1437,6 +1584,12 @@ msgstr "Reload (F5)"
 
 msgid "Neue Insel"
 msgstr "New island"
+
+msgid "Neue Passphrase"
+msgstr "New passphrase"
+
+msgid "Neue Passphrase wiederholen"
+msgstr "Repeat the new passphrase"
 
 msgid "Neue Tabs mit der Atoll-Startseite öffnen"
 msgstr "Open new tabs with the Atoll start page"
@@ -1525,6 +1678,9 @@ msgstr "The file alone"
 msgid "Nur diese Adresse"
 msgstr "Only this address"
 
+msgid "Nur lesen"
+msgstr "Read only"
+
 msgid "OK"
 msgstr "OK"
 
@@ -1585,6 +1741,24 @@ msgstr "Passkeys"
 msgid "Passkeys gehen hier nicht, 1Password gibt sie nur an die eigene Erweiterung heraus"
 msgstr "Passkeys do not work here, 1Password hands them to its own extension only"
 
+msgid "Passphrase"
+msgstr "Passphrase"
+
+msgid "Passphrase geändert"
+msgstr "Passphrase changed"
+
+msgid "Passphrase oder Wiederherstellungsschlüssel"
+msgstr "Passphrase or recovery key"
+
+msgid "Passphrase oder Wiederherstellungsschlüssel passt nicht."
+msgstr "The passphrase or recovery key does not fit."
+
+msgid "Passphrase wiederholen"
+msgstr "Repeat the passphrase"
+
+msgid "Passphrase ändern"
+msgstr "Change passphrase"
+
 msgid "Passwort"
 msgstr "Password"
 
@@ -1627,6 +1801,9 @@ msgstr "Release page"
 msgid "Rosa"
 msgstr "Pink"
 
+msgid "SCHLÜSSEL"
+msgstr "KEY"
+
 msgid "SEITEN, DIE ES NICHT MEHR GIBT"
 msgstr "PAGES THAT ARE GONE"
 
@@ -1647,6 +1824,9 @@ msgstr "START PAGE"
 
 msgid "SUCHMASCHINE"
 msgstr "SEARCH ENGINE"
+
+msgid "SYNC"
+msgstr "SYNC"
 
 msgid "Samstag"
 msgstr "Saturday"
@@ -1728,6 +1908,9 @@ msgstr "Page contents are no longer remembered, what was remembered is deleted"
 
 msgid "Seiteninhalte werden wieder gemerkt, ab der nächsten Seite"
 msgstr "Page contents are remembered again, starting with the next page"
+
+msgid "Server übernehmen"
+msgstr "Take the server's"
 
 msgid "Sidebar anzeigen"
 msgstr "Show sidebar"
@@ -1885,6 +2068,18 @@ msgstr "Search or enter address"
 msgid "Suchmaschine: {}"
 msgstr "Search engine: {}"
 
+msgid "Sync ist für dein Konto schon eingerichtet. Gib die Passphrase oder den Wiederherstellungsschlüssel ein, um dieses Gerät dazuzunehmen."
+msgstr "Sync is already set up for your account. Enter the passphrase or the recovery key to add this device."
+
+msgid "Sync wird geprüft"
+msgstr "Checking sync"
+
+msgid "Sync zurücksetzen"
+msgstr "Reset sync"
+
+msgid "Sync-Server nicht erreichbar"
+msgstr "Sync server not reachable"
+
 msgid "Systemsprache"
 msgstr "System language"
 
@@ -1923,6 +2118,9 @@ msgstr "tabs"
 
 msgid "Tabs archivieren nach Tagen"
 msgstr "Archive tabs after days"
+
+msgid "Tabs auf diesem Gerät: {}, auf dem Server: {}.\n\nZusammenführen behält beides, gleichnamige Workspaces werden eins. Server übernehmen ersetzt, was hier liegt. Eigene hochladen ersetzt, was auf dem Server liegt, auch für deine anderen Geräte."
+msgstr "Tabs on this device: {}, on the server: {}.\n\nMerge keeps both, workspaces of the same name become one. Take the server's replaces what is here. Upload mine replaces what is on the server, for your other devices too."
 
 msgid "Tabs der aktuellen Insel schlafen legen"
 msgstr "Put the tabs of the current island to sleep"
@@ -2092,6 +2290,15 @@ msgstr "Reload completely, without the cache"
 msgid "Vollständig neu laden, ohne Cache (Strg+F5)"
 msgstr "Reload completely, without the cache (Ctrl+F5)"
 
+msgid "Vom Server holen"
+msgstr "Fetch from the server"
+
+msgid "Vom Server holen?"
+msgstr "Fetch from the server?"
+
+msgid "Vom Sync-Server holen"
+msgstr "Fetch from the sync server"
+
 msgid "Von Atoll Sync abgemeldet"
 msgstr "Signed out of Atoll Sync"
 
@@ -2109,6 +2316,15 @@ msgstr "AD BLOCKER"
 
 msgid "Warnung: "
 msgstr "Warning: "
+
+msgid "Wartet auf deine Entscheidung, wie dieses Gerät und der Server zusammenkommen."
+msgstr "Waiting for you to decide how this device and the server come together."
+
+msgid "Was auf dem Server liegt, wird durch den Stand dieses Geräts ersetzt, auch auf deinen anderen Geräten."
+msgstr "What is on the server is replaced with what this device holds, on your other devices too."
+
+msgid "Was auf diesem Gerät liegt, wird durch den Stand des Servers ersetzt."
+msgstr "What is on this device is replaced with what the server holds."
 
 msgid "Was du selbst in einen Editor schreibst, bleibt außen vor."
 msgstr "What you write into an editor yourself stays out."
@@ -2164,8 +2380,17 @@ msgstr "What should the workspace be called?"
 msgid "Wie soll die Insel heißen? Ohne Namen wird durchnummeriert."
 msgstr "What should the island be called? Without a name it is numbered."
 
+msgid "Wie „Nur lesen“, aber der Stand des Servers wird nur geholt, wenn du es sagst."
+msgstr "Like \"Read only\", but what the server holds is only fetched when you say so."
+
 msgid "Wiederherstellen"
 msgstr "Restore"
+
+msgid "Wiederherstellungsschlüssel"
+msgstr "Recovery key"
+
+msgid "Wird abgeglichen …"
+msgstr "Syncing …"
 
 msgid "Wird verbunden. Bis dahin lädt Atoll nichts."
 msgstr "Being connected. Until then Atoll loads nothing."
@@ -2178,6 +2403,9 @@ msgstr "WireGuard configuration"
 
 msgid "WireGuard-Konfiguration wählen"
 msgstr "Choose a WireGuard configuration"
+
+msgid "Wirklich ersetzen?"
+msgstr "Really replace?"
 
 msgid "Workspace"
 msgstr "Workspace"
@@ -2202,6 +2430,9 @@ msgstr "Switch workspace"
 
 msgid "Workspace {}"
 msgstr "Workspace {}"
+
+msgid "Workspaces, Inseln, Tabs und Archiv dieses Geräts werden durch den Stand des Servers ersetzt. Was hier noch nicht gesendet wurde, geht verloren. Private Tabs bleiben."
+msgstr "The workspaces, islands, tabs and archive of this device are replaced with what the server holds. Whatever was not sent yet is lost. Private tabs stay."
 
 msgid "Wähle zuerst das Netzwerkgerät deines System-VPN"
 msgstr "Choose the network device of your system VPN first"
@@ -2269,6 +2500,9 @@ msgstr "Click to load it again or press F5."
 msgid "Zurücksetzen"
 msgstr "Reset"
 
+msgid "Zurücksetzen fehlgeschlagen: {}"
+msgstr "Resetting failed: {}"
+
 msgid "Zusammenführen"
 msgstr "Merge"
 
@@ -2286,6 +2520,12 @@ msgstr "archive days restore bring back sync"
 
 msgid "archiv wayback kopie alte fassung"
 msgstr "archive wayback copy old version"
+
+msgid "atoll sync abgleichen server geräte"
+msgstr "atoll sync server devices"
+
+msgid "atoll sync server stand übernehmen spiegeln"
+msgstr "atoll sync server take over mirror"
 
 msgid "bereits vorhanden"
 msgstr "already there"
@@ -2601,14 +2841,29 @@ msgstr "{} × {} pixels, uploaded as PNG"
 msgid "{}, aktualisiert {}"
 msgstr "{}, updated {}"
 
+msgid "{}, zuletzt {}"
+msgstr "{}, last seen {}"
+
 msgid "{}, {}"
 msgstr "{}, {}"
+
+msgid "Ändern"
+msgstr "Change"
+
+msgid "Ändern fehlgeschlagen: {}"
+msgstr "Changing failed: {}"
 
 msgid "Ändern…"
 msgstr "Change…"
 
+msgid "Änderungen hier gehen an den Server, Änderungen anderer Geräte kommen hierher."
+msgstr "Changes here go to the server, changes on other devices come here."
+
 msgid "Öffnen"
 msgstr "Open"
+
+msgid "Öffnet deine Daten, wenn die Passphrase vergessen ist."
+msgstr "Opens your data when the passphrase is forgotten."
 
 msgid "ÜBER ATOLL"
 msgstr "ABOUT ATOLL"
@@ -2669,6 +2924,9 @@ msgstr "Search for \"{}\""
 
 msgid "„{}“ und {} archivierte Tabs werden endgültig gelöscht."
 msgstr "“{}” and {} archived tabs will be deleted permanently."
+
+msgid "„{}“ verschwindet aus der Liste. Meldet es sich wieder, taucht es erneut auf; abmelden lässt es sich nur auf dem Gerät selbst."
+msgstr "\"{}\" disappears from the list. If it checks in again, it shows up again; it can only be signed out on the device itself."
 
 msgid "„{}“ wird aktualisiert …"
 msgstr "\"{}\" is being updated …"

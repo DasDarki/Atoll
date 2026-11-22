@@ -98,8 +98,14 @@ impl Api {
         self.call("PUT", "/v1/key", Some(put))
     }
 
-    pub fn push(&self, changes: Vec<Change>) -> Result<i64, ApiError> {
-        let pushed: Pushed = self.call("POST", "/v1/changes", Some(&Push { changes }))?;
+    /// Sends `changes` sealed with the key `key_id`; refused with [`ApiError::KeyChanged`] when
+    /// the account no longer keeps that key.
+    pub fn push(&self, key_id: &str, changes: Vec<Change>) -> Result<i64, ApiError> {
+        let push = Push {
+            changes,
+            key_id: key_id.to_owned(),
+        };
+        let pushed: Pushed = self.call("POST", "/v1/changes", Some(&push))?;
         Ok(pushed.revision)
     }
 
@@ -276,6 +282,7 @@ fn classify(status: u16, text: String) -> Result<String, ApiError> {
         Some((ErrorCode::ResyncRequired, _)) => Err(ApiError::ResyncRequired),
         Some((ErrorCode::NoKey, _)) => Err(ApiError::NoKey),
         Some((ErrorCode::KeyConflict, _)) => Err(ApiError::KeyConflict),
+        Some((ErrorCode::KeyChanged, _)) => Err(ApiError::KeyChanged),
         Some((ErrorCode::RateLimited | ErrorCode::Internal, message)) => {
             Err(ApiError::Unavailable(message))
         }

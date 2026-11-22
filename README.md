@@ -78,6 +78,19 @@ saved tabs therefore cost nothing at startup.
   Atoll stays signed in across restarts. A sign-in ended in Onyx is noticed and forgotten, signing
   out also ends it at Onyx. Atoll only needs the address of the sync server; the server names the
   Onyx to sign in with.
+- **Atoll Sync**: workspaces, islands, tabs and the archive are kept in step between devices,
+  end-to-end encrypted. The first device sets a passphrase and is shown a recovery key once; every
+  further device is unlocked with either. The key stays in the keyring, so the passphrase is asked
+  for once per device. When this device and the server both hold data the first time they meet,
+  Atoll asks whether to merge them (workspaces of the same name become one), take the server's
+  state or upload its own. Modes: reading and writing (changes go out two seconds after the last
+  one, changes elsewhere arrive within a moment through an event stream), reading only (the server
+  is mirrored, changes here are discarded), reading on demand ("Jetzt abgleichen" or the palette)
+  and off. A page another device sent somewhere follows, unless it was used or sent somewhere here
+  within the last seconds. Private tabs never leave the device. The settings list the devices of
+  the account, rename this one, change the passphrase, show the recovery key and reset the account
+  on the server; a device whose key was replaced elsewhere stops before touching anything and asks
+  to be unlocked again.
 - **Archiving islands**: islands can be archived with one click, which moves all their tabs into
   the archive. Islands unused for four weeks, configurable in the settings, are marked in the
   sidebar and suggested in the archive; nothing is archived from there without confirmation. The

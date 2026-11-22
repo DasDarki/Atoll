@@ -105,6 +105,15 @@ export struct DialogData {
     accept-label: string,
     cancel-label: string,
     destructive: bool,
+    /// Further answers, shown between cancelling and agreeing.
+    choices: [string],
+}
+
+export struct SyncDeviceItem {
+    id: string,
+    name: string,
+    detail: string,
+    current: bool,
 }
 
 export enum PointerAction { cancel, down, up, move }

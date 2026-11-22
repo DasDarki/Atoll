@@ -1,4 +1,4 @@
-import { WorkspaceItem, SidebarRow, IslandTarget, MenuItemData, ArchiveItem, ArchiveRow, ArchiveRowKind, ExportIslandItem, DialogData, WebCursor, WebPointer, WebScroll, SuggestionItem, Completion, PaletteItem, PageHit, BookmarkItem, HistoryItem, PageSecurity, SiteInfoDetail, DownloadItem, UploadFile, PasswordItem, PluginItem } from "structs.slint";
+import { WorkspaceItem, SidebarRow, IslandTarget, MenuItemData, ArchiveItem, ArchiveRow, ArchiveRowKind, ExportIslandItem, DialogData, SyncDeviceItem, WebCursor, WebPointer, WebScroll, SuggestionItem, Completion, PaletteItem, PageHit, BookmarkItem, HistoryItem, PageSecurity, SiteInfoDetail, DownloadItem, UploadFile, PasswordItem, PluginItem } from "structs.slint";
 
 export global SidebarState {
     in property <bool> visible: true;
@@ -272,6 +272,7 @@ export global OverlayState {
 
     in property <DialogData> dialog;
     callback dialog-closed(bool, string);
+    callback dialog-chose(int);
 
     in property <string> toast;
     in property <bool> toast-visible;
@@ -381,6 +382,25 @@ export global SettingsState {
     in property <string> account-error;
     in-out property <string> sync-server;
     callback account-action(string);
+    /// Where the key of Atoll Sync stands: 0 nothing to show, 1 checking, 2 server not
+    /// reachable, 3 to be set up, 4 locked, 5 working on the key, 6 ready.
+    in property <int> sync-key-phase;
+    in property <string> sync-key-detail;
+    in property <string> sync-key-error;
+    in-out property <string> sync-passphrase;
+    in-out property <string> sync-passphrase-repeat;
+    in-out property <bool> sync-changing-passphrase;
+    /// The recovery key while it is shown, otherwise empty.
+    in property <string> sync-recovery-key;
+    /// 0 reading and writing, 1 reading, 2 reading on demand, 3 off.
+    in-out property <int> sync-mode;
+    in property <bool> sync-running;
+    in property <bool> sync-choice-pending;
+    in property <string> sync-status;
+    in-out property <string> sync-device-name;
+    in property <[SyncDeviceItem]> sync-devices;
+    callback sync-action(string);
+    callback sync-forget-device(string);
     in-out property <bool> new-tab-start-page;
     in-out property <bool> home-button;
     in property <[string]> search-engines;

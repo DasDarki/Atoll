@@ -34,18 +34,31 @@ pub async fn touch(pool: &PgPool, account: &str, device: SyncId) -> Result<(), s
 }
 
 /// Stores `changes` of `device` and answers with the revision the last one got.
+/// Stores `changes`, `None` when they are sealed with `key_id` and the account keeps another
+/// key or none. The key is checked under the lock a reset takes as well.
 pub async fn push(
     pool: &PgPool,
     account: &str,
     device: SyncId,
+    key_id: Option<&str>,
     changes: &[Change],
-) -> Result<i64, sqlx::Error> {
+) -> Result<Option<i64>, sqlx::Error> {
     let mut transaction = pool.begin().await?;
     let mut revision: i64 =
         sqlx::query_scalar("SELECT revision FROM account WHERE account = $1 FOR UPDATE")
             .bind(account)
             .fetch_one(&mut *transaction)
             .await?;
+    if let Some(key_id) = key_id {
+        let kept: Option<String> =
+            sqlx::query_scalar("SELECT key_id FROM account_key WHERE account = $1")
+                .bind(account)
+                .fetch_optional(&mut *transaction)
+                .await?;
+        if !kept.is_some_and(|kept| kept.is_empty() || kept == key_id) {
+            return Ok(None);
+        }
+    }
     for change in changes {
         revision += 1;
         sqlx::query(
@@ -70,7 +83,7 @@ pub async fn push(
         .execute(&mut *transaction)
         .await?;
     transaction.commit().await?;
-    Ok(revision)
+    Ok(Some(revision))
 }
 
 /// Where reading changes has to start again from the snapshot: changes up to this revision

@@ -611,7 +611,7 @@ fn list_names() -> String {
     }
 }
 
-fn relative_age(age: Duration) -> String {
+pub(super) fn relative_age(age: Duration) -> String {
     let minutes = age.as_secs() / 60;
     match minutes {
         0 => "gerade eben".to_owned(),

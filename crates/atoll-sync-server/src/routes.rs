@@ -130,7 +130,22 @@ async fn push(
             format!("a record may hold at most {MAX_RECORD} bytes"),
         ));
     }
-    let revision = db::push(&state.pool, &caller.account, caller.device, &push.changes).await?;
+    let key_id = Some(push.key_id.as_str()).filter(|key_id| !key_id.is_empty());
+    let Some(revision) = db::push(
+        &state.pool,
+        &caller.account,
+        caller.device,
+        key_id,
+        &push.changes,
+    )
+    .await?
+    else {
+        return Err(ApiError::new(
+            StatusCode::CONFLICT,
+            ErrorCode::KeyChanged,
+            "the changes are sealed with a key the account no longer keeps",
+        ));
+    };
     let _ = state.events.send((caller.account, revision));
     Ok(Json(Pushed { revision }))
 }

@@ -154,7 +154,11 @@ fn change(kind: Kind, id: SyncId, data: Option<&[u8]>) -> Change {
 }
 
 async fn push(server: &Server, account: &Account, changes: Vec<Change>) -> i64 {
-    let body = serde_json::to_string(&Push { changes }).unwrap();
+    let body = serde_json::to_string(&Push {
+        changes,
+        key_id: String::new(),
+    })
+    .unwrap();
     let (status, pushed): (_, Pushed) =
         json(server, account, "POST", "/v1/changes", Some(body)).await;
     assert_eq!(status, StatusCode::OK);
@@ -329,6 +333,7 @@ async fn pushes_at_the_same_time_get_revisions_in_the_order_they_become_visible(
                 changes: (0..20)
                     .map(|_| change(Kind::Tab, SyncId::random(), Some(b"x")))
                     .collect(),
+                key_id: String::new(),
             })
             .unwrap();
             let request = Request::builder()
@@ -412,6 +417,77 @@ async fn the_wrapped_key_is_set_once_and_replaced_only_knowingly() {
     let (_, read): (_, StoredKey) = json(&server, &account, "GET", "/v1/key", None).await;
     assert_eq!(read.envelope, envelope);
     assert_eq!(read.version, 2);
+}
+
+#[tokio::test]
+async fn pushes_sealed_with_a_key_the_account_no_longer_keeps_are_refused() {
+    let Some(server) = server().await else { return };
+    let account = Account::new();
+    let key_id = "0123456789abcdef0123456789abcdef";
+    let sealed_with = |key_id: &str| {
+        serde_json::to_string(&Push {
+            changes: vec![change(Kind::Tab, SyncId::random(), Some(b"x"))],
+            key_id: key_id.to_owned(),
+        })
+        .unwrap()
+    };
+    let (status, body) = call(
+        &server,
+        Some(&account),
+        "POST",
+        "/v1/changes",
+        Some(sealed_with(key_id)),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CONFLICT, "no key is kept yet");
+    assert_eq!(
+        serde_json::from_slice::<ErrorBody>(&body).unwrap().error,
+        ErrorCode::KeyChanged
+    );
+
+    let put = serde_json::to_string(&PutKey {
+        envelope: WireEnvelope {
+            key_id: key_id.to_owned(),
+            salt: vec![7; 16],
+            memory_kib: 65536,
+            passes: 3,
+            wrapped: vec![1; 73],
+        },
+        replaces: None,
+    })
+    .unwrap();
+    let (status, _) = call(&server, Some(&account), "PUT", "/v1/key", Some(put)).await;
+    assert_eq!(status, StatusCode::OK);
+    let (status, _) = call(
+        &server,
+        Some(&account),
+        "POST",
+        "/v1/changes",
+        Some(sealed_with(key_id)),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    let (status, _) = call(
+        &server,
+        Some(&account),
+        "POST",
+        "/v1/changes",
+        Some(sealed_with("ffffffffffffffffffffffffffffffff")),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CONFLICT, "another key");
+
+    let (status, _) = call(&server, Some(&account), "DELETE", "/v1/account", None).await;
+    assert!(status.is_success());
+    let (status, _) = call(
+        &server,
+        Some(&account),
+        "POST",
+        "/v1/changes",
+        Some(sealed_with(key_id)),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CONFLICT, "the account was reset");
 }
 
 #[tokio::test]
@@ -520,13 +596,18 @@ async fn oversized_pushes_are_refused() {
     let too_many: Vec<Change> = (0..1001)
         .map(|_| change(Kind::Tab, SyncId::random(), Some(b"x")))
         .collect();
-    let body = serde_json::to_string(&Push { changes: too_many }).unwrap();
+    let body = serde_json::to_string(&Push {
+        changes: too_many,
+        key_id: String::new(),
+    })
+    .unwrap();
     let (status, _) = call(&server, Some(&account), "POST", "/v1/changes", Some(body)).await;
     assert_eq!(status, StatusCode::PAYLOAD_TOO_LARGE);
 
     let huge = vec![0u8; 64 * 1024 + 1];
     let body = serde_json::to_string(&Push {
         changes: vec![change(Kind::Tab, SyncId::random(), Some(&huge))],
+        key_id: String::new(),
     })
     .unwrap();
     let (status, _) = call(&server, Some(&account), "POST", "/v1/changes", Some(body)).await;
@@ -534,6 +615,7 @@ async fn oversized_pushes_are_refused() {
 
     let body = serde_json::to_string(&Push {
         changes: Vec::new(),
+        key_id: String::new(),
     })
     .unwrap();
     let (status, _) = call(&server, Some(&account), "POST", "/v1/changes", Some(body)).await;

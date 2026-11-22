@@ -59,6 +59,8 @@ enum Command {
     ExportList,
     OpenArchive,
     SyncArchive,
+    SyncNow,
+    SyncFromServer,
     ArchiveIsland,
     SleepIsland,
     SortNumberIslands,
@@ -717,6 +719,18 @@ impl Browser {
                 t!("archiv tage zurückholen abgleichen"),
             ),
             (
+                Command::SyncNow,
+                t!("Jetzt synchronisieren").to_owned(),
+                "",
+                t!("atoll sync abgleichen server geräte"),
+            ),
+            (
+                Command::SyncFromServer,
+                t!("Vom Sync-Server holen").to_owned(),
+                "",
+                t!("atoll sync server stand übernehmen spiegeln"),
+            ),
+            (
                 Command::ArchiveIsland,
                 t!("Aktuelle Insel archivieren").to_owned(),
                 "",
@@ -1001,6 +1015,8 @@ impl Browser {
             Command::ExportList => self.open_export(None),
             Command::OpenArchive => self.open_archive(),
             Command::SyncArchive => self.sync_archive_with_settings(),
+            Command::SyncNow => self.sync_now(),
+            Command::SyncFromServer => self.mirror_from_server(),
             Command::ArchiveIsland => {
                 if let Some(island) = self.active_island() {
                     self.island_action(island, "archive");

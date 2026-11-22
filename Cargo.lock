@@ -792,6 +792,7 @@ dependencies = [
  "atoll-onepassword",
  "atoll-plugin",
  "atoll-storage",
+ "atoll-sync",
  "atoll-sync-client",
  "atoll-tor",
  "atoll-torrent",

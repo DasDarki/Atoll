@@ -159,6 +159,10 @@ pub struct Preferences {
     pub hide_shortcut: String,
     /// The address of the Atoll Sync server.
     pub sync_server: String,
+    /// How this device keeps in step, as [`atoll_sync_client::Mode::as_str`] names it.
+    pub sync_mode: String,
+    /// The name the other devices see, empty for the name of the computer.
+    pub sync_device_name: String,
 }
 
 /// A single preference, used to store exactly what changed.
@@ -186,6 +190,8 @@ pub enum PreferenceKey {
     ArchiveOnMissing,
     HideShortcut,
     SyncServer,
+    SyncMode,
+    SyncDeviceName,
     CookieBannersHide,
     CookieBannersAnswer,
     VpnEnabled,
@@ -232,6 +238,8 @@ impl PreferenceKey {
             PreferenceKey::ArchiveOnMissing => "archive_on_missing",
             PreferenceKey::HideShortcut => "hide_shortcut",
             PreferenceKey::SyncServer => "sync_server",
+            PreferenceKey::SyncMode => "sync_mode",
+            PreferenceKey::SyncDeviceName => "sync_device_name",
             PreferenceKey::CookieBannersHide => "cookie_banners_hide",
             PreferenceKey::CookieBannersAnswer => "cookie_banners_answer",
             PreferenceKey::VpnEnabled => "vpn_enabled",
@@ -299,6 +307,8 @@ impl Default for Preferences {
             archive_on_missing: false,
             hide_shortcut: DEFAULT_HIDE_SHORTCUT.to_owned(),
             sync_server: DEFAULT_SYNC_SERVER.to_owned(),
+            sync_mode: atoll_sync_client::Mode::ReadWrite.as_str().to_owned(),
+            sync_device_name: String::new(),
         }
     }
 }
@@ -400,6 +410,10 @@ impl Preferences {
             sync_server: text(PreferenceKey::SyncServer)
                 .or_else(|| std::env::var("ATOLL_SYNC_SERVER").ok())
                 .unwrap_or(defaults.sync_server),
+            sync_mode: text(PreferenceKey::SyncMode)
+                .filter(|mode| atoll_sync_client::Mode::parse(mode).is_some())
+                .unwrap_or(defaults.sync_mode),
+            sync_device_name: text(PreferenceKey::SyncDeviceName).unwrap_or_default(),
         }
     }
 
@@ -459,6 +473,8 @@ impl Preferences {
             PreferenceKey::ArchiveOnMissing => flag(self.archive_on_missing),
             PreferenceKey::HideShortcut => self.hide_shortcut.clone(),
             PreferenceKey::SyncServer => self.sync_server.clone(),
+            PreferenceKey::SyncMode => self.sync_mode.clone(),
+            PreferenceKey::SyncDeviceName => self.sync_device_name.clone(),
         };
         if let Err(error) = storage.set_setting(key.storage_key(), &value) {
             tracing::warn!(%error, key = key.storage_key(), "preference could not be stored");
@@ -477,6 +493,24 @@ impl Preferences {
     /// The language to use, which follows the system unless the user picked one.
     pub fn language(&self) -> Language {
         self.language.unwrap_or_else(atoll_i18n::system_language)
+    }
+
+    pub fn sync_mode(&self) -> atoll_sync_client::Mode {
+        atoll_sync_client::Mode::parse(&self.sync_mode)
+            .unwrap_or(atoll_sync_client::Mode::ReadWrite)
+    }
+
+    /// The name of this device for the other devices.
+    pub fn sync_device_name(&self) -> String {
+        let name = self.sync_device_name.trim();
+        if !name.is_empty() {
+            return name.to_owned();
+        }
+        std::fs::read_to_string("/proc/sys/kernel/hostname")
+            .ok()
+            .map(|host| host.trim().to_owned())
+            .filter(|host| !host.is_empty())
+            .unwrap_or_else(|| "Atoll".to_owned())
     }
 
     pub fn has_start_page(&self) -> bool {
@@ -533,6 +567,8 @@ mod tests {
             archive_on_missing: true,
             hide_shortcut: "Ctrl+Shift+H".to_owned(),
             sync_server: "https://sync.example.org".to_owned(),
+            sync_mode: "read_on_demand".to_owned(),
+            sync_device_name: "Laptop".to_owned(),
         };
         for key in [
             PreferenceKey::SearchUrl,
@@ -576,6 +612,8 @@ mod tests {
             PreferenceKey::ArchiveOnMissing,
             PreferenceKey::HideShortcut,
             PreferenceKey::SyncServer,
+            PreferenceKey::SyncMode,
+            PreferenceKey::SyncDeviceName,
         ] {
             preferences.store(&storage, key);
         }

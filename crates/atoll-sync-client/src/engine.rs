@@ -527,7 +527,7 @@ impl Worker {
                     })
                     .collect();
                 for chunk in removals.chunks(PUSH_CHUNK) {
-                    self.api.push(chunk.to_vec())?;
+                    self.api.push(&self.key.id(), chunk.to_vec())?;
                 }
                 self.send_all(|_, _| true)?;
             }
@@ -564,7 +564,7 @@ impl Worker {
             })
             .collect();
         for chunk in changes.chunks(PUSH_CHUNK) {
-            self.api.push(chunk.to_vec())?;
+            self.api.push(&self.key.id(), chunk.to_vec())?;
         }
         Ok(changes.len())
     }
@@ -608,7 +608,7 @@ impl Worker {
             });
         }
         for chunk in changes.chunks(PUSH_CHUNK) {
-            self.api.push(chunk.to_vec())?;
+            self.api.push(&self.key.id(), chunk.to_vec())?;
         }
         self.storage
             .forget_outbox(&entries)

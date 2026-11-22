@@ -105,6 +105,16 @@ impl BrowserView {
     }
 
     /// The address of the main frame.
+    /// How long ago the user last did something in this page, `None` if never.
+    pub fn since_input(&self) -> Option<std::time::Duration> {
+        self.state.since_acted()
+    }
+
+    /// How long ago Atoll last sent this page to an address, `None` if never.
+    pub fn since_load(&self) -> Option<std::time::Duration> {
+        self.state.since_asked()
+    }
+
     pub fn url(&self) -> Option<String> {
         let frame = self.state.browser()?.main_frame()?;
         let url = CefString::from(&frame.url()).to_string();

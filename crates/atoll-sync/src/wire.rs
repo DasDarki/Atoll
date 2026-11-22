@@ -36,6 +36,10 @@ pub struct Change {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Push {
     pub changes: Vec<Change>,
+    /// The [`crate::DataKey::id`] the changes are sealed with. When given, the server refuses
+    /// the push unless the account still keeps that key.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub key_id: String,
 }
 
 /// The answer to a push: the revision the last of its changes got.
@@ -188,6 +192,8 @@ pub enum ErrorCode {
     NoKey,
     /// The key was set or replaced by another device in the meantime.
     KeyConflict,
+    /// The changes are sealed with a key the account no longer keeps.
+    KeyChanged,
     /// The request breaks the protocol.
     BadRequest,
     TooLarge,

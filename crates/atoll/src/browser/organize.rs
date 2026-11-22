@@ -194,7 +194,7 @@ impl Browser {
     }
 
     /// A workspace other than `except` that no other window shows.
-    fn free_workspace(&self, except: WorkspaceId) -> Option<WorkspaceId> {
+    pub(super) fn free_workspace(&self, except: WorkspaceId) -> Option<WorkspaceId> {
         let manager = self.manager();
         self.storage
             .workspaces()

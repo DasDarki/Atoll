@@ -6,7 +6,7 @@ use atoll_engine::{
     ContextMenuRequest, FileDialogMode, FileDialogRequest, JsDialogKind, JsDialogRequest,
     MenuEntry, MenuEntryKind, RequestId, ViewId,
 };
-use slint::{ComponentHandle, ModelRc, VecModel};
+use slint::{ComponentHandle, ModelRc, SharedString, VecModel};
 
 use super::Browser;
 use crate::platform::dialogs::{self, FileDialogKind, FileDialogOptions, FileFilter};
@@ -14,11 +14,14 @@ use crate::ui::{DialogData, DialogKind, MenuItemData, OverlayState};
 use atoll_i18n::t;
 
 type DialogResult = Box<dyn FnOnce(&Browser, bool, String)>;
+type ChoiceResult = Box<dyn FnOnce(&Browser, usize)>;
 
 struct Dialog {
     data: DialogData,
     on_close: DialogResult,
     origin: Option<ViewId>,
+    /// Called instead of `on_close` when one of the further answers in `data.choices` is taken.
+    on_choice: Option<ChoiceResult>,
 }
 
 /// Dialogs waiting to be shown. Only one is visible at a time.
@@ -47,6 +50,7 @@ impl Browser {
                 accept_label: accept_label.into(),
                 cancel_label: t!("Abbrechen").into(),
                 destructive: false,
+                choices: ModelRc::default(),
             },
             on_close: Box::new(move |_, accepted, text| {
                 let text = text.trim().to_owned();
@@ -55,6 +59,7 @@ impl Browser {
                 }
             }),
             origin: None,
+            on_choice: None,
         });
     }
 
@@ -76,6 +81,7 @@ impl Browser {
                 accept_label: accept_label.into(),
                 cancel_label: t!("Abbrechen").into(),
                 destructive: false,
+                choices: ModelRc::default(),
             },
             on_close: Box::new(move |_, accepted, text| {
                 if accepted {
@@ -83,6 +89,7 @@ impl Browser {
                 }
             }),
             origin: None,
+            on_choice: None,
         });
     }
 
@@ -97,9 +104,11 @@ impl Browser {
                 accept_label: t!("Schließen").into(),
                 cancel_label: "".into(),
                 destructive: false,
+                choices: ModelRc::default(),
             },
             on_close: Box::new(|_, _, _| {}),
             origin: None,
+            on_choice: None,
         });
     }
 
@@ -142,6 +151,7 @@ impl Browser {
                 accept_label: accept_label.into(),
                 cancel_label: t!("Abbrechen").into(),
                 destructive,
+                choices: ModelRc::default(),
             },
             on_close: Box::new(move |_, accepted, _| {
                 if accepted {
@@ -149,6 +159,49 @@ impl Browser {
                 }
             }),
             origin: None,
+            on_choice: None,
+        });
+    }
+
+    /// Asks with further answers beside the agreeing one. `on_answer` gets `None` when the
+    /// dialog was dismissed, `Some(0)` for `accept_label` and `Some(n)` for the n-th of `choices`.
+    pub(super) fn choose(
+        &self,
+        title: &str,
+        message: &str,
+        accept_label: &str,
+        choices: &[&str],
+        on_answer: impl FnOnce(&Browser, Option<usize>) + 'static,
+    ) {
+        let on_answer = Rc::new(std::cell::Cell::new(Some(on_answer)));
+        let on_choice = on_answer.clone();
+        self.enqueue_dialog(Dialog {
+            data: DialogData {
+                kind: DialogKind::Confirm,
+                title: title.into(),
+                message: message.into(),
+                input: "".into(),
+                accept_label: accept_label.into(),
+                cancel_label: t!("Abbrechen").into(),
+                destructive: false,
+                choices: ModelRc::from(Rc::new(VecModel::from(
+                    choices
+                        .iter()
+                        .map(|choice| SharedString::from(*choice))
+                        .collect::<Vec<_>>(),
+                ))),
+            },
+            on_close: Box::new(move |browser, accepted, _| {
+                if let Some(on_answer) = on_answer.take() {
+                    on_answer(browser, accepted.then_some(0));
+                }
+            }),
+            origin: None,
+            on_choice: Some(Box::new(move |browser, index| {
+                if let Some(on_answer) = on_choice.take() {
+                    on_answer(browser, Some(index + 1));
+                }
+            })),
         });
     }
 
@@ -200,6 +253,7 @@ impl Browser {
                 accept_label: accept.into(),
                 cancel_label: cancel.into(),
                 destructive: false,
+                choices: ModelRc::default(),
             },
             on_close: Box::new(move |browser, accepted, text| {
                 if let Some(engine) = browser.engine.borrow().as_ref() {
@@ -207,6 +261,7 @@ impl Browser {
                 }
             }),
             origin: Some(view),
+            on_choice: None,
         });
     }
 
@@ -265,6 +320,26 @@ impl Browser {
                 .set_dialog(DialogData::default());
         }
         (dialog.on_close)(self, accepted, text);
+        let idle = self.dialogs.borrow().current.is_none();
+        if idle {
+            self.show_next_dialog();
+        }
+    }
+
+    /// Called by the user interface when one of the further answers of the dialog was taken.
+    pub fn dialog_chose(&self, index: usize) {
+        let Some(dialog) = self.dialogs.borrow_mut().current.take() else {
+            return;
+        };
+        if let Some(window) = self.window() {
+            window
+                .global::<OverlayState>()
+                .set_dialog(DialogData::default());
+        }
+        match dialog.on_choice {
+            Some(on_choice) => on_choice(self, index),
+            None => (dialog.on_close)(self, false, String::new()),
+        }
         let idle = self.dialogs.borrow().current.is_none();
         if idle {
             self.show_next_dialog();

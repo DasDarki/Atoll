@@ -17,6 +17,7 @@ atoll-onepassword.workspace = true
 atoll-plugin.workspace = true
 atoll-i18n.workspace = true
 atoll-net.workspace = true
+atoll-sync.workspace = true
 atoll-sync-client.workspace = true
 atoll-vpn.workspace = true
 atoll-tor.workspace = true

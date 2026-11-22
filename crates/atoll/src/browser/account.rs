@@ -57,7 +57,7 @@ impl Browser {
     }
 
     /// The sign-in of this profile, wherever it waits.
-    fn token_store(&self) -> TokenStore {
+    pub(super) fn token_store(&self) -> TokenStore {
         let data = self
             .paths
             .database
@@ -101,10 +101,35 @@ impl Browser {
                         AccountState::SignedIn { auth, name: None }
                     }
                 };
+                let signed_in = matches!(state, AccountState::SignedIn { .. });
                 *browser.account.borrow_mut() = state;
                 browser.show_account_everywhere();
+                if signed_in {
+                    browser.sync_signed_in();
+                }
             },
         );
+    }
+
+    /// The sign-in, while there is one.
+    pub(super) fn signed_in_auth(&self) -> Option<Arc<Auth>> {
+        match &*self.account.borrow() {
+            AccountState::SignedIn { auth, .. } => Some(auth.clone()),
+            _ => None,
+        }
+    }
+
+    /// Onyx no longer accepts the sign-in: it was ended elsewhere.
+    pub(super) fn signed_out_by_server(&self) {
+        if self.signed_in_auth().is_none() {
+            return;
+        }
+        *self.account.borrow_mut() = AccountState::SignedOut;
+        self.sync_signed_out();
+        self.show_account_everywhere();
+        self.show_toast(t!(
+            "Atoll Sync: Die Anmeldung wurde beendet. Melde dich in den Einstellungen neu an."
+        ));
     }
 
     /// Opens the sign-in page of Onyx in a tab and waits for it to send the browser back.
@@ -188,8 +213,12 @@ impl Browser {
                         AccountState::SignedOut
                     }
                 };
+                let signed_in = matches!(state, AccountState::SignedIn { .. });
                 *browser.account.borrow_mut() = state;
                 browser.show_account_everywhere();
+                if signed_in {
+                    browser.sync_signed_in();
+                }
                 if let Some(tab) = login_tab {
                     browser.close_login_tab_soon(tab);
                 }
@@ -214,6 +243,7 @@ impl Browser {
     /// out here at once.
     fn sign_out(&self) {
         let previous = std::mem::take(&mut *self.account.borrow_mut());
+        self.sync_signed_out();
         self.show_account_everywhere();
         if let AccountState::SignedIn { auth, .. } = previous {
             run_in_background("sign-out", move || auth.sign_out(), |()| {});
@@ -306,6 +336,7 @@ impl Browser {
         state.set_account_title(title.into());
         state.set_account_detail(detail.into());
         state.set_sync_server(self.preferences.borrow().sync_server.as_str().into());
+        self.show_sync();
     }
 }
 

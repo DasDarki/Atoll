@@ -355,6 +355,8 @@ fn connect_overlays(window: &AppWindow, browser: &Rc<Browser>) {
         browser,
         |target, accepted, text| target.dialog_closed(accepted, text.to_string())
     );
+    on!(state, on_dialog_chose, browser, |target, index| target
+        .dialog_chose(usize::try_from(index).unwrap_or_default()));
     on!(state, on_toast_dismissed, browser, |target| target
         .hide_toast());
     on!(state, on_archive_restore, browser, |target, kind, id| {
@@ -460,6 +462,10 @@ fn connect_settings(window: &AppWindow, browser: &Rc<Browser>) {
         .open_plugin_folder());
     on!(state, on_account_action, browser, |target, action| target
         .account_action(&action));
+    on!(state, on_sync_action, browser, |target, action| target
+        .sync_action(&action));
+    on!(state, on_sync_forget_device, browser, |target, id| target
+        .forget_sync_device(&id));
     on!(state, on_close, browser, |target| target.close_settings());
 }
 

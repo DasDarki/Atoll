@@ -75,6 +75,9 @@ impl Browser {
         self.show_password_settings();
         self.show_plugin_settings();
         self.show_account();
+        state.set_sync_device_name(preferences.sync_device_name().into());
+        self.refresh_sync_devices();
+        self.recheck_sync_key();
         state.set_visible(true);
     }
 
@@ -82,6 +85,7 @@ impl Browser {
         if let Some(window) = self.window() {
             window.global::<SettingsState>().set_visible(false);
         }
+        self.send_sync_device_name();
         self.focus_content();
     }
 
@@ -104,6 +108,14 @@ impl Browser {
             "home-button" => self.set_home_button(state.get_home_button()),
             "hide-shortcut" => self.hide_shortcut_edited(state.get_hide_shortcut().as_str()),
             "sync-server" => self.sync_server_edited(state.get_sync_server().as_str()),
+            "sync-mode" => self.sync_mode_edited(state.get_sync_mode()),
+            "sync-device-name" => {
+                self.sync_device_name_edited(state.get_sync_device_name().as_str())
+            }
+            "sync-device-name-done" => {
+                self.sync_device_name_edited(state.get_sync_device_name().as_str());
+                self.send_sync_device_name();
+            }
             "archive-fallback" => {
                 let mode = match state.get_archive_fallback() {
                     0 => ArchiveFallback::Off,

@@ -38,6 +38,7 @@ mod sidebar;
 mod site_info;
 mod startup;
 mod suggestions;
+mod sync;
 mod tabs;
 mod titles;
 mod transfer;
@@ -129,6 +130,7 @@ struct Shared {
     hidden: Rc<Cell<bool>>,
     /// The account of Atoll Sync, the same for every window.
     account: Rc<RefCell<account::AccountState>>,
+    sync: Rc<RefCell<sync::SyncState>>,
 }
 
 impl Shared {
@@ -168,6 +170,7 @@ impl Shared {
             plugins,
             hidden: Rc::default(),
             account: Rc::default(),
+            sync: Rc::default(),
         }
     }
 }
@@ -240,6 +243,7 @@ pub struct Browser {
     plugins: Rc<Plugins>,
     hidden: Rc<Cell<bool>>,
     account: Rc<RefCell<account::AccountState>>,
+    sync: Rc<RefCell<sync::SyncState>>,
     /// The panel of an extension this window shows.
     panel: RefCell<Option<OpenPanel>>,
     panel_geometry: Cell<ViewGeometry>,
@@ -322,6 +326,7 @@ impl Browser {
             plugins: shared.plugins.clone(),
             hidden: shared.hidden.clone(),
             account: shared.account.clone(),
+            sync: shared.sync.clone(),
             panel: RefCell::default(),
             panel_geometry: Cell::new(ViewGeometry {
                 width: 360,

@@ -825,6 +825,220 @@ export component SettingsPage inherits Modal {
                         font-size: Theme.font-small + 1px;
                         wrap: word-wrap;
                     }
+                    if SettingsState.account-phase == 2 && SettingsState.sync-key-phase != 0 : VerticalLayout {
+                        Divider { }
+                        SectionTitle { text: @tr("SYNC"); }
+                        if SettingsState.sync-key-phase == 1 : SettingRow {
+                            title: @tr("Sync wird geprüft");
+                            description: @tr("Atoll fragt den Server, ob Sync für dein Konto eingerichtet ist.");
+                        }
+                        if SettingsState.sync-key-phase == 2 : SettingRow {
+                            title: @tr("Sync-Server nicht erreichbar");
+                            description: SettingsState.sync-key-detail;
+                            ActionButton {
+                                text: @tr("Erneut versuchen");
+                                clicked => { SettingsState.sync-action("retry"); }
+                            }
+                        }
+                        if SettingsState.sync-key-phase == 3 || SettingsState.sync-key-phase == 4 : VerticalLayout {
+                            spacing: 8px;
+                            padding-top: 4px;
+                            padding-bottom: 8px;
+                            Text {
+                                text: SettingsState.sync-key-phase == 3
+                                    ? @tr("Lege eine Passphrase fest. Mit ihr wird alles verschlüsselt, bevor es dieses Gerät verlässt; der Server kann es nicht lesen. Du brauchst sie auf jedem weiteren Gerät. Vergessen lässt sie sich nur mit dem Wiederherstellungsschlüssel ausgleichen.")
+                                    : @tr("Sync ist für dein Konto schon eingerichtet. Gib die Passphrase oder den Wiederherstellungsschlüssel ein, um dieses Gerät dazuzunehmen.");
+                                color: Theme.text-muted;
+                                font-size: Theme.font-normal;
+                                wrap: word-wrap;
+                            }
+                            TextField {
+                                text <=> SettingsState.sync-passphrase;
+                                secret: true;
+                                placeholder: SettingsState.sync-key-phase == 3 ? @tr("Passphrase") : @tr("Passphrase oder Wiederherstellungsschlüssel");
+                                accepted => { SettingsState.sync-action(SettingsState.sync-key-phase == 3 ? "set-up" : "unlock"); }
+                            }
+                            if SettingsState.sync-key-phase == 3 : TextField {
+                                text <=> SettingsState.sync-passphrase-repeat;
+                                secret: true;
+                                placeholder: @tr("Passphrase wiederholen");
+                                accepted => { SettingsState.sync-action("set-up"); }
+                            }
+                            HorizontalLayout {
+                                alignment: start;
+                                spacing: 8px;
+                                ActionButton {
+                                    text: SettingsState.sync-key-phase == 3 ? @tr("Einrichten") : @tr("Entsperren");
+                                    kind: ButtonKind.primary;
+                                    clicked => { SettingsState.sync-action(SettingsState.sync-key-phase == 3 ? "set-up" : "unlock"); }
+                                }
+                                if SettingsState.sync-key-phase == 4 : ActionButton {
+                                    text: @tr("Sync zurücksetzen");
+                                    kind: ButtonKind.danger;
+                                    clicked => { SettingsState.sync-action("reset"); }
+                                }
+                            }
+                        }
+                        if SettingsState.sync-key-phase == 5 : SettingRow {
+                            title: @tr("Einen Moment …");
+                            description: @tr("Aus der Passphrase wird der Schlüssel gewonnen. Das dauert absichtlich etwas.");
+                        }
+                        if SettingsState.sync-key-phase == 6 : VerticalLayout {
+                            if SettingsState.sync-recovery-key != "" : Rectangle {
+                                background: Theme.hover;
+                                border-radius: Theme.radius-small;
+                                VerticalLayout {
+                                    padding: 12px;
+                                    spacing: 8px;
+                                    Text {
+                                        text: @tr("Dein Wiederherstellungsschlüssel. Schreib ihn auf und bewahre ihn sicher auf: Mit ihm kommst du an deine Daten, wenn du die Passphrase vergisst. Niemand sonst kann sie wiederherstellen.");
+                                        color: Theme.text-muted;
+                                        font-size: Theme.font-normal;
+                                        wrap: word-wrap;
+                                    }
+                                    Text {
+                                        text: SettingsState.sync-recovery-key;
+                                        color: Theme.text;
+                                        font-size: Theme.font-normal + 1px;
+                                        font-family: "monospace";
+                                        wrap: word-wrap;
+                                    }
+                                    HorizontalLayout {
+                                        alignment: start;
+                                        spacing: 8px;
+                                        ActionButton {
+                                            text: @tr("Kopieren");
+                                            clicked => { SettingsState.sync-action("copy-recovery"); }
+                                        }
+                                        ActionButton {
+                                            text: @tr("Ausblenden");
+                                            clicked => { SettingsState.sync-action("hide-recovery"); }
+                                        }
+                                    }
+                                }
+                            }
+                            SettingRow {
+                                title: @tr("Abgleich");
+                                description: SettingsState.sync-status;
+                                if SettingsState.sync-choice-pending : ActionButton {
+                                    text: @tr("Entscheiden");
+                                    kind: ButtonKind.primary;
+                                    clicked => { SettingsState.sync-action("choose"); }
+                                }
+                                if SettingsState.sync-running && !SettingsState.sync-choice-pending : ActionButton {
+                                    text: @tr("Jetzt abgleichen");
+                                    clicked => { SettingsState.sync-action("now"); }
+                                }
+                            }
+                            VerticalLayout {
+                                spacing: 8px;
+                                padding-top: 4px;
+                                padding-bottom: 8px;
+                                Segmented {
+                                    options: [@tr("Lesen & Schreiben"), @tr("Nur lesen"), @tr("Auf Abruf"), @tr("Aus")];
+                                    selected <=> SettingsState.sync-mode;
+                                    changed-by-user => { SettingsState.changed("sync-mode"); }
+                                }
+                                Text {
+                                    text: SettingsState.sync-mode == 0
+                                        ? @tr("Änderungen hier gehen an den Server, Änderungen anderer Geräte kommen hierher.")
+                                        : SettingsState.sync-mode == 1
+                                        ? @tr("Dieses Gerät zeigt immer den Stand des Servers. Was du hier änderst, wird beim nächsten Abgleich verworfen.")
+                                        : SettingsState.sync-mode == 2
+                                        ? @tr("Wie „Nur lesen“, aber der Stand des Servers wird nur geholt, wenn du es sagst.")
+                                        : @tr("Dieses Gerät bleibt angemeldet, gleicht aber nichts ab.");
+                                    color: Theme.text-faint;
+                                    font-size: Theme.font-small + 1px;
+                                    wrap: word-wrap;
+                                }
+                            }
+                            if SettingsState.sync-running : SettingRow {
+                                title: @tr("Vom Server holen");
+                                description: @tr("Ersetzt Workspaces, Inseln, Tabs und Archiv hier durch den Stand des Servers.");
+                                ActionButton {
+                                    text: @tr("Holen");
+                                    clicked => { SettingsState.sync-action("mirror"); }
+                                }
+                            }
+                            Divider { }
+                            SectionTitle { text: @tr("GERÄTE"); }
+                            VerticalLayout {
+                                spacing: 6px;
+                                padding-top: 4px;
+                                padding-bottom: 8px;
+                                TextField {
+                                    text <=> SettingsState.sync-device-name;
+                                    placeholder: @tr("Name dieses Geräts");
+                                    accepted => { SettingsState.changed("sync-device-name-done"); }
+                                    edited => { SettingsState.changed("sync-device-name"); }
+                                }
+                            }
+                            for device in SettingsState.sync-devices : SettingRow {
+                                title: device.name;
+                                description: device.detail;
+                                if !device.current : ActionButton {
+                                    text: @tr("Entfernen");
+                                    clicked => { SettingsState.sync-forget-device(device.id); }
+                                }
+                            }
+                            Divider { }
+                            SectionTitle { text: @tr("SCHLÜSSEL"); }
+                            SettingRow {
+                                title: @tr("Passphrase ändern");
+                                description: @tr("Die anderen Geräte bleiben entsperrt; neue fragen nach der neuen Passphrase.");
+                                ActionButton {
+                                    text: SettingsState.sync-changing-passphrase ? @tr("Abbrechen") : @tr("Ändern");
+                                    clicked => { SettingsState.sync-changing-passphrase = !SettingsState.sync-changing-passphrase; }
+                                }
+                            }
+                            if SettingsState.sync-changing-passphrase : VerticalLayout {
+                                spacing: 8px;
+                                padding-bottom: 8px;
+                                TextField {
+                                    text <=> SettingsState.sync-passphrase;
+                                    secret: true;
+                                    placeholder: @tr("Neue Passphrase");
+                                }
+                                TextField {
+                                    text <=> SettingsState.sync-passphrase-repeat;
+                                    secret: true;
+                                    placeholder: @tr("Neue Passphrase wiederholen");
+                                    accepted => { SettingsState.sync-action("change-passphrase"); }
+                                }
+                                HorizontalLayout {
+                                    alignment: start;
+                                    ActionButton {
+                                        text: @tr("Speichern");
+                                        kind: ButtonKind.primary;
+                                        clicked => { SettingsState.sync-action("change-passphrase"); }
+                                    }
+                                }
+                            }
+                            SettingRow {
+                                title: @tr("Wiederherstellungsschlüssel");
+                                description: @tr("Öffnet deine Daten, wenn die Passphrase vergessen ist.");
+                                ActionButton {
+                                    text: @tr("Anzeigen");
+                                    clicked => { SettingsState.sync-action("show-recovery"); }
+                                }
+                            }
+                            SettingRow {
+                                title: @tr("Sync zurücksetzen");
+                                description: @tr("Löscht alles, was der Server für dein Konto speichert. Was auf deinen Geräten liegt, bleibt.");
+                                ActionButton {
+                                    text: @tr("Zurücksetzen");
+                                    kind: ButtonKind.danger;
+                                    clicked => { SettingsState.sync-action("reset"); }
+                                }
+                            }
+                        }
+                        if SettingsState.sync-key-error != "" : Text {
+                            text: SettingsState.sync-key-error;
+                            color: Theme.danger;
+                            font-size: Theme.font-small + 1px;
+                            wrap: word-wrap;
+                        }
+                    }
                     Divider { }
                     SectionTitle { text: @tr("SERVER"); }
                     VerticalLayout {
