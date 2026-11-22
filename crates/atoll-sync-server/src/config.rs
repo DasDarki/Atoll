@@ -7,6 +7,8 @@ use anyhow::{Context, Result};
 #[derive(Debug, Clone)]
 pub struct Config {
     pub database_url: String,
+    /// The database password, given apart from the URL so it may hold any character.
+    pub database_password: Option<String>,
     pub listen: SocketAddr,
     /// The Onyx issuer, exactly as it appears in the tokens.
     pub issuer: String,
@@ -20,8 +22,12 @@ pub struct Config {
 
 impl Config {
     pub fn from_environment() -> Result<Self> {
-        let required =
-            |name: &str| std::env::var(name).with_context(|| format!("{name} is not set"));
+        let required = |name: &str| {
+            std::env::var(name)
+                .ok()
+                .filter(|value| !value.trim().is_empty())
+                .with_context(|| format!("{name} is not set"))
+        };
         let issuer = required("ATOLL_SYNC_ONYX_URL")?
             .trim_end_matches('/')
             .to_owned();
@@ -35,6 +41,9 @@ impl Config {
             .unwrap_or(180);
         Ok(Self {
             database_url: required("ATOLL_SYNC_DATABASE_URL")?,
+            database_password: std::env::var("ATOLL_SYNC_DATABASE_PASSWORD")
+                .ok()
+                .filter(|password| !password.is_empty()),
             listen: std::env::var("ATOLL_SYNC_LISTEN")
                 .unwrap_or_else(|_| "0.0.0.0:8080".to_owned())
                 .parse()

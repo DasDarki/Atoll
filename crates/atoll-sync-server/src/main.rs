@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use atoll_sync_server::config::Config;
 use atoll_sync_server::{AppState, Verifier, app, db, spawn_pruning};
-use sqlx::postgres::PgPoolOptions;
+use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -15,9 +15,16 @@ async fn main() -> Result<()> {
         )
         .init();
     let config = Config::from_environment()?;
+    let mut options: PgConnectOptions = config
+        .database_url
+        .parse()
+        .context("ATOLL_SYNC_DATABASE_URL is no database address")?;
+    if let Some(password) = &config.database_password {
+        options = options.password(password);
+    }
     let pool = PgPoolOptions::new()
         .max_connections(20)
-        .connect(&config.database_url)
+        .connect_with(options)
         .await
         .context("the database could not be reached")?;
     db::migrate(&pool)
