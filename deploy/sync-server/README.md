@@ -21,8 +21,10 @@ Note the client ID.
 ## 2. Coolify
 
 1. New resource, Docker Compose, this repository, branch `main`.
-2. Base directory `/`, Docker Compose location `/deploy/sync-server/docker-compose.yml`.
-   The build context is the repository root, the server is built from the Cargo workspace.
+2. Base directory `/deploy/sync-server`, Docker Compose location `/docker-compose.yml`.
+   Coolify resolves the build context against the base directory, and `../..` from there is the
+   repository root the server is built from. With base directory `/` the build fails with
+   `lstat /deploy: no such file or directory`.
 3. Domain of the service `atoll-sync`: `https://atoll.dasdarki.de:8080`. The `:8080` tells
    Coolify which container port Traefik routes to. The service only exposes the port, nothing is
    published on the host. Postgres gets no domain.
