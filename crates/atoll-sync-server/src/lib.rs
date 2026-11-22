@@ -26,12 +26,18 @@ pub struct AppState {
     /// Every stored change as `(account, revision)`, for the event streams.
     pub events: broadcast::Sender<(String, i64)>,
     pub limiter: Arc<Limiter>,
+    /// Where devices sign in, told to them by `GET /v1/config`.
+    pub sign_in: atoll_sync::wire::ServerConfig,
 }
 
 impl AppState {
     pub fn new(pool: PgPool, verifier: Verifier) -> Self {
         let (events, _) = broadcast::channel(1024);
         Self {
+            sign_in: atoll_sync::wire::ServerConfig {
+                issuer: verifier.issuer().to_owned(),
+                client_id: verifier.client_id().to_owned(),
+            },
             pool,
             verifier: Arc::new(verifier),
             events,

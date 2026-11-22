@@ -373,6 +373,14 @@ export global SettingsState {
     /// What is typed into the field for the hiding keys, and the keys that hide right now.
     in-out property <string> hide-shortcut;
     in property <string> hide-shortcut-active;
+    /// Where the account of Atoll Sync stands: 0 signed out, 1 signing in, 2 signed in,
+    /// 3 checking the sign-in of the last run.
+    in property <int> account-phase;
+    in property <string> account-title;
+    in property <string> account-detail;
+    in property <string> account-error;
+    in-out property <string> sync-server;
+    callback account-action(string);
     in-out property <bool> new-tab-start-page;
     in-out property <bool> home-button;
     in property <[string]> search-engines;

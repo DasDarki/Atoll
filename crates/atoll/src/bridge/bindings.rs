@@ -458,6 +458,8 @@ fn connect_settings(window: &AppWindow, browser: &Rc<Browser>) {
         .install_plugin(&kind));
     on!(state, on_open_plugin_folder, browser, |target| target
         .open_plugin_folder());
+    on!(state, on_account_action, browser, |target, action| target
+        .account_action(&action));
     on!(state, on_close, browser, |target| target.close_settings());
 }
 

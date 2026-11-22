@@ -71,6 +71,13 @@ saved tabs therefore cost nothing at startup.
   Einstellungen synchronisieren" brings back every such tab that would not be due under the
   number of days set now (all of them while it is off), keeping the visit it had, and archives
   at once what is due; tabs archived by hand stay where they are.
+- **Atoll Sync account**: the settings sign in to Atoll Sync with Onyx. The sign-in page opens in
+  a tab, the answer is caught on a short-lived port of `127.0.0.1` (authorization code flow with
+  PKCE) and the tab closes. The refresh token waits in the desktop keyring (Secret Service), or in
+  a file only the user can read where there is none, and is renewed and saved before each use, so
+  Atoll stays signed in across restarts. A sign-in ended in Onyx is noticed and forgotten, signing
+  out also ends it at Onyx. Atoll only needs the address of the sync server; the server names the
+  Onyx to sign in with.
 - **Archiving islands**: islands can be archived with one click, which moves all their tabs into
   the archive. Islands unused for four weeks, configurable in the settings, are marked in the
   sidebar and suggested in the archive; nothing is archived from there without confirmation. The

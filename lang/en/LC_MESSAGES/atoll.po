@@ -82,6 +82,9 @@ msgstr "Cancel"
 msgid "Abgebrochen"
 msgstr "Cancelled"
 
+msgid "Abmelden"
+msgstr "Sign out"
+
 msgid "Achtung: Ohne Hochladen wirst du von vielen Schwärmen abgestraft oder ausgeschlossen, und du nimmst mehr, als du gibst."
 msgstr "Careful: without uploading, many swarms will punish or shut you out, and you take more than you give."
 
@@ -184,8 +187,29 @@ msgstr "Past the VPN"
 msgid "Anfragen blockieren und umleiten"
 msgstr "block and redirect requests"
 
+msgid "Angemeldet"
+msgstr "Signed in"
+
+msgid "Angemeldet bei {}"
+msgstr "Signed in at {}"
+
+msgid "Angemeldet bei {}, Onyx ist gerade nicht erreichbar"
+msgstr "Signed in at {}, Onyx cannot be reached right now"
+
 msgid "Anlegen"
 msgstr "Create"
+
+msgid "Anmeldung fehlgeschlagen"
+msgstr "Signing in failed"
+
+msgid "Anmeldung fehlgeschlagen: {}"
+msgstr "Signing in failed: {}"
+
+msgid "Anmeldung läuft"
+msgstr "Signing in"
+
+msgid "Anmeldung wird geprüft"
+msgstr "Checking the sign-in"
 
 msgid "Anmeldungen mit 1Password ausfüllen"
 msgstr "Fill logins with 1Password"
@@ -229,6 +253,9 @@ msgstr "Archived tabs leave the sidebar but are kept in full. Brought back, they
 msgid "Archivierung vorschlagen nach Wochen"
 msgstr "Suggest archiving after weeks"
 
+msgid "Atoll Sync: Die Anmeldung wurde beendet. Melde dich in den Einstellungen neu an."
+msgstr "Atoll Sync: the sign-in was ended. Sign in again in the settings."
+
 msgid "Atoll beenden"
 msgstr "Quit Atoll"
 
@@ -240,6 +267,12 @@ msgstr "Atoll brings no VPN of its own. Write down the proxy of your service; wh
 
 msgid "Atoll drückt bei den bekannten Einwilligungsdiensten den Knopf, der alles ablehnt. So weiß die Seite, dass du nein gesagt hast, statt nur nicht zu fragen."
 msgstr "With the consent tools Atoll knows, it presses the button that refuses everything. The site then knows that you said no, instead of simply not asking."
+
+msgid "Atoll ist angemeldet. Dieser Tab schließt sich gleich."
+msgstr "Atoll is signed in. This tab closes in a moment."
+
+msgid "Atoll konnte nicht angemeldet werden."
+msgstr "Atoll could not be signed in."
 
 msgid "Atoll konnte nicht gestartet werden: {}"
 msgstr "Atoll could not be started: {}"
@@ -375,6 +408,9 @@ msgstr "Commands"
 
 msgid "Behalten"
 msgstr "Keep"
+
+msgid "Bei Atoll Sync angemeldet als {}"
+msgstr "Signed in to Atoll Sync as {}"
 
 msgid "Beim Laden auch hochladen"
 msgstr "Upload while loading"
@@ -628,6 +664,12 @@ msgstr "The proxy wants a way of logging in Atoll cannot"
 msgid "Der Proxy will einen Benutzernamen und ein Passwort"
 msgstr "The proxy wants a user name and a password"
 
+msgid "Der Server speichert nur, was er nicht lesen kann. Angemeldet wird über das Onyx, das er nennt. Ändern lässt sich die Adresse nur abgemeldet."
+msgstr "The server only stores what it cannot read. Signing in goes through the Onyx it names. The address can only be changed while signed out."
+
+msgid "Der Sync-Server antwortet nicht: {}"
+msgstr "The sync server does not answer: {}"
+
 msgid "Der Torrent konnte nicht geladen werden: {}"
 msgstr "The torrent could not be loaded: {}"
 
@@ -690,6 +732,9 @@ msgstr "The address inside the tunnel is not an IPv4 address"
 
 msgid "Die Adresse muss {{query}} enthalten, bis dahin bleibt die bisherige Suche aktiv."
 msgstr "The address has to contain {{query}}, until then the previous search stays active."
+
+msgid "Die Anmeldung hat zu lange gedauert."
+msgstr "Signing in took too long."
 
 msgid "Die Browser-Engine konnte nicht gestartet werden."
 msgstr "The browser engine could not be started."
@@ -1198,6 +1243,9 @@ msgstr "Update now"
 msgid "Jetzt sehen"
 msgstr "Look now"
 
+msgid "KONTO"
+msgstr "ACCOUNT"
+
 msgid "Kein Login gefunden"
 msgstr "No login found"
 
@@ -1236,6 +1284,9 @@ msgstr "A click fills the login in, the buttons copy single parts."
 
 msgid "Konfiguration wählen…"
 msgstr "Choose a configuration…"
+
+msgid "Konto & Sync"
+msgstr "Account & Sync"
 
 msgid "Leer lassen für die Atoll-Startseite"
 msgstr "Leave empty for the Atoll start page"
@@ -1318,6 +1369,9 @@ msgstr "Delete"
 msgid "Mehr laden"
 msgstr "Load more"
 
+msgid "Melde dich im geöffneten Tab bei Onyx an."
+msgstr "Sign in to Onyx in the tab that opened."
+
 msgid "Meldet dich auf allen Websites ab."
 msgstr "Signs you out on every website."
 
@@ -1326,6 +1380,12 @@ msgstr "Remember what the open pages show"
 
 msgid "Mit 1Password anmelden"
 msgstr "Sign in with 1Password"
+
+msgid "Mit Onyx anmelden"
+msgstr "Sign in with Onyx"
+
+msgid "Mit deinem Onyx-Konto gleicht Atoll Tabs, Inseln, Workspaces und das Archiv zwischen deinen Geräten ab, Ende-zu-Ende verschlüsselt."
+msgstr "With your Onyx account Atoll keeps tabs, islands, workspaces and the archive in step between your devices, end-to-end encrypted."
 
 msgid "Mittwoch"
 msgstr "Wednesday"
@@ -1419,6 +1479,9 @@ msgstr "New private tab"
 
 msgid "Neues Fenster"
 msgstr "New window"
+
+msgid "Nicht angemeldet"
+msgstr "Not signed in"
 
 msgid "Nicht geladen"
 msgstr "Not loaded"
@@ -1569,6 +1632,9 @@ msgstr "PAGES THAT ARE GONE"
 
 msgid "SEITENSUCHE"
 msgstr "PAGE SEARCH"
+
+msgid "SERVER"
+msgstr "SERVER"
 
 msgid "SPEICHERORT"
 msgstr "LOCATION"
@@ -2026,6 +2092,9 @@ msgstr "Reload completely, without the cache"
 msgid "Vollständig neu laden, ohne Cache (Strg+F5)"
 msgstr "Reload completely, without the cache (Ctrl+F5)"
 
+msgid "Von Atoll Sync abgemeldet"
+msgstr "Signed out of Atoll Sync"
+
 msgid "Von selbst ausfüllen"
 msgstr "Fill in by itself"
 
@@ -2175,6 +2244,9 @@ msgstr "Switch to tab"
 
 msgid "Zu Workspace wechseln: {}"
 msgstr "Switch to workspace: {}"
+
+msgid "Zuerst die Adresse des Sync-Servers eintragen."
+msgstr "Enter the address of the sync server first."
 
 msgid "Zugangsdaten werden geholt…"
 msgstr "Fetching the credentials…"

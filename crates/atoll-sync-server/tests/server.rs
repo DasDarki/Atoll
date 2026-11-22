@@ -212,6 +212,16 @@ async fn only_valid_tokens_for_atoll_get_in() {
 }
 
 #[tokio::test]
+async fn devices_learn_where_to_sign_in_without_being_signed_in() {
+    let Some(server) = server().await else { return };
+    let (status, body) = call(&server, None, "GET", "/v1/config", None).await;
+    assert_eq!(status, StatusCode::OK);
+    let config: atoll_sync::wire::ServerConfig = serde_json::from_slice(&body).unwrap();
+    assert_eq!(config.issuer, ISSUER);
+    assert_eq!(config.client_id, CLIENT);
+}
+
+#[tokio::test]
 async fn changes_come_back_in_order_and_page_by_page() {
     let Some(server) = server().await else { return };
     let account = Account::new();

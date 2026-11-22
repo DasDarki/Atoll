@@ -12,6 +12,7 @@ pub const MAX_ARCHIVE_SUGGESTION_WEEKS: u32 = 52;
 pub const MAX_ARCHIVE_TABS_AFTER_DAYS: u32 = 365;
 const DEFAULT_MEMORY_LIMIT_GB: u32 = 4;
 const DEFAULT_HIDE_SHORTCUT: &str = "Alt+L";
+const DEFAULT_SYNC_SERVER: &str = "https://atoll.dasdarki.de";
 pub const MAX_MEMORY_LIMIT_GB: u32 = 64;
 
 /// What Atoll does when a page is not there any more.
@@ -156,6 +157,8 @@ pub struct Preferences {
     pub archive_on_missing: bool,
     /// The keys that hide Atoll behind black and bring it back, written like `Alt+L`.
     pub hide_shortcut: String,
+    /// The address of the Atoll Sync server.
+    pub sync_server: String,
 }
 
 /// A single preference, used to store exactly what changed.
@@ -182,6 +185,7 @@ pub enum PreferenceKey {
     ArchiveFallback,
     ArchiveOnMissing,
     HideShortcut,
+    SyncServer,
     CookieBannersHide,
     CookieBannersAnswer,
     VpnEnabled,
@@ -227,6 +231,7 @@ impl PreferenceKey {
             PreferenceKey::ArchiveFallback => "archive_fallback",
             PreferenceKey::ArchiveOnMissing => "archive_on_missing",
             PreferenceKey::HideShortcut => "hide_shortcut",
+            PreferenceKey::SyncServer => "sync_server",
             PreferenceKey::CookieBannersHide => "cookie_banners_hide",
             PreferenceKey::CookieBannersAnswer => "cookie_banners_answer",
             PreferenceKey::VpnEnabled => "vpn_enabled",
@@ -293,6 +298,7 @@ impl Default for Preferences {
             archive_fallback: ArchiveFallback::default(),
             archive_on_missing: false,
             hide_shortcut: DEFAULT_HIDE_SHORTCUT.to_owned(),
+            sync_server: DEFAULT_SYNC_SERVER.to_owned(),
         }
     }
 }
@@ -391,6 +397,9 @@ impl Preferences {
             hide_shortcut: text(PreferenceKey::HideShortcut)
                 .and_then(|keys| crate::input::shortcuts::normalize(&keys))
                 .unwrap_or(defaults.hide_shortcut),
+            sync_server: text(PreferenceKey::SyncServer)
+                .or_else(|| std::env::var("ATOLL_SYNC_SERVER").ok())
+                .unwrap_or(defaults.sync_server),
         }
     }
 
@@ -449,6 +458,7 @@ impl Preferences {
             PreferenceKey::ArchiveFallback => self.archive_fallback.as_str().to_owned(),
             PreferenceKey::ArchiveOnMissing => flag(self.archive_on_missing),
             PreferenceKey::HideShortcut => self.hide_shortcut.clone(),
+            PreferenceKey::SyncServer => self.sync_server.clone(),
         };
         if let Err(error) = storage.set_setting(key.storage_key(), &value) {
             tracing::warn!(%error, key = key.storage_key(), "preference could not be stored");
@@ -522,6 +532,7 @@ mod tests {
             archive_fallback: ArchiveFallback::Automatic,
             archive_on_missing: true,
             hide_shortcut: "Ctrl+Shift+H".to_owned(),
+            sync_server: "https://sync.example.org".to_owned(),
         };
         for key in [
             PreferenceKey::SearchUrl,
@@ -564,6 +575,7 @@ mod tests {
             PreferenceKey::ArchiveFallback,
             PreferenceKey::ArchiveOnMissing,
             PreferenceKey::HideShortcut,
+            PreferenceKey::SyncServer,
         ] {
             preferences.store(&storage, key);
         }

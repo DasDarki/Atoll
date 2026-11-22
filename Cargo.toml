@@ -26,6 +26,7 @@ atoll-vpn = { path = "crates/atoll-vpn" }
 atoll-tor = { path = "crates/atoll-tor" }
 atoll-torrent = { path = "crates/atoll-torrent" }
 atoll-sync = { path = "crates/atoll-sync" }
+atoll-sync-client = { path = "crates/atoll-sync-client" }
 adblock = { version = "0.13", default-features = false, features = ["embedded-domain-resolver", "full-regex-handling"] }
 psl = "2.1"
 

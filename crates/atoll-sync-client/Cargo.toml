@@ -1,0 +1,26 @@
+[package]
+name = "atoll-sync-client"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+atoll-net.workspace = true
+atoll-sync.workspace = true
+data-encoding.workspace = true
+getrandom.workspace = true
+atoll-i18n.workspace = true
+keyring-core = "1.1"
+serde.workspace = true
+serde_json.workspace = true
+sha2 = "0.10"
+thiserror.workspace = true
+tracing.workspace = true
+ureq.workspace = true
+
+[target.'cfg(target_os = "linux")'.dependencies]
+zbus-secret-service-keyring-store = { version = "1", features = ["crypto-rust"] }
+
+[lints]
+workspace = true

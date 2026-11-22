@@ -88,6 +88,14 @@ impl Verifier {
         }
     }
 
+    pub fn issuer(&self) -> &str {
+        &self.issuer
+    }
+
+    pub fn client_id(&self) -> &str {
+        &self.client_id
+    }
+
     /// The account a token belongs to, its `sub`.
     pub async fn verify(&self, token: &str) -> Result<String, AuthError> {
         let header = decode_header(token).map_err(|error| AuthError::Invalid(error.to_string()))?;

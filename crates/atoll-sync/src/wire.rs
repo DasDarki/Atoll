@@ -13,6 +13,15 @@ use crate::model::Kind;
 /// The header that carries the id of the device a request comes from.
 pub const DEVICE_HEADER: &str = "Atoll-Device";
 
+/// `GET /v1/config`, the one thing a device asks without being signed in: where to sign in.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ServerConfig {
+    /// The Onyx issuer, the base of its OAuth endpoints.
+    pub issuer: String,
+    /// The client id of Atoll in Onyx.
+    pub client_id: String,
+}
+
 /// A change a device sends: a record written anew, or removed.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Change {

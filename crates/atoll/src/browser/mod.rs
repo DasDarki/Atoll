@@ -1,3 +1,4 @@
+mod account;
 mod adblock;
 mod archive;
 mod bookmarks;
@@ -126,6 +127,8 @@ struct Shared {
     plugins: Rc<Plugins>,
     /// Whether Atoll hides behind black, the same for every window.
     hidden: Rc<Cell<bool>>,
+    /// The account of Atoll Sync, the same for every window.
+    account: Rc<RefCell<account::AccountState>>,
 }
 
 impl Shared {
@@ -164,6 +167,7 @@ impl Shared {
                 .unwrap_or_default(),
             plugins,
             hidden: Rc::default(),
+            account: Rc::default(),
         }
     }
 }
@@ -235,6 +239,7 @@ pub struct Browser {
     save: RefCell<SaveState>,
     plugins: Rc<Plugins>,
     hidden: Rc<Cell<bool>>,
+    account: Rc<RefCell<account::AccountState>>,
     /// The panel of an extension this window shows.
     panel: RefCell<Option<OpenPanel>>,
     panel_geometry: Cell<ViewGeometry>,
@@ -316,6 +321,7 @@ impl Browser {
             save: RefCell::default(),
             plugins: shared.plugins.clone(),
             hidden: shared.hidden.clone(),
+            account: shared.account.clone(),
             panel: RefCell::default(),
             panel_geometry: Cell::new(ViewGeometry {
                 width: 360,

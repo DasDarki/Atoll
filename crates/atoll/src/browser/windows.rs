@@ -461,6 +461,9 @@ impl WindowManager {
             }
         });
         self.start_archive_check();
+        if let Some(first) = self.browsers().first() {
+            first.resume_account();
+        }
     }
 
     /// Looks for tabs to archive a minute after the start and every few minutes after that.

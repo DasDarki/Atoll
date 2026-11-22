@@ -140,6 +140,12 @@ export component SettingsPage inherits Modal {
                 selected: SettingsState.section == 5;
                 clicked => { SettingsState.section = 5; }
             }
+            SectionButton {
+                text: @tr("Konto & Sync");
+                icon: @image-url("../icons/key.svg");
+                selected: SettingsState.section == 6;
+                clicked => { SettingsState.section = 6; }
+            }
         }
 
         Rectangle {
@@ -790,6 +796,57 @@ export component SettingsPage inherits Modal {
                         ActionButton {
                             text: @tr("Öffnen");
                             clicked => { SettingsState.open-plugin-folder(); }
+                        }
+                    }
+                }
+
+                if SettingsState.section == 6 : VerticalLayout {
+                    SectionTitle { text: @tr("KONTO"); }
+                    SettingRow {
+                        title: SettingsState.account-title;
+                        description: SettingsState.account-detail;
+                        if SettingsState.account-phase == 0 : ActionButton {
+                            text: @tr("Mit Onyx anmelden");
+                            kind: ButtonKind.primary;
+                            clicked => { SettingsState.account-action("sign-in"); }
+                        }
+                        if SettingsState.account-phase == 1 : ActionButton {
+                            text: @tr("Abbrechen");
+                            clicked => { SettingsState.account-action("cancel"); }
+                        }
+                        if SettingsState.account-phase == 2 : ActionButton {
+                            text: @tr("Abmelden");
+                            clicked => { SettingsState.account-action("sign-out"); }
+                        }
+                    }
+                    if SettingsState.account-error != "" : Text {
+                        text: SettingsState.account-error;
+                        color: Theme.danger;
+                        font-size: Theme.font-small + 1px;
+                        wrap: word-wrap;
+                    }
+                    Divider { }
+                    SectionTitle { text: @tr("SERVER"); }
+                    VerticalLayout {
+                        spacing: 8px;
+                        padding-top: 4px;
+                        padding-bottom: 8px;
+                        if SettingsState.account-phase == 0 : TextField {
+                            text <=> SettingsState.sync-server;
+                            placeholder: "https://atoll.dasdarki.de";
+                            edited => { SettingsState.changed("sync-server"); }
+                            accepted => { SettingsState.changed("sync-server"); }
+                        }
+                        if SettingsState.account-phase != 0 : Text {
+                            text: SettingsState.sync-server;
+                            color: Theme.text;
+                            font-size: Theme.font-normal;
+                        }
+                        Text {
+                            text: @tr("Der Server speichert nur, was er nicht lesen kann. Angemeldet wird über das Onyx, das er nennt. Ändern lässt sich die Adresse nur abgemeldet.");
+                            color: Theme.text-faint;
+                            font-size: Theme.font-small + 1px;
+                            wrap: word-wrap;
                         }
                     }
                 }

@@ -32,6 +32,7 @@ const MAX_BODY: usize = 8 * 1024 * 1024;
 pub fn router(state: AppState) -> Router {
     Router::new()
         .route("/healthz", get(health))
+        .route("/v1/config", get(config))
         .route("/v1/changes", get(read_changes).post(push))
         .route("/v1/snapshot", get(snapshot))
         .route("/v1/events", get(events))
@@ -96,6 +97,10 @@ async fn health(State(state): State<AppState>) -> Response {
             StatusCode::SERVICE_UNAVAILABLE.into_response()
         }
     }
+}
+
+async fn config(State(state): State<AppState>) -> Json<atoll_sync::wire::ServerConfig> {
+    Json(state.sign_in)
 }
 
 async fn push(

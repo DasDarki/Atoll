@@ -74,6 +74,7 @@ impl Browser {
         self.show_memory_settings();
         self.show_password_settings();
         self.show_plugin_settings();
+        self.show_account();
         state.set_visible(true);
     }
 
@@ -102,6 +103,7 @@ impl Browser {
             }
             "home-button" => self.set_home_button(state.get_home_button()),
             "hide-shortcut" => self.hide_shortcut_edited(state.get_hide_shortcut().as_str()),
+            "sync-server" => self.sync_server_edited(state.get_sync_server().as_str()),
             "archive-fallback" => {
                 let mode = match state.get_archive_fallback() {
                     0 => ArchiveFallback::Off,
