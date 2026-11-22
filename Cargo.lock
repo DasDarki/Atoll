@@ -916,6 +916,7 @@ name = "atoll-storage"
 version = "0.1.0"
 dependencies = [
  "atoll-core",
+ "atoll-sync",
  "rusqlite",
  "thiserror 2.0.20",
 ]
@@ -937,16 +938,23 @@ dependencies = [
 name = "atoll-sync-client"
 version = "0.1.0"
 dependencies = [
+ "atoll-core",
  "atoll-i18n",
  "atoll-net",
+ "atoll-storage",
  "atoll-sync",
+ "atoll-sync-server",
+ "axum",
  "data-encoding",
  "getrandom 0.3.4",
+ "jsonwebtoken",
  "keyring-core",
  "serde",
  "serde_json",
  "sha2 0.10.9",
+ "sqlx",
  "thiserror 2.0.20",
+ "tokio",
  "tracing",
  "ureq",
  "zbus-secret-service-keyring-store",

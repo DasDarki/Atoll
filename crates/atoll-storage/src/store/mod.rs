@@ -7,6 +7,7 @@ pub mod history;
 pub mod islands;
 pub mod pages;
 pub mod plugins;
+pub mod replica;
 pub mod settings;
 pub mod sync;
 pub mod tabs;

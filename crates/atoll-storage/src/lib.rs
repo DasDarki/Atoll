@@ -16,6 +16,7 @@ pub use store::history::{HistoryEntry, HistoryStore};
 pub use store::islands::{IslandStore, NewIsland};
 pub use store::pages::{MAX_PAGE_TEXT, PageHit, PageTextStore};
 pub use store::plugins::{PluginRecord, PluginStore};
+pub use store::replica::{Applied, Incoming, ReplicaStore};
 pub use store::settings::SettingsStore;
 pub use store::sync::{OutboxEntry, SyncStore};
 pub use store::tabs::{NewTab, TabEntry, TabStore};
@@ -26,7 +27,7 @@ pub use store::workspaces::WorkspaceStore;
 pub mod prelude {
     pub use crate::{
         AdblockStore, ArchiveStore, BookmarkStore, Connected, DownloadStore, FaviconStore,
-        HistoryStore, IslandStore, PageTextStore, PluginStore, SettingsStore, SyncStore, TabStore,
-        WindowStore, WorkspaceStore,
+        HistoryStore, IslandStore, PageTextStore, PluginStore, ReplicaStore, SettingsStore,
+        SyncStore, TabStore, WindowStore, WorkspaceStore,
     };
 }

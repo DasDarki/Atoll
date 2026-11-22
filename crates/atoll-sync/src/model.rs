@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use crate::id::SyncId;
 
 /// The kind of a record, part of its address on the server.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Kind {
     Workspace,

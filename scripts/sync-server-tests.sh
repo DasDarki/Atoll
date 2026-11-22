@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Runs the tests of the sync server against a throwaway Postgres in Docker.
+# Runs the tests of the sync server and the sync engine against a throwaway Postgres in Docker.
 set -euo pipefail
 
 NAME="atoll-sync-test-postgres"
@@ -23,5 +23,5 @@ for _ in $(seq 1 60); do
 done
 docker exec "$NAME" pg_isready -U atoll -d atoll_sync >/dev/null
 
-ATOLL_SYNC_TEST_DATABASE_URL="postgres://atoll:atoll@127.0.0.1:$PORT/atoll_sync" \
-  cargo test -p atoll-sync-server "$@"
+ATOLL_SYNC_TEST_DATABASE_URL="postgres://atoll:atoll@127.0.0.1:$PORT/atoll_sync" ATOLL_SYNC_NO_KEYRING=1 \
+  cargo test -p atoll-sync-server -p atoll-sync-client "$@"
