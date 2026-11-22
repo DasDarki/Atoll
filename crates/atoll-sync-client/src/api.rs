@@ -48,6 +48,8 @@ pub enum ApiError {
     NoKey,
     #[error("another device set the key first")]
     KeyConflict,
+    #[error("the account was set up anew with another key")]
+    KeyChanged,
     #[error("the sync server cannot be reached: {0}")]
     Unavailable(String),
     #[error("the sync server refused: {0}")]

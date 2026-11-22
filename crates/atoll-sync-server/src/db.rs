@@ -146,7 +146,7 @@ fn stored(row: &sqlx::postgres::PgRow) -> Result<Stored, sqlx::Error> {
 
 pub async fn key(pool: &PgPool, account: &str) -> Result<Option<StoredKey>, sqlx::Error> {
     let row = sqlx::query(
-        "SELECT salt, memory_kib, passes, wrapped, version FROM account_key WHERE account = $1",
+        "SELECT key_id, salt, memory_kib, passes, wrapped, version FROM account_key WHERE account = $1",
     )
     .bind(account)
     .fetch_optional(pool)
@@ -154,6 +154,7 @@ pub async fn key(pool: &PgPool, account: &str) -> Result<Option<StoredKey>, sqlx
     row.map(|row| {
         Ok(StoredKey {
             envelope: WireEnvelope {
+                key_id: row.try_get("key_id")?,
                 salt: row.try_get("salt")?,
                 memory_kib: row.try_get::<i32, _>("memory_kib")? as u32,
                 passes: row.try_get::<i32, _>("passes")? as u32,
@@ -174,25 +175,24 @@ pub async fn put_key(
     replaces: Option<i64>,
 ) -> Result<Option<i64>, sqlx::Error> {
     let version = match replaces {
-        None => {
-            sqlx::query_scalar(
-                "INSERT INTO account_key (account, salt, memory_kib, passes, wrapped, version)
-                 VALUES ($1, $2, $3, $4, $5, 1)
+        None => sqlx::query_scalar(
+            "INSERT INTO account_key (account, salt, memory_kib, passes, wrapped, version, key_id)
+                 VALUES ($1, $2, $3, $4, $5, 1, $6)
                  ON CONFLICT (account) DO NOTHING RETURNING version",
-            )
-            .bind(account)
-            .bind(&envelope.salt)
-            .bind(envelope.memory_kib as i32)
-            .bind(envelope.passes as i32)
-            .bind(&envelope.wrapped)
-            .fetch_optional(pool)
-            .await?
-        }
+        )
+        .bind(account)
+        .bind(&envelope.salt)
+        .bind(envelope.memory_kib as i32)
+        .bind(envelope.passes as i32)
+        .bind(&envelope.wrapped)
+        .bind(&envelope.key_id)
+        .fetch_optional(pool)
+        .await?,
         Some(previous) => {
             sqlx::query_scalar(
                 "UPDATE account_key
                  SET salt = $2, memory_kib = $3, passes = $4, wrapped = $5,
-                     version = version + 1, updated_at = now()
+                     version = version + 1, updated_at = now(), key_id = $7
                  WHERE account = $1 AND version = $6 RETURNING version",
             )
             .bind(account)
@@ -201,6 +201,7 @@ pub async fn put_key(
             .bind(envelope.passes as i32)
             .bind(&envelope.wrapped)
             .bind(previous)
+            .bind(&envelope.key_id)
             .fetch_optional(pool)
             .await?
         }

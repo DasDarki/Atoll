@@ -96,6 +96,9 @@ pub struct PutKey {
 /// [`KeyEnvelope`] as it travels.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct WireEnvelope {
+    /// The [`crate::DataKey::id`] of the wrapped key, empty from servers that predate it.
+    #[serde(default)]
+    pub key_id: String,
     #[serde(with = "base64")]
     pub salt: Vec<u8>,
     pub memory_kib: u32,
@@ -107,6 +110,7 @@ pub struct WireEnvelope {
 impl From<&KeyEnvelope> for WireEnvelope {
     fn from(envelope: &KeyEnvelope) -> Self {
         Self {
+            key_id: envelope.key_id.clone(),
             salt: envelope.salt.to_vec(),
             memory_kib: envelope.hardness.memory_kib,
             passes: envelope.hardness.passes,
@@ -120,6 +124,7 @@ impl TryFrom<&WireEnvelope> for KeyEnvelope {
 
     fn try_from(wire: &WireEnvelope) -> Result<Self, Self::Error> {
         Ok(Self {
+            key_id: wire.key_id.clone(),
             salt: wire
                 .salt
                 .as_slice()

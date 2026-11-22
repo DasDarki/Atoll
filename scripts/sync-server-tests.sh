@@ -15,13 +15,13 @@ docker run -d --name "$NAME" \
   -e POSTGRES_USER=atoll -e POSTGRES_PASSWORD=atoll -e POSTGRES_DB=atoll_sync \
   -p "127.0.0.1:$PORT:5432" postgres:17 >/dev/null
 
-for _ in $(seq 1 60); do
-  if docker exec "$NAME" pg_isready -U atoll -d atoll_sync >/dev/null 2>&1; then
-    break
-  fi
+# The image starts a server for its setup first and restarts it, so it is ready only once it
+# says so the second time.
+for _ in $(seq 1 120); do
+  ready=$(docker logs "$NAME" 2>&1 | grep -c "database system is ready to accept connections" || true)
+  [ "$ready" -ge 2 ] && break
   sleep 0.5
 done
-docker exec "$NAME" pg_isready -U atoll -d atoll_sync >/dev/null
 
 ATOLL_SYNC_TEST_DATABASE_URL="postgres://atoll:atoll@127.0.0.1:$PORT/atoll_sync" ATOLL_SYNC_NO_KEYRING=1 \
   cargo test -p atoll-sync-server -p atoll-sync-client "$@"

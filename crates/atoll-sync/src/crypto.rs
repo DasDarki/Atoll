@@ -57,6 +57,21 @@ impl DataKey {
         &self.0
     }
 
+    /// A name for this key that gives nothing of it away: the start of a hash of it. Devices
+    /// compare it with the one stored next to the wrapped key to notice that the account was set
+    /// up anew with another key.
+    pub fn id(&self) -> String {
+        use sha2::{Digest, Sha256};
+        let mut hash = Sha256::new();
+        hash.update(b"atoll/1/key-id/");
+        hash.update(self.0);
+        hash.finalize()
+            .iter()
+            .take(16)
+            .map(|byte| format!("{byte:02x}"))
+            .collect()
+    }
+
     /// The key written for people: 52 letters and digits in groups of four. Whoever holds it can
     /// read the data, it is the way back when the passphrase is forgotten.
     pub fn recovery_key(&self) -> String {
@@ -130,6 +145,8 @@ impl Default for Hardness {
 /// The data key wrapped by the sync passphrase, the only form in which it reaches the server.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct KeyEnvelope {
+    /// The [`DataKey::id`] of the wrapped key.
+    pub key_id: String,
     pub salt: [u8; SALT_LENGTH],
     pub hardness: Hardness,
     /// The sealed data key, in the same format as a sealed record.
@@ -143,6 +160,7 @@ impl KeyEnvelope {
         random(&mut salt);
         let wrapping = derive(passphrase, &salt, hardness)?;
         Ok(Self {
+            key_id: key.id(),
             salt,
             hardness,
             wrapped: seal_with(&wrapping, WRAP_CONTEXT, key.as_bytes()),
@@ -336,6 +354,16 @@ mod tests {
         ));
         let again = KeyEnvelope::wrap(&key, "korrekt pferd batterie", quick()).unwrap();
         assert_ne!(again.salt, envelope.salt);
+    }
+
+    #[test]
+    fn the_key_id_names_the_key_and_nothing_more() {
+        let key = DataKey::generate();
+        assert_eq!(key.id(), key.clone().id());
+        assert_eq!(key.id().len(), 32);
+        assert_ne!(key.id(), DataKey::generate().id());
+        let envelope = KeyEnvelope::wrap(&key, "geheim", quick()).unwrap();
+        assert_eq!(envelope.key_id, key.id());
     }
 
     #[test]

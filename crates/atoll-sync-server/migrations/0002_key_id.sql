@@ -1,0 +1,1 @@
+ALTER TABLE account_key ADD COLUMN key_id TEXT NOT NULL DEFAULT '';

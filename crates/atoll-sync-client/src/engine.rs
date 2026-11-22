@@ -16,7 +16,7 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use atoll_storage::prelude::*;
 use atoll_storage::{Applied, Incoming, Storage};
-use atoll_sync::wire::{Change, DeviceName, Platform, Stored};
+use atoll_sync::wire::{Change, DeviceName, Platform, Snapshot, Stored};
 use atoll_sync::{DataKey, Kind, Record, SyncId};
 
 use crate::api::{Api, ApiError};
@@ -119,6 +119,9 @@ pub enum Report {
     Failed(String),
     /// The sign-in is gone, the thread stopped.
     SignedOut,
+    /// The account was set up anew with another key; the thread stopped before touching
+    /// anything, the key has to be unlocked again.
+    KeyChanged,
 }
 
 /// Everything the thread needs.
@@ -236,6 +239,7 @@ struct Worker {
     resting_until: Option<Instant>,
     asked_for_choice: bool,
     named: bool,
+    key_checked: bool,
 }
 
 impl Worker {
@@ -257,6 +261,7 @@ impl Worker {
             resting_until: None,
             asked_for_choice: false,
             named: false,
+            key_checked: false,
         })
     }
 
@@ -290,13 +295,18 @@ impl Worker {
                     self.woken = true;
                     self.tick()
                 }
-                Ok(Command::Link(choice)) => self.link(choice),
+                Ok(Command::Link(choice)) => self.link(choice, None),
                 Err(RecvTimeoutError::Timeout) => self.tick(),
             };
             match outcome {
                 Ok(()) => {}
                 Err(ApiError::SignedOut) => {
                     (self.report)(Report::SignedOut);
+                    return;
+                }
+                Err(ApiError::KeyChanged) => {
+                    tracing::warn!("the key of the account changed, the sync thread stops");
+                    (self.report)(Report::KeyChanged);
                     return;
                 }
                 Err(error) => {
@@ -316,6 +326,9 @@ impl Worker {
             return Ok(());
         }
         self.resting_until = None;
+        if !self.key_checked && self.mode() != Mode::Off {
+            self.check_key()?;
+        }
         match self.mode() {
             Mode::ReadWrite => self.read_write(false),
             Mode::Read => {
@@ -335,6 +348,21 @@ impl Worker {
                 }
             }
             Mode::ReadOnDemand | Mode::Off => Ok(()),
+        }
+    }
+
+    /// Makes sure the server still keeps the key this device holds. A reset elsewhere puts
+    /// another one there, and records sealed with it would not open here: mirroring then would
+    /// throw away everything on this device for an empty-looking server.
+    fn check_key(&mut self) -> Result<(), ApiError> {
+        match self.api.key()? {
+            Some(stored)
+                if stored.envelope.key_id.is_empty() || stored.envelope.key_id == self.key.id() =>
+            {
+                self.key_checked = true;
+                Ok(())
+            }
+            _ => Err(ApiError::KeyChanged),
         }
     }
 
@@ -405,10 +433,10 @@ impl Worker {
             })
             .count();
         if snapshot.records.is_empty() {
-            return self.link(Choice::Upload);
+            return self.link(Choice::Upload, Some(snapshot));
         }
         if local_tabs == 0 {
-            return self.link(Choice::TakeServer);
+            return self.link(Choice::TakeServer, Some(snapshot));
         }
         self.asked_for_choice = true;
         (self.report)(Report::NeedsChoice {
@@ -418,9 +446,14 @@ impl Worker {
         Ok(())
     }
 
-    /// Joins this device to the account in the way chosen.
-    fn link(&mut self, choice: Choice) -> Result<(), ApiError> {
-        let snapshot = self.api.snapshot()?;
+    /// Joins this device to the account in the way chosen, on the snapshot the choice was made
+    /// on. A fresh one taken here could hold what another device sent in the meantime, and
+    /// uploading would then remove it.
+    fn link(&mut self, choice: Choice, snapshot: Option<Snapshot>) -> Result<(), ApiError> {
+        let snapshot = match snapshot {
+            Some(snapshot) => snapshot,
+            None => self.api.snapshot()?,
+        };
         let server = self.open_all(&snapshot.records);
         let server_ids: HashSet<(Kind, SyncId)> =
             server.iter().map(|(kind, id, _)| (*kind, *id)).collect();
@@ -590,6 +623,7 @@ impl Worker {
                 Ok(())
             }
             Err(ApiError::ResyncRequired) => {
+                self.check_key()?;
                 self.push(true)?;
                 self.mirror_reporting(sent)
             }
@@ -635,6 +669,7 @@ impl Worker {
     }
 
     fn mirror(&mut self) -> Result<(), ApiError> {
+        self.check_key()?;
         self.mirror_reporting(0)
     }
 

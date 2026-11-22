@@ -9,7 +9,8 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use atoll_core::{IslandColor, IslandId, Timestamp, WorkspaceId};
 use atoll_storage::prelude::*;
 use atoll_storage::{NewIsland, NewTab, Storage};
-use atoll_sync::{DataKey, SyncId};
+use atoll_sync::wire::{PutKey, WireEnvelope};
+use atoll_sync::{DataKey, Hardness, KeyEnvelope, SyncId};
 use atoll_sync_client::{Api, Choice, Command, Engine, Mode, Report, Setup, TokenError, Tokens};
 use jsonwebtoken::{EncodingKey, Header, encode};
 use serde::Serialize;
@@ -87,6 +88,25 @@ fn server() -> Option<String> {
         });
     });
     Some(address)
+}
+
+/// Sets sync up for `account` with `key`, as the first device does.
+fn set_up(server: &str, account: &str, key: &DataKey) {
+    let api = Api::new(server, SyncId::random(), Arc::new(Fixed(token(account))));
+    let envelope = KeyEnvelope::wrap(
+        key,
+        "geheim",
+        Hardness {
+            memory_kib: 64,
+            passes: 1,
+        },
+    )
+    .unwrap();
+    api.put_key(&PutKey {
+        envelope: WireEnvelope::from(&envelope),
+        replaces: None,
+    })
+    .unwrap();
 }
 
 /// One device: a database file and the sync thread working on it.
@@ -221,6 +241,7 @@ fn two_devices_keep_in_step_both_ways() {
     let directory = directory("both-ways");
     let account = SyncId::random().to_string();
     let key = DataKey::generate();
+    set_up(&server, &account, &key);
 
     let laptop_path = directory.join("laptop.db");
     {
@@ -286,6 +307,7 @@ fn a_reading_device_mirrors_and_drops_its_own_changes() {
     let directory = directory("reading");
     let account = SyncId::random().to_string();
     let key = DataKey::generate();
+    set_up(&server, &account, &key);
 
     let laptop_path = directory.join("laptop.db");
     {
@@ -323,6 +345,7 @@ fn reading_on_demand_waits_until_asked() {
     let directory = directory("on-demand");
     let account = SyncId::random().to_string();
     let key = DataKey::generate();
+    set_up(&server, &account, &key);
     let laptop_path = directory.join("laptop.db");
     {
         let laptop = Storage::open(&laptop_path).unwrap();
@@ -359,6 +382,7 @@ fn when_both_sides_hold_data_the_user_chooses() {
     let directory = directory("choice");
     let account = SyncId::random().to_string();
     let key = DataKey::generate();
+    set_up(&server, &account, &key);
 
     let laptop_path = directory.join("laptop.db");
     {
@@ -403,5 +427,47 @@ fn when_both_sides_hold_data_the_user_chooses() {
         };
         wanted(layout(&desk.storage())) && wanted(layout(&laptop.storage()))
     });
+    let _ = std::fs::remove_dir_all(directory);
+}
+
+#[test]
+fn a_reset_elsewhere_stops_a_device_before_it_touches_anything() {
+    let Some(server) = server() else { return };
+    let directory = directory("reset");
+    let account = SyncId::random().to_string();
+    let key = DataKey::generate();
+    set_up(&server, &account, &key);
+
+    let laptop_path = directory.join("laptop.db");
+    {
+        let laptop = Storage::open(&laptop_path).unwrap();
+        let work = laptop.create_workspace("Arbeit").unwrap();
+        let docs = island(&laptop, work.id, "Doku");
+        tab(&laptop, docs, "https://a.example/");
+    }
+    let laptop = Device::attach(laptop_path, &server, &account, &key, Mode::ReadWrite);
+    eventually("the laptop sending", || {
+        laptop
+            .reports()
+            .iter()
+            .any(|report| matches!(report, Report::Synced { .. }))
+    });
+    let before = layout(&laptop.storage());
+
+    let elsewhere = Api::new(&server, SyncId::random(), Arc::new(Fixed(token(&account))));
+    elsewhere.reset().unwrap();
+    set_up(&server, &account, &DataKey::generate());
+    laptop.engine.send(Command::Now);
+    eventually("the laptop noticing the new key", || {
+        laptop
+            .reports()
+            .iter()
+            .any(|report| matches!(report, Report::KeyChanged))
+    });
+    assert_eq!(
+        layout(&laptop.storage()),
+        before,
+        "nothing was mirrored away"
+    );
     let _ = std::fs::remove_dir_all(directory);
 }

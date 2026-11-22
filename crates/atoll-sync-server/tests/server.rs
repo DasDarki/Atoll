@@ -371,6 +371,7 @@ async fn the_wrapped_key_is_set_once_and_replaced_only_knowingly() {
     );
 
     let envelope = WireEnvelope {
+        key_id: "0123456789abcdef0123456789abcdef".to_owned(),
         salt: vec![7; 16],
         memory_kib: 65536,
         passes: 3,
@@ -424,6 +425,7 @@ async fn resetting_empties_the_account_and_sends_every_device_to_the_snapshot() 
     )
     .await;
     let envelope = WireEnvelope {
+        key_id: "0123456789abcdef0123456789abcdef".to_owned(),
         salt: vec![7; 16],
         memory_kib: 64,
         passes: 1,
