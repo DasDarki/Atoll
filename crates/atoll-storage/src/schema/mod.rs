@@ -17,6 +17,7 @@ const MIGRATIONS: &[&str] = &[
     include_str!("v12_page_text.sql"),
     include_str!("v13_tab_archive.sql"),
     include_str!("v14_archive_reason.sql"),
+    include_str!("v15_sync.sql"),
 ];
 
 pub(crate) fn migrate(connection: &Connection) -> StorageResult<()> {

@@ -8,6 +8,7 @@ pub mod islands;
 pub mod pages;
 pub mod plugins;
 pub mod settings;
+pub mod sync;
 pub mod tabs;
 pub mod windows;
 pub mod workspaces;

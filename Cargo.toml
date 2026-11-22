@@ -25,6 +25,7 @@ atoll-socks = { path = "crates/atoll-socks" }
 atoll-vpn = { path = "crates/atoll-vpn" }
 atoll-tor = { path = "crates/atoll-tor" }
 atoll-torrent = { path = "crates/atoll-torrent" }
+atoll-sync = { path = "crates/atoll-sync" }
 adblock = { version = "0.13", default-features = false, features = ["embedded-domain-resolver", "full-regex-handling"] }
 psl = "2.1"
 
@@ -36,6 +37,9 @@ cef = { version = "152.3", default-features = false }
 directories = "6"
 getrandom = "0.3"
 anyhow = "1"
+argon2 = "0.5"
+chacha20poly1305 = "0.10"
+data-encoding = "2.6"
 arboard = { version = "3.6", features = ["wayland-data-control"] }
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "bmp", "tiff", "webp", "ico"] }
 libc = "0.2"
